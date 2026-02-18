@@ -1005,6 +1005,79 @@ def generate_html():
             cursor: pointer;
         }}
 
+        /* Sidebar overlay */
+        .sidebar-overlay {{
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 998;
+        }}
+        .sidebar-overlay.show {{ display: block; }}
+
+        /* Bottom nav (mobile) */
+        .bottom-nav {{
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #202020;
+            border-top: 1px solid #2d2d2d;
+            z-index: 900;
+            padding: 6px 0;
+            padding-bottom: max(6px, env(safe-area-inset-bottom));
+        }}
+        .bottom-nav-inner {{
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 500px;
+            margin: 0 auto;
+        }}
+        .bnav-item {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 6px 12px;
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: color 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }}
+        .bnav-item.active {{ color: #8b5cf6; }}
+        .bnav-item:active {{ color: #a78bfa; }}
+        .bnav-icon {{ font-size: 22px; }}
+
+        /* WhatsApp floating button */
+        .wa-float {{
+            position: fixed;
+            bottom: 24px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: #25D366;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(37,211,102,0.4);
+            z-index: 800;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }}
+        .wa-float:hover {{ transform: scale(1.08); box-shadow: 0 6px 24px rgba(37,211,102,0.5); }}
+        .wa-float:active {{ transform: scale(0.95); }}
+        .wa-float svg {{ width: 28px; height: 28px; fill: #fff; }}
+
         /* Responsive */
         @media (max-width: 768px) {{
             .sidebar {{
@@ -1017,13 +1090,127 @@ def generate_html():
             }}
             .sidebar.open {{ left: 0; }}
             .mobile-toggle {{ display: block; }}
-            .content {{ padding: 60px 20px 20px; }}
-            .page-title {{ font-size: 24px; }}
-            .hero h1 {{ font-size: 28px; }}
-            .hero-stats {{ gap: 24px; }}
-            .includes-list {{ grid-template-columns: 1fr; }}
-            .cat-grid {{ grid-template-columns: 1fr 1fr; }}
-            .pipeline-row {{ flex-direction: column; }}
+            .bottom-nav {{ display: block; }}
+            .wa-float {{ bottom: 80px; right: 16px; width: 52px; height: 52px; }}
+            .wa-float svg {{ width: 26px; height: 26px; }}
+
+            .content {{
+                padding: 56px 16px 80px;
+            }}
+            .page {{
+                max-width: 100%;
+            }}
+            .page-title {{
+                font-size: 24px;
+                line-height: 1.2;
+            }}
+            .page-meta {{
+                font-size: 13px;
+                margin-bottom: 20px;
+            }}
+
+            /* Hero mobile */
+            .hero {{
+                padding: 32px 8px 24px;
+            }}
+            .hero-logo {{ font-size: 40px; }}
+            .hero h1 {{
+                font-size: 26px;
+                letter-spacing: -0.5px;
+            }}
+            .hero p {{
+                font-size: 14px;
+                margin-bottom: 24px;
+            }}
+            .hero-stats {{
+                gap: 20px;
+                margin-bottom: 24px;
+            }}
+            .hero-stat .number {{ font-size: 24px; }}
+            .hero-cta {{
+                padding: 14px 32px;
+                font-size: 16px;
+                width: 100%;
+                max-width: 300px;
+            }}
+            .contact-bar {{
+                gap: 12px;
+                flex-direction: column;
+            }}
+
+            /* Category tiles mobile */
+            .cat-grid {{
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }}
+            .cat-tile {{
+                padding: 18px 12px;
+            }}
+            .cat-icon {{ font-size: 30px; margin-bottom: 6px; }}
+            .cat-name {{ font-size: 14px; }}
+
+            /* Gallery cards mobile — bigger touch targets */
+            .gallery-grid {{ gap: 10px; }}
+            .gallery-card {{
+                padding: 16px;
+                gap: 12px;
+                min-height: 64px;
+            }}
+            .gallery-name {{ font-size: 14px; }}
+            .gallery-meta {{ font-size: 11px; }}
+
+            /* Pricing mobile */
+            .pricing-card {{ padding: 18px; }}
+            .pricing-name {{ font-size: 18px; }}
+            .tier-header {{ flex-direction: column; align-items: flex-start; gap: 2px; }}
+            .tier-price {{ font-size: 20px; }}
+            .tier-details {{ font-size: 14px; }}
+            .addons-list li {{ font-size: 14px; padding: 5px 0; }}
+            .includes-list {{ grid-template-columns: 1fr; gap: 8px; }}
+            .includes-list span {{ font-size: 14px; }}
+
+            /* Checklists mobile — bigger touch targets */
+            .check-item {{
+                padding: 12px;
+                font-size: 15px;
+                min-height: 48px;
+            }}
+            .check-item input[type="checkbox"] {{
+                width: 20px;
+                height: 20px;
+            }}
+
+            /* Workflow tiles */
+            .wf-tile-grid {{
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }}
+            .wf-tile {{ padding: 16px; }}
+            .wf-tile-icon {{ font-size: 24px; }}
+            .wf-tile-label {{ font-size: 13px; }}
+
+            /* Pipeline */
+            .pipeline-row {{ flex-direction: column; gap: 6px; }}
+            .pipeline-stage {{ min-width: auto; padding: 10px; font-size: 13px; }}
+
+            /* Password gate */
+            .pw-gate {{ padding: 40px 16px; }}
+            .pw-input {{ width: 100%; max-width: 260px; font-size: 16px; padding: 12px 16px; }}
+            .pw-btn {{ margin-left: 0; margin-top: 12px; display: block; width: 100%; max-width: 260px; padding: 14px; font-size: 16px; }}
+            .pw-gate > div {{ display: flex; flex-direction: column; align-items: center; }}
+
+            /* Workflow content */
+            .wf-content {{ font-size: 15px; }}
+            .wf-content .wf-table {{ font-size: 12px; display: block; overflow-x: auto; }}
+            .wf-code {{ font-size: 12px; }}
+            .back-link {{ font-size: 14px; padding: 8px 0; }}
+        }}
+
+        /* Small phones */
+        @media (max-width: 380px) {{
+            .cat-grid {{ grid-template-columns: 1fr; }}
+            .hero-stats {{ flex-wrap: wrap; gap: 16px; }}
+            .wf-tile-grid {{ grid-template-columns: 1fr; }}
         }}
 
         /* Toast */
@@ -1047,6 +1234,34 @@ def generate_html():
 </head>
 <body>
     <button class="mobile-toggle" onclick="toggleSidebar()">&#9776;</button>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- WhatsApp floating button -->
+    <a href="https://wa.me/15307278598?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." class="wa-float" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </a>
+
+    <!-- Bottom nav (mobile) -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <div class="bnav-item active" onclick="mobileNav('home')" id="bnav-home">
+                <span class="bnav-icon">🏠</span>
+                Home
+            </div>
+            <div class="bnav-item" onclick="mobileNav('portfolio-home')" id="bnav-portfolio">
+                <span class="bnav-icon">📸</span>
+                Portfolio
+            </div>
+            <div class="bnav-item" onclick="mobileNav('pricing')" id="bnav-pricing">
+                <span class="bnav-icon">💰</span>
+                Pricing
+            </div>
+            <div class="bnav-item" onclick="mobileNav('contact')" id="bnav-contact">
+                <span class="bnav-icon">📞</span>
+                Contact
+            </div>
+        </div>
+    </nav>
 
     <div class="layout">
         <!-- Sidebar -->
@@ -1249,6 +1464,56 @@ def generate_html():
             <!-- TWOMANN COURSE PAGES -->
             {twomann_pages}
 
+            <!-- CONTACT -->
+            <div class="page" id="contact">
+                <div class="page-breadcrumb">Contact</div>
+                <h1 class="page-title">Get In Touch</h1>
+                <div class="page-meta">Ready to capture your special moments? Reach out anytime!</div>
+
+                <div class="gallery-grid" style="max-width:400px;">
+                    <a href="https://wa.me/15307278598?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." target="_blank" rel="noopener" class="gallery-card" style="border-color:#25D366;">
+                        <div class="gallery-icon" style="font-size:28px;">💬</div>
+                        <div class="gallery-info">
+                            <div class="gallery-name">WhatsApp</div>
+                            <div class="gallery-meta">Fastest way to reach us</div>
+                        </div>
+                        <div class="gallery-arrow">&#8599;</div>
+                    </a>
+                    <a href="tel:+15307278598" class="gallery-card">
+                        <div class="gallery-icon" style="font-size:28px;">📞</div>
+                        <div class="gallery-info">
+                            <div class="gallery-name">(530) 727-8598</div>
+                            <div class="gallery-meta">Call or text</div>
+                        </div>
+                        <div class="gallery-arrow">&#8599;</div>
+                    </a>
+                    <a href="https://www.rsquarestudios.com" target="_blank" rel="noopener" class="gallery-card">
+                        <div class="gallery-icon" style="font-size:28px;">🌐</div>
+                        <div class="gallery-info">
+                            <div class="gallery-name">rsquarestudios.com</div>
+                            <div class="gallery-meta">Full portfolio on SmugMug</div>
+                        </div>
+                        <div class="gallery-arrow">&#8599;</div>
+                    </a>
+                    <a href="https://www.instagram.com/rsquare_studios/" target="_blank" rel="noopener" class="gallery-card">
+                        <div class="gallery-icon" style="font-size:28px;">📷</div>
+                        <div class="gallery-info">
+                            <div class="gallery-name">@rsquare_studios</div>
+                            <div class="gallery-meta">Follow on Instagram</div>
+                        </div>
+                        <div class="gallery-arrow">&#8599;</div>
+                    </a>
+                </div>
+
+                <div class="includes-box" style="max-width:400px; margin-top:28px;">
+                    <h3>Based in Dallas-Fort Worth, TX</h3>
+                    <div style="font-size:14px; color:#c4b5fd; line-height:1.7;">
+                        Available for weddings, maternity, newborn, birthday, and cradle ceremony photography.<br><br>
+                        We typically book 4-6 weeks in advance. Secure your date with a deposit!
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -1266,8 +1531,8 @@ def generate_html():
             document.querySelectorAll('.sidebar-link').forEach(a => a.classList.remove('active'));
             // Scroll to top
             document.getElementById('main-content').scrollTop = 0;
-            // Close mobile sidebar
-            document.getElementById('sidebar').classList.remove('open');
+            // Close mobile sidebar + overlay
+            closeSidebar();
         }}
 
         function accessWorkflow(sectionId) {{
@@ -1363,7 +1628,31 @@ def generate_html():
         }}
 
         function toggleSidebar() {{
-            document.getElementById('sidebar').classList.toggle('open');
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('sidebar-overlay');
+            sb.classList.toggle('open');
+            ov.classList.toggle('show');
+        }}
+
+        function closeSidebar() {{
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('show');
+        }}
+
+        // Bottom nav handler
+        function mobileNav(sectionId) {{
+            showSection(sectionId);
+            // Update active state on bottom nav
+            document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
+            // Map section to tab
+            const tabMap = {{
+                'home': 'bnav-home',
+                'portfolio-home': 'bnav-portfolio',
+                'pricing': 'bnav-pricing',
+                'contact': 'bnav-contact',
+            }};
+            const tabId = tabMap[sectionId];
+            if (tabId) document.getElementById(tabId)?.classList.add('active');
         }}
 
         // Check if already unlocked
