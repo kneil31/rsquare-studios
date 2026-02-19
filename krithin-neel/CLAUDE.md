@@ -9,7 +9,7 @@ Subproject of rsquare-studios-dashboard. Family memories page hosted on GitHub P
 - **Live URL:** https://kneil31.github.io/krithin-neel/
 - **GitHub Repo:** kneil31/krithin-neel (public)
 - **Generator:** `generate_krithin_page.py` → `output/index.html`
-- **No password protection** (removed for now)
+- **Password:** `Kn!7h$Xw9#mP2@vR4&qZ` (AES-256-GCM encrypted, all content hidden until unlock)
 
 ## Design
 
@@ -18,24 +18,27 @@ Subproject of rsquare-studios-dashboard. Family memories page hosted on GitHub P
 - 3 tabs: Krithin | Monika | Family
 - Mobile-first (shared via WhatsApp)
 - Gallery tiles: 3/4 aspect ratio, 2-column mobile, 3-column desktop
-- Video tiles: 16/9 aspect ratio, always 2-column grid, YouTube thumbnails as background
+- Video tiles: 16/9 aspect ratio, always 2-column grid. Supports optional `"cover"` field for SmugMug photos
+- Reel tiles: 9/16 portrait aspect ratio, 3-column grid, `<img>` tags. Supports optional `"cover"` field for SmugMug photos (much better quality than YouTube thumbs)
+- Gallery tiles: Support optional `"cover"` field to override `cover_images.json` highlight images
 
 ## Data
 
 - Image counts from `../album_stats.json` (keyed by SmugMug node_id)
 - Cover images from `cover_images.json` (SmugMug highlight images, medium/large/xlarge)
-- Older Monika albums (2023) don't have node_ids — show emoji icon fallback tiles
 - Gallery URLs, video URLs, and metadata hardcoded in generator
+- Custom covers: galleries, videos, and reels all support optional `"cover"` field (SmugMug XLarge URLs)
 
 ## Content
 
 | Tab | Galleries |
 |-----|-----------|
 | Krithin | Fresh 48, Cradle Ceremony, Sankranthi 2025, Temple Visit, Cake Smash, Adugulu, Halloween, New Year 2026 |
-| Monika | Baby Shower, Maternity 2024, Birthday 2023, Girls Shoot 2023, Maternity 2023 |
-| Family | Moniel Housewarming, Sankranthi 2025 |
+| Monika | Baby Shower, Maternity 2024, Girls Shoot 2023 |
+| Family | Moniel Housewarming |
 
-**Videos:** 9 in Krithin tab, 1 in Monika tab (all with YouTube URLs and thumbnail tiles)
+**Videos:** 6 in Krithin tab (incl. KAYU Fly High), 3 in Monika tab (all with YouTube URLs and custom SmugMug covers)
+**Reels:** 13 in Krithin tab (all with SmugMug cover photos from Krithin-2026-dump album)
 
 ## Workflow
 
@@ -53,5 +56,9 @@ cd /tmp/krithin-neel && git add . && git commit -m "description" && git push
 
 - "Moniel Housewarming" not "Half Saree" (album name: Monika-Neel HW)
 - Halloween album is "KAYU Halloween" in album_stats (node_id: K9g7f3)
-- Video tile thumbnails use `https://img.youtube.com/vi/{VIDEO_ID}/hqdefault.jpg`
+- Video/reel/gallery tiles all support optional `"cover": "SmugMug URL"` field — use XLarge size for good quality
+- Reel cover source album: Krithin-2026-dump (all 13 reels have custom covers)
+- Gallery covers: Fresh 48 (Cg8LkMz), Cradle (zbjFvnD), Sankranthi (ZqK2JFp), Temple Visit (z5F449L), Cake Smash (qGFd3mp), Girls Shoot (NQzhzqV), Moniel HW (2vgmVNq), Baby Shower (bfcjZSM)
+- Removed: Birthday 2023, Maternity 2023 (SmugMug 404), Sankranthi 2025 from Family (duplicate)
+- KAYU Fly High moved from Reels to Krithin Videos; Kids Meet Teaser removed
 - Skipped video: `dkpibn_N4EM` (Cradle Ceremony review only, may add later)
