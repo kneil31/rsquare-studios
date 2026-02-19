@@ -22,6 +22,7 @@ Data sources:
 
 import json
 import os
+import sys
 import base64
 import webbrowser
 from pathlib import Path
@@ -32,15 +33,30 @@ from cryptography.hazmat.primitives import hashes
 
 SCRIPT_DIR = Path(__file__).parent
 OUTPUT_FILE = SCRIPT_DIR / "index.html"
+SECRET_FILE = SCRIPT_DIR / ".secret"
 GALLERIES_FILE = SCRIPT_DIR.parent / "rsqr_whatsapp_api" / "smugmug_galleries.json"
 WORKFLOW_FILE = SCRIPT_DIR.parent.parent / "photo_workflow" / "PHOTO_WORKFLOW_CHEATSHEET.md"
 POSING_DIR = SCRIPT_DIR.parent.parent.parent / "Upskill" / "Posing_Upskill" / "prompts"
 TWOMANN_DIR = SCRIPT_DIR.parent / "TwoMann_Course" / "chapters"
 EDITING_PROJECTS_FILE = SCRIPT_DIR / "editing_projects.json"
 
-# Password for AES-256-GCM encryption of protected sections
-DASHBOARD_PASSWORD = "rsquare2026"
-PBKDF2_ITERATIONS = 100_000
+# Passwords loaded from .secret file or env vars (never hardcoded)
+def _load_passwords():
+    """Load client and internal passwords from .secret JSON, env vars, or defaults."""
+    if SECRET_FILE.exists():
+        try:
+            secrets = json.loads(SECRET_FILE.read_text(encoding="utf-8"))
+            return secrets.get("client", ""), secrets.get("internal", "")
+        except (json.JSONDecodeError, KeyError):
+            pass
+    client = os.environ.get("DASHBOARD_CLIENT_PASSWORD", "").strip()
+    internal = os.environ.get("DASHBOARD_INTERNAL_PASSWORD", "").strip()
+    if client and internal:
+        return client, internal
+    print("ERROR: No passwords found. Create .secret file:")
+    print('  {"client": "your-client-pw", "internal": "your-internal-pw"}')
+    sys.exit(1)
+PBKDF2_ITERATIONS = 400_000
 
 
 def encrypt_content(plaintext, password):
@@ -341,7 +357,7 @@ def build_gallery_cards(galleries):
                 card_class = "gallery-card style-line"
 
             cards += f"""
-                <a href="{escape_html(url)}" target="_blank" rel="noopener" class="{card_class}">
+                <a href="{escape_html(url)}" target="_blank" rel="noreferrer noopener" class="{card_class}">
                     {icon_html}
                     <div class="gallery-info">
                         <div class="gallery-name">{escape_html(short_name)}</div>
@@ -607,8 +623,8 @@ def generate_html():
     post_html = checklist_html(post_shoot_items, "post")
 
     # Build protected content dicts — two levels of access
-    # Client content: pricing, booking, rate config (password: rsquare2026)
-    # Internal content: workflow, checklists, posing guides (password: r2workflow)
+    # Client content: pricing, booking, rate config (password from .secret)
+    # Internal content: workflow, checklists, posing guides, editing projects (password from .secret)
     client_content = {}
     internal_content = {}
 
@@ -760,7 +776,7 @@ def generate_html():
 
                 <div class="btn-row">
                     <button class="copy-btn" onclick="copyQuote()">📋 Copy to Clipboard</button>
-                    <a class="share-wa-btn" id="wa-share-btn" href="#" target="_blank" rel="noopener" onclick="shareQuoteWA(event)">💬 Share via WhatsApp</a>
+                    <a class="share-wa-btn" id="wa-share-btn" href="#" target="_blank" rel="noreferrer noopener" onclick="shareQuoteWA(event)">💬 Share via WhatsApp</a>
                 </div>
 
                 <div id="booking-confirmation" style="display:none; margin-top:20px; padding:20px; background:#1a2e1a; border:1px solid #2d4a2d; border-radius:12px; text-align:center;">
@@ -808,7 +824,7 @@ def generate_html():
                         <div class="wf-tile-icon">💍</div>
                         <div class="wf-tile-label">Wedding Poses</div>
                     </div>
-                    <a class="wf-tile" href="https://literate-basketball-b5e.notion.site/PLAN-POSES-13e48bb472084196a825703d7e8a4d10" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;">
+                    <a class="wf-tile" href="https://literate-basketball-b5e.notion.site/PLAN-POSES-13e48bb472084196a825703d7e8a4d10" target="_blank" rel="noreferrer noopener" style="text-decoration:none;color:inherit;">
                         <div class="wf-tile-icon">📸</div>
                         <div class="wf-tile-label">Pose References</div>
                     </a>
@@ -873,7 +889,7 @@ def generate_html():
             completed_col = p.get("edit_completed", "") or "—"
             link_html = ""
             if p.get("delivery_link"):
-                link_html = f'<a href="{escape_html(p["delivery_link"])}" target="_blank" rel="noopener" class="delivery-link">View</a>'
+                link_html = f'<a href="{escape_html(p["delivery_link"])}" target="_blank" rel="noreferrer noopener" class="delivery-link">View</a>'
             else:
                 link_html = '<span style="color:#6b7280;">—</span>'
 
@@ -945,11 +961,11 @@ def generate_html():
     }
 
     # Encrypt client and internal content with separate passwords
-    INTERNAL_PASSWORD = "r2workflow"
+    client_pw, internal_pw = _load_passwords()
     client_json = json.dumps(client_content)
     internal_json = json.dumps(internal_content)
-    encrypted_client_blob = encrypt_content(client_json, DASHBOARD_PASSWORD)
-    encrypted_internal_blob = encrypt_content(internal_json, INTERNAL_PASSWORD)
+    encrypted_client_blob = encrypt_content(client_json, client_pw)
+    encrypted_internal_blob = encrypt_content(internal_json, internal_pw)
     print(f"   Encrypted {len(client_content)} client sections ({len(encrypted_client_blob)} chars)")
     print(f"   Encrypted {len(internal_content)} internal sections ({len(encrypted_internal_blob)} chars)")
 
@@ -958,6 +974,8 @@ def generate_html():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
     <title>Rsquare Studios — Dashboard</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
@@ -2384,7 +2402,7 @@ def generate_html():
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
     <!-- WhatsApp floating button -->
-    <a href="https://wa.me/15307278598?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." class="wa-float" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+    <a href="https://wa.me/15307278598?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." class="wa-float" target="_blank" rel="noreferrer noopener" aria-label="Chat on WhatsApp">
         <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
     </a>
 
@@ -2567,147 +2585,147 @@ def generate_html():
                 <h1 class="page-title">Videos</h1>
                 <div class="page-meta">Highlight reels and cinematic teasers from our events</div>
                 <div class="video-grid">
-                    <a href="https://www.youtube.com/watch?v=ATyq7m_gLtY" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=ATyq7m_gLtY" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/ATyq7m_gLtY/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">3:25</div>
                         </div>
                         <div class="video-title">Rashmi Baby Shower</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=B4WH92E3ov4" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=B4WH92E3ov4" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/B4WH92E3ov4/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">6:39</div>
                         </div>
                         <div class="video-title">ShravArt's Housewarming</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=oZSifwJn6MI" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=oZSifwJn6MI" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/oZSifwJn6MI/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">3:42</div>
                         </div>
                         <div class="video-title">Mounika Baby Shower</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=7IqxKNLrtaI" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=7IqxKNLrtaI" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/7IqxKNLrtaI/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">4:59</div>
                         </div>
                         <div class="video-title">Andrilla Sweet 16 Birthday</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=XksmtJX71Ao" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=XksmtJX71Ao" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/XksmtJX71Ao/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">6:08</div>
                         </div>
                         <div class="video-title">Krithi Half Saree Ceremony</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=iNklzAP3JNo" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=iNklzAP3JNo" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/iNklzAP3JNo/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">1:36</div>
                         </div>
                         <div class="video-title">Ranjith Pinky Gender Reveal</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=lS1BdiEk3Pg" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=lS1BdiEk3Pg" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/lS1BdiEk3Pg/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">4:43</div>
                         </div>
                         <div class="video-title">Vasundhra Baby Shower</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=vuSREP1Srgc" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=vuSREP1Srgc" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/vuSREP1Srgc/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">6:34</div>
                         </div>
                         <div class="video-title">Sarayu Mihira's Sweet 16</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=1g4y62tnHqQ" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=1g4y62tnHqQ" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/1g4y62tnHqQ/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">4:07</div>
                         </div>
                         <div class="video-title">Our Little Miracle Is On The Way</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=7OuNc5YJh48" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=7OuNc5YJh48" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/7OuNc5YJh48/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">3:12</div>
                         </div>
                         <div class="video-title">Keerthi's Half Saree Ceremony</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=AbwBEGaop8k" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=AbwBEGaop8k" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/AbwBEGaop8k/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">3:21</div>
                         </div>
                         <div class="video-title">Laya Half Saree</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=Nk5upRtUf9M" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=Nk5upRtUf9M" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/Nk5upRtUf9M/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">5:06</div>
                         </div>
                         <div class="video-title">Ratna &amp; Janu Wedding</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=NIFPgrPOYCo" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=NIFPgrPOYCo" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/NIFPgrPOYCo/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">3:34</div>
                         </div>
                         <div class="video-title">Anurag &amp; Madhu Gender Reveal</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=QMzq-VSBhzQ" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=QMzq-VSBhzQ" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/QMzq-VSBhzQ/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">1:24</div>
                         </div>
                         <div class="video-title">Nyshitha Saree Ceremony</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=2GwQNMeU4Hs" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=2GwQNMeU4Hs" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/2GwQNMeU4Hs/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">2:29</div>
                         </div>
                         <div class="video-title">Tarun's Birthday</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=j56qe0hx7iA" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=j56qe0hx7iA" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/j56qe0hx7iA/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">5:00</div>
                         </div>
                         <div class="video-title">Keerthi &amp; Prawin Gender Reveal</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=6f0IUSxVThM" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=6f0IUSxVThM" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/6f0IUSxVThM/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">1:23</div>
                         </div>
                         <div class="video-title">Ratna &amp; Janu Pre-Wedding Teaser</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=LrS4f_ZqWNE" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=LrS4f_ZqWNE" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/LrS4f_ZqWNE/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">3:39</div>
                         </div>
                         <div class="video-title">Swetha Housewarming</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=-gkBScX8YsY" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=-gkBScX8YsY" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/-gkBScX8YsY/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">1:03</div>
                         </div>
                         <div class="video-title">Radhika &amp; Praveen Teaser</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=nEPyewr1uA4" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=nEPyewr1uA4" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/nEPyewr1uA4/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">1:55</div>
                         </div>
                         <div class="video-title">Vinod &amp; Sunitha</div>
                     </a>
-                    <a href="https://www.youtube.com/watch?v=8Q7MyyYxf3k" target="_blank" rel="noopener" class="video-card">
+                    <a href="https://www.youtube.com/watch?v=8Q7MyyYxf3k" target="_blank" rel="noreferrer noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/8Q7MyyYxf3k/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">3:17</div>
@@ -2716,7 +2734,7 @@ def generate_html():
                     </a>
                 </div>
                 <div style="margin-top:20px; text-align:center;">
-                    <a href="https://www.youtube.com/@rsquarestudios" target="_blank" rel="noopener" style="color:#8b5cf6; text-decoration:none; font-size:14px;">View all on YouTube &rarr;</a>
+                    <a href="https://www.youtube.com/@rsquarestudios" target="_blank" rel="noreferrer noopener" style="color:#8b5cf6; text-decoration:none; font-size:14px;">View all on YouTube &rarr;</a>
                 </div>
             </div>
 
@@ -2776,7 +2794,7 @@ def generate_html():
                 <div class="page-meta">WhatsApp is the easiest way to reach me. Just say hi!</div>
 
                 <div class="gallery-grid" style="max-width:400px;">
-                    <a href="https://wa.me/15307278598?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." target="_blank" rel="noopener" class="gallery-card" style="border-color:#25D366;">
+                    <a href="https://wa.me/15307278598?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." target="_blank" rel="noreferrer noopener" class="gallery-card" style="border-color:#25D366;">
                         <div class="gallery-icon" style="font-size:28px;">💬</div>
                         <div class="gallery-info">
                             <div class="gallery-name">WhatsApp</div>
@@ -2792,7 +2810,7 @@ def generate_html():
                         </div>
                         <div class="gallery-arrow">&#8599;</div>
                     </a>
-                    <a href="https://www.rsquarestudios.com" target="_blank" rel="noopener" class="gallery-card">
+                    <a href="https://www.rsquarestudios.com" target="_blank" rel="noreferrer noopener" class="gallery-card">
                         <div class="gallery-icon" style="font-size:28px;">🌐</div>
                         <div class="gallery-info">
                             <div class="gallery-name">rsquarestudios.com</div>
@@ -2800,7 +2818,7 @@ def generate_html():
                         </div>
                         <div class="gallery-arrow">&#8599;</div>
                     </a>
-                    <a href="https://www.instagram.com/rsquare_studios/" target="_blank" rel="noopener" class="gallery-card">
+                    <a href="https://www.instagram.com/rsquare_studios/" target="_blank" rel="noreferrer noopener" class="gallery-card">
                         <div class="gallery-icon" style="font-size:28px;">📷</div>
                         <div class="gallery-info">
                             <div class="gallery-name">@rsquare_studios</div>
@@ -2831,6 +2849,25 @@ def generate_html():
         let clientUnlocked = false;
         let internalUnlocked = false;
         let _appConfig = null;
+
+        // URL allowlist — only these hosts are permitted in dynamic links
+        const ALLOWED_HOSTS = [
+            'www.rsquarestudios.com', 'rsquarestudios.com',
+            'www.smugmug.com', 'photos.smugmug.com',
+            'www.youtube.com', 'youtube.com', 'youtu.be',
+            'wa.me', 'api.whatsapp.com',
+            'www.instagram.com', 'instagram.com',
+            'we.tl', 'mega.nz',
+            'cal.com', 'app.cal.com',
+            'literate-basketball-b5e.notion.site',
+        ];
+        function isAllowedUrl(url) {{
+            try {{
+                const parsed = new URL(url);
+                if (!['http:', 'https:'].includes(parsed.protocol)) return false;
+                return ALLOWED_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h));
+            }} catch {{ return false; }}
+        }}
 
         function showSection(id) {{
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -3279,7 +3316,7 @@ def main():
     print(f"{'='*60}")
     print(f"\n  📄 File: {OUTPUT_FILE}")
     print(f"  🌐 Run `python3 generate_dashboard.py` to regenerate")
-    print(f"  🔑 Internal password: rsquare2026\n")
+    print(f"  🔑 Passwords loaded from .secret file\n")
 
 
 if __name__ == "__main__":
