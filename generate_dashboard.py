@@ -238,14 +238,44 @@ def build_gallery_cards(galleries):
                 from datetime import datetime as dt
                 d = dt.strptime(date_str.strip(), "%Y-%m-%d")
                 display_date = d.strftime("%b %d, %Y")
+                month_short = d.strftime("%b").upper()
+                day_num = d.strftime("%-d")
             except Exception:
                 display_date = date_str
+                month_short = ""
+                day_num = ""
 
             loc_display = f"{escape_html(location)} &middot; " if location else ""
 
+            # Get first letter for monogram
+            monogram = short_name[0].upper() if short_name else "?"
+
+            # Style A: Monogram (wedding, cradle)
+            icon_monogram = f'<div class="gallery-monogram">{monogram}</div>'
+
+            # Style B: Date card (maternity, birthday)
+            icon_date = f'<div class="gallery-date-card"><span class="date-month">{month_short}</span><span class="date-day">{day_num}</span></div>'
+
+            # Style C: Accent line (newborn/baby shower)
+            # No icon element needed — handled by CSS class
+
+            # Assign style per category for demo
+            demo_styles = {"wedding": "monogram", "cradle": "monogram", "maternity": "date", "birthday": "date", "newborn": "line"}
+            style = demo_styles.get(cat, "monogram")
+
+            if style == "monogram":
+                icon_html = icon_monogram
+                card_class = "gallery-card"
+            elif style == "date":
+                icon_html = icon_date
+                card_class = "gallery-card"
+            else:  # line
+                icon_html = ""
+                card_class = "gallery-card style-line"
+
             cards += f"""
-                <a href="{escape_html(url)}" target="_blank" rel="noopener" class="gallery-card">
-                    <div class="gallery-icon">📷</div>
+                <a href="{escape_html(url)}" target="_blank" rel="noopener" class="{card_class}">
+                    {icon_html}
                     <div class="gallery-info">
                         <div class="gallery-name">{escape_html(short_name)}</div>
                         <div class="gallery-meta">{loc_display}{escape_html(display_date)}</div>
@@ -368,7 +398,8 @@ def generate_html():
     portfolio_pages = ""
     for cat, info in gallery_cards.items():
         portfolio_pages += f"""
-            <div class="page" id="portfolio-{cat}">
+            <div class="page gallery-page-wrap" id="portfolio-{cat}">
+                <div class="gallery-backdrop" style="background-image:url('{info['cover']}')"></div>
                 <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
                 <div class="cat-hero" style="background-image:url('{info['cover']}');background-position:{info['cover_pos']}">
                     <div class="cat-hero-content">
@@ -723,40 +754,103 @@ def generate_html():
             text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }}
 
+        /* Gallery page with blurred backdrop */
+        .gallery-page-wrap {{
+            position: relative;
+        }}
+        .gallery-backdrop {{
+            position: fixed;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            filter: blur(30px) brightness(0.15);
+            z-index: -1;
+            transform: scale(1.2);
+        }}
+
         /* Gallery cards */
         .gallery-grid {{
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
         }}
         .gallery-card {{
             display: flex;
             align-items: center;
-            gap: 16px;
-            padding: 18px 20px;
-            background: #1a1a1a;
+            gap: 14px;
+            padding: 16px 18px;
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 14px;
+            border-radius: 12px;
             text-decoration: none;
             color: inherit;
-            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+            transition: background 0.2s, transform 0.15s;
         }}
         .gallery-card:hover {{
-            background: #222;
+            background: rgba(255,255,255,0.08);
             transform: translateY(-1px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
         }}
-        .gallery-icon {{
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+
+        /* Style A: Monogram — elegant serif initial in thin circle */
+        .gallery-monogram {{
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255,255,255,0.2);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 18px;
+            font-weight: 300;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            color: #d1d5db;
             flex-shrink: 0;
+            letter-spacing: 1px;
         }}
+
+        /* Style B: Date card — mini calendar */
+        .gallery-date-card {{
+            width: 42px;
+            height: 46px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }}
+        .gallery-date-card .date-month {{
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8b5cf6;
+            line-height: 1;
+            margin-bottom: 2px;
+        }}
+        .gallery-date-card .date-day {{
+            font-size: 16px;
+            font-weight: 300;
+            color: #e0e0e0;
+            line-height: 1;
+        }}
+
+        /* Style C: Accent line — vertical bar, no icon */
+        .gallery-card.style-line {{
+            padding-left: 0;
+            gap: 0;
+            border-left: 3px solid #8b5cf6;
+            border-radius: 0 12px 12px 0;
+        }}
+        .gallery-card.style-line .gallery-info {{
+            padding-left: 18px;
+        }}
+
         .gallery-info {{ flex: 1; }}
         .gallery-name {{
             font-size: 15px;
@@ -766,13 +860,13 @@ def generate_html():
         }}
         .gallery-meta {{
             font-size: 12px;
-            color: #6b7280;
+            color: rgba(255,255,255,0.35);
             margin-top: 3px;
             letter-spacing: 0.2px;
         }}
         .gallery-arrow {{
             font-size: 14px;
-            color: #6b7280;
+            color: rgba(255,255,255,0.2);
             transition: color 0.2s, transform 0.2s;
         }}
         .gallery-card:hover .gallery-arrow {{
@@ -1371,18 +1465,23 @@ def generate_html():
             .cat-hero-title {{ font-size: 22px; }}
 
             /* Gallery cards mobile */
-            .gallery-grid {{ gap: 10px; }}
+            .gallery-grid {{ gap: 8px; }}
             .gallery-card {{
                 padding: 14px 16px;
                 gap: 12px;
-                border-radius: 12px;
+                border-radius: 10px;
             }}
-            .gallery-icon {{
+            .gallery-monogram {{
                 width: 38px;
                 height: 38px;
-                border-radius: 8px;
                 font-size: 16px;
             }}
+            .gallery-date-card {{
+                width: 38px;
+                height: 42px;
+            }}
+            .gallery-date-card .date-day {{ font-size: 14px; }}
+            .gallery-date-card .date-month {{ font-size: 8px; }}
             .gallery-name {{ font-size: 14px; }}
             .gallery-meta {{ font-size: 11px; }}
 
