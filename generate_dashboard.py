@@ -1912,6 +1912,20 @@ def generate_html():
                         </div>
                         <div class="video-title">Vasundhra Baby Shower</div>
                     </a>
+                    <a href="https://www.youtube.com/watch?v=vuSREP1Srgc" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/vuSREP1Srgc/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">6:34</div>
+                        </div>
+                        <div class="video-title">Sarayu Mihira's Sweet 16</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=1g4y62tnHqQ" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/1g4y62tnHqQ/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">4:07</div>
+                        </div>
+                        <div class="video-title">Our Little Miracle Is On The Way</div>
+                    </a>
                 </div>
                 <div style="margin-top:20px; text-align:center;">
                     <a href="https://www.youtube.com/@rsquarestudios" target="_blank" rel="noopener" style="color:#8b5cf6; text-decoration:none; font-size:14px;">View all on YouTube &rarr;</a>
