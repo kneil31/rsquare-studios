@@ -258,15 +258,15 @@ def build_gallery_cards(galleries):
         "celebrations": "Celebrations",
     }
     category_covers = {
-        "wedding": ("https://photos.smugmug.com/photos/i-BvTChsc/0/LwhGTh2B2pCPDgNpjPJp8J3nCSfRNdKwd3j5CVTKN/X3/i-BvTChsc-X3.jpg", "center center"),
-        "engagement": ("https://photos.smugmug.com/photos/i-8NfsLKT/0/LVnhsbXXV3JPcX2r2PhvcKfCj9gK9czpWsZ2VXrSH/X3/i-8NfsLKT-X3.jpg", "center center"),
-        "pre_wedding": ("https://photos.smugmug.com/photos/i-GfR24FT/0/MHQbxRCTTvn8x7WXCkzHRjCWR96TC6TnBsTfQRFQ7/X3/i-GfR24FT-X3.jpg", "center center"),
-        "half_saree": ("https://photos.smugmug.com/photos/i-MCmGphP/0/NZvk2KBMQzVZvJJTQh23xdmRRsvzNzGRdBgx2HX66/X3/i-MCmGphP-X3.jpg", "center center"),
-        "maternity": ("https://photos.smugmug.com/photos/i-ZqWs3n5/0/NcPVRqqFJXR3MJfcVn45gshTHXpxkZFvfv655D3mB/X3/i-ZqWs3n5-X3.jpg", "center 15%"),
-        "baby_shower": ("https://photos.smugmug.com/photos/i-3MjgbV3/0/NWkJRQPLmfwjxBJ2qLpKLS2RHVpb39NtfssFhZJxp/X3/i-3MjgbV3-X3.jpg", "center 25%"),
-        "birthday": ("https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg", "center center"),
-        "cradle": ("https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg", "center center"),
-        "celebrations": ("https://photos.smugmug.com/photos/i-MPN69Q3/0/LGSxZbpLfpcb7j3kqQkkTdfwDHcJbV6XdxnGNq6Hb/X3/i-MPN69Q3-X3.jpg", "center center"),
+        "wedding": ("https://photos.smugmug.com/photos/i-BvTChsc/0/LwhGTh2B2pCPDgNpjPJp8J3nCSfRNdKwd3j5CVTKN/X3/i-BvTChsc-X3.jpg", "center 43%"),
+        "engagement": ("https://photos.smugmug.com/photos/i-8NfsLKT/0/LVnhsbXXV3JPcX2r2PhvcKfCj9gK9czpWsZ2VXrSH/X3/i-8NfsLKT-X3.jpg", "38% 47%"),
+        "pre_wedding": ("https://photos.smugmug.com/photos/i-GfR24FT/0/MHQbxRCTTvn8x7WXCkzHRjCWR96TC6TnBsTfQRFQ7/X3/i-GfR24FT-X3.jpg", "center 24%"),
+        "half_saree": ("https://photos.smugmug.com/photos/i-MCmGphP/0/NZvk2KBMQzVZvJJTQh23xdmRRsvzNzGRdBgx2HX66/X3/i-MCmGphP-X3.jpg", "68% 52%"),
+        "maternity": ("https://photos.smugmug.com/photos/i-ZqWs3n5/0/NcPVRqqFJXR3MJfcVn45gshTHXpxkZFvfv655D3mB/X3/i-ZqWs3n5-X3.jpg", "center 18%"),
+        "baby_shower": ("https://photos.smugmug.com/photos/i-3MjgbV3/0/NWkJRQPLmfwjxBJ2qLpKLS2RHVpb39NtfssFhZJxp/X3/i-3MjgbV3-X3.jpg", "37% 18%"),
+        "birthday": ("https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg", "center 40%"),
+        "cradle": ("https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg", "center 47%"),
+        "celebrations": ("https://photos.smugmug.com/photos/i-MPN69Q3/0/LGSxZbpLfpcb7j3kqQkkTdfwDHcJbV6XdxnGNq6Hb/X3/i-MPN69Q3-X3.jpg", "76% 17%"),
     }
 
     cards_by_category = {}
