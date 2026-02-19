@@ -1877,6 +1877,34 @@ def generate_html():
                         </div>
                         <div class="video-title">ShravArt's Housewarming</div>
                     </a>
+                    <a href="https://www.youtube.com/watch?v=oZSifwJn6MI" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/oZSifwJn6MI/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:42</div>
+                        </div>
+                        <div class="video-title">Mounika Baby Shower</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=7IqxKNLrtaI" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/7IqxKNLrtaI/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">4:59</div>
+                        </div>
+                        <div class="video-title">Andrilla Sweet 16 Birthday</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=XksmtJX71Ao" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/XksmtJX71Ao/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">6:08</div>
+                        </div>
+                        <div class="video-title">Krithi Half Saree Ceremony</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=iNklzAP3JNo" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/iNklzAP3JNo/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">1:36</div>
+                        </div>
+                        <div class="video-title">Ranjith Pinky Gender Reveal</div>
+                    </a>
                 </div>
                 <div style="margin-top:20px; text-align:center;">
                     <a href="https://www.youtube.com/@rsquarestudios" target="_blank" rel="noopener" style="color:#8b5cf6; text-decoration:none; font-size:14px;">View all on YouTube &rarr;</a>
