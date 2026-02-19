@@ -215,8 +215,8 @@ def build_gallery_cards(galleries):
     }
     category_covers = {
         "wedding": ("https://photos.smugmug.com/photos/i-BvTChsc/0/LwhGTh2B2pCPDgNpjPJp8J3nCSfRNdKwd3j5CVTKN/X3/i-BvTChsc-X3.jpg", "center center"),
-        "maternity": ("https://photos.smugmug.com/photos/i-ZqWs3n5/0/NcPVRqqFJXR3MJfcVn45gshTHXpxkZFvfv655D3mB/X3/i-ZqWs3n5-X3.jpg", "center 20%"),
-        "newborn": ("https://photos.smugmug.com/photos/i-3MjgbV3/0/NWkJRQPLmfwjxBJ2qLpKLS2RHVpb39NtfssFhZJxp/X3/i-3MjgbV3-X3.jpg", "center center"),
+        "maternity": ("https://photos.smugmug.com/photos/i-ZqWs3n5/0/NcPVRqqFJXR3MJfcVn45gshTHXpxkZFvfv655D3mB/X3/i-ZqWs3n5-X3.jpg", "center 15%"),
+        "newborn": ("https://photos.smugmug.com/photos/i-3MjgbV3/0/NWkJRQPLmfwjxBJ2qLpKLS2RHVpb39NtfssFhZJxp/X3/i-3MjgbV3-X3.jpg", "center 25%"),
         "birthday": ("https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg", "center center"),
         "cradle": ("https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg", "center center"),
     }
@@ -639,7 +639,7 @@ def generate_html():
             text-decoration: none;
             color: inherit;
             overflow: hidden;
-            aspect-ratio: 4/3;
+            aspect-ratio: 3/4;
             display: flex;
             align-items: flex-end;
             background-size: cover;
@@ -1269,7 +1269,7 @@ def generate_html():
                 gap: 10px;
             }}
             .cat-tile {{
-                aspect-ratio: 3/2;
+                aspect-ratio: 3/4;
             }}
             .cat-tile-content {{
                 padding: 10px 12px;
