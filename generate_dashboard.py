@@ -245,100 +245,42 @@ def build_gallery_cards(galleries):
 
 
 def build_pricing_section():
-    """Build pricing cards from hardcoded data (from photography_info_messages.py)."""
-    packages = [
-        {
-            "name": "Wedding Photography",
-            "icon": "💍",
-            "color": "#8b5cf6",
-            "tiers": [
-                {"name": "Full Day", "price": "$2,500", "details": "8-10 hrs, 2 photographers, 500-800 photos, engagement session included"},
-                {"name": "Half Day", "price": "$1,500", "details": "4-6 hrs, 1 photographer, 300-500 photos"},
-                {"name": "Engagement Only", "price": "$450", "details": "60-90 min, 40-60 edited photos"},
-            ],
-            "addons": [
-                "2nd photographer +$400",
-                "Extra hour +$250",
-                "Wedding album +$500",
-                "Parent albums +$150 ea",
-                "Raw files +$300",
-            ],
-        },
-        {
-            "name": "Maternity",
-            "icon": "🤰",
-            "color": "#ec4899",
-            "tiers": [
-                {"name": "Session", "price": "$450", "details": "60-90 min, 2-3 outfits, 40-60 photos, gown rental included"},
-            ],
-            "addons": [
-                "Album +$150",
-                "Canvas print (16x20) +$100",
-                "Newborn bundle $900 (save $100)",
-            ],
-        },
-        {
-            "name": "Newborn",
-            "icon": "👶",
-            "color": "#f59e0b",
-            "tiers": [
-                {"name": "Session", "price": "$550", "details": "2-3 hrs, 3-4 setups, 30-50 photos, props included, best at 5-14 days"},
-            ],
-            "addons": [
-                "Milestone Bundle (newborn+6mo+1yr) $1,200 (save $200)",
-                "Album (10x10, 20 pages) +$200",
-                "Announcement cards +$75",
-            ],
-        },
-        {
-            "name": "Birthday",
-            "icon": "🎂",
-            "color": "#3b82f6",
-            "tiers": [
-                {"name": "1st Birthday / Cake Smash", "price": "$400", "details": "1 hr, 50-70 photos, decorations included"},
-                {"name": "Party Coverage", "price": "$600", "details": "2-3 hrs, 100-150 photos"},
-            ],
-            "addons": [],
-        },
-        {
-            "name": "Cradle Ceremony",
-            "icon": "🍼",
-            "color": "#10b981",
-            "tiers": [
-                {"name": "Full Coverage", "price": "$700", "details": "3-4 hrs, 150-250 photos"},
-            ],
-            "addons": [],
-        },
-    ]
-
-    html = ""
-    for pkg in packages:
-        tiers_html = ""
-        for tier in pkg["tiers"]:
-            tiers_html += f"""
+    """Build pricing cards with actual Rsquare Studios rates."""
+    html = """
+            <!-- 1 Person -->
+            <div class="pricing-card" style="--accent: #8b5cf6;">
+                <div class="pricing-header">
+                    <span class="pricing-icon">📷</span>
+                    <span class="pricing-name">1 Person</span>
+                </div>
                 <div class="price-tier">
                     <div class="tier-header">
-                        <span class="tier-name">{tier['name']}</span>
-                        <span class="tier-price">{tier['price']}</span>
+                        <span class="tier-name">Photography Only</span>
+                        <span class="tier-price">$150<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
                     </div>
-                    <div class="tier-details">{tier['details']}</div>
-                </div>"""
-
-        addons_html = ""
-        if pkg["addons"]:
-            addons_html = '<div class="addons-label">Add-ons</div><ul class="addons-list">'
-            for addon in pkg["addons"]:
-                addons_html += f"<li>{addon}</li>"
-            addons_html += "</ul>"
-
-        html += f"""
-            <div class="pricing-card" style="--accent: {pkg['color']};">
-                <div class="pricing-header">
-                    <span class="pricing-icon">{pkg['icon']}</span>
-                    <span class="pricing-name">{pkg['name']}</span>
                 </div>
-                {tiers_html}
-                {addons_html}
+                <div class="price-tier">
+                    <div class="tier-header">
+                        <span class="tier-name">Photography &amp; Videography</span>
+                        <span class="tier-price">$235<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
+                    </div>
+                    <div class="tier-details">One person covering both photo &amp; video</div>
+                </div>
+            </div>
+
+            <!-- 2 Persons -->
+            <div class="pricing-card" style="--accent: #3b82f6;">
+                <div class="pricing-header">
+                    <span class="pricing-icon">📷📹</span>
+                    <span class="pricing-name">2 Persons</span>
+                </div>
+                <div class="price-tier">
+                    <div class="tier-header">
+                        <span class="tier-name">Photography &amp; Videography</span>
+                        <span class="tier-price">$325<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
+                    </div>
+                    <div class="tier-details">Dedicated photographer + dedicated videographer</div>
+                </div>
             </div>"""
 
     return html
@@ -1358,14 +1300,16 @@ def generate_html():
                     {pricing_html}
                 </div>
                 <div class="includes-box">
-                    <h3>All Packages Include</h3>
+                    <h3>Deliverables</h3>
                     <div class="includes-list">
-                        <span>&#10003; Private SmugMug gallery</span>
-                        <span>&#10003; High-resolution downloads</span>
-                        <span>&#10003; Print release</span>
-                        <span>&#10003; Professional editing</span>
-                        <span>&#10003; 48-72hr sneak peek</span>
-                        <span>&#10003; Lifetime cloud storage</span>
+                        <span>&#10003; All edited pictures (varies by event)</span>
+                        <span>&#10003; Cinematic teaser (4-6 mins)</span>
+                    </div>
+                </div>
+                <div class="includes-box" style="margin-top:12px; border-color:#4a3520;">
+                    <h3 style="color:#f59e0b;">Payment</h3>
+                    <div style="font-size:14px; color:#fef3c7;">
+                        Full payment must be in <strong>CASH</strong>
                     </div>
                 </div>
             </div>
