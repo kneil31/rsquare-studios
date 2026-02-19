@@ -998,68 +998,67 @@ def generate_html():
             margin-bottom: 32px;
         }}
 
-        /* Hero */
+        /* Hero — Option D: split layout (image left, text right) */
         .hero {{
-            position: relative;
-            text-align: center;
-            padding: 80px 20px 60px;
-            background: url('https://photos.smugmug.com/photos/i-VqnMPLz/0/KG7kc3wMPKBWdFkVhTsWfp4LJQCNzQkxK4ww4DZJv/X3/i-VqnMPLz-X3.jpg') center center / cover no-repeat;
             border-radius: 16px;
             margin: 0 16px 24px;
             overflow: hidden;
+            display: flex;
+            align-items: stretch;
+            background: linear-gradient(180deg, #2d1854 0%, #0e0518 35%, #050208 100%);
         }}
-        .hero::before {{
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.65) 100%);
-            z-index: 0;
-        }}
-        .hero > * {{
+        .hero-img-wrap {{
             position: relative;
-            z-index: 1;
+            width: 50%;
+            flex-shrink: 0;
+            background: linear-gradient(180deg, #2d1854 0%, #0e0518 35%, #050208 100%);
         }}
-        .hero-logo {{
-            font-size: 48px;
-            margin-bottom: 12px;
+        .hero-image {{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            -webkit-mask-image: linear-gradient(to right, black 40%, transparent 100%);
+            mask-image: linear-gradient(to right, black 40%, transparent 100%);
+        }}
+        .hero-body {{
+            padding: 36px 32px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }}
         .hero h1 {{
-            font-size: 36px;
+            font-size: 32px;
             font-weight: 800;
             color: #fff;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             letter-spacing: -1px;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }}
         .hero p {{
-            font-size: 16px;
-            color: #d1d5db;
-            max-width: 500px;
-            margin: 0 auto 32px;
+            font-size: 15px;
+            color: #c4b5fd;
             line-height: 1.6;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+            margin-bottom: 24px;
         }}
         .hero-stats {{
             display: flex;
-            justify-content: center;
-            gap: 40px;
-            margin-bottom: 32px;
+            gap: 28px;
+            margin-bottom: 24px;
         }}
         .hero-stat {{
-            text-align: center;
+            text-align: left;
         }}
         .hero-stat .number {{
-            font-size: 28px;
+            font-size: 24px;
             font-weight: 700;
             color: #c4b5fd;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }}
         .hero-stat .label {{
-            font-size: 12px;
-            color: #d1d5db;
+            font-size: 11px;
+            color: #9ca3af;
             letter-spacing: 0.5px;
-            margin-top: 4px;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            margin-top: 2px;
         }}
         .hero-cta {{
             display: inline-block;
@@ -1071,17 +1070,10 @@ def generate_html():
             font-weight: 600;
             font-size: 15px;
             transition: background 0.2s;
-            box-shadow: 0 4px 12px rgba(139,92,246,0.4);
+            box-shadow: 0 4px 16px rgba(139,92,246,0.4);
+            align-self: flex-start;
         }}
         .hero-cta:hover {{ background: #7c3aed; }}
-        .hero-scroll-hint {{
-            margin-top: 24px;
-            font-size: 12px;
-            color: rgba(255,255,255,0.4);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            animation: bounce 2s infinite;
-        }}
         @keyframes bounce {{
             0%, 100% {{ transform: translateY(0); }}
             50% {{ transform: translateY(6px); }}
@@ -1951,19 +1943,26 @@ def generate_html():
                 margin-bottom: 20px;
             }}
 
-            /* Hero mobile — full screen */
+            /* Hero mobile — stack vertically */
             .hero {{
-                min-height: calc(100vh - 70px);
+                flex-direction: column;
                 margin: 0;
                 border-radius: 0;
-                padding: 0 24px;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                background-image: url('https://photos.smugmug.com/photos/i-VqnMPLz/0/Kd2nZQ6mNq7gxWCvG9bnXfk4xpp9JSX64npLRHHNV/XL/i-VqnMPLz-XL.jpg');
             }}
-            .hero-logo {{ font-size: 44px; margin-bottom: 16px; }}
+            .hero-img-wrap {{
+                width: 100%;
+                height: 250px;
+                background: linear-gradient(180deg, #2d1854 0%, #0e0518 80%, #050208 100%);
+            }}
+            .hero-image {{
+                -webkit-mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+                mask-image: linear-gradient(to bottom, black 50%, transparent 100%);
+            }}
+            .hero-body {{
+                padding: 24px 24px 32px;
+                text-align: center;
+                align-items: center;
+            }}
             .hero h1 {{
                 font-size: 32px;
                 letter-spacing: -0.5px;
@@ -1975,14 +1974,17 @@ def generate_html():
                 line-height: 1.7;
             }}
             .hero-stats {{
+                justify-content: center;
                 gap: 28px;
                 margin-bottom: 28px;
             }}
+            .hero-stat {{ text-align: center; }}
             .hero-stat .number {{ font-size: 26px; }}
             .hero-cta {{
                 padding: 16px 40px;
                 font-size: 16px;
                 border-radius: 10px;
+                align-self: center;
             }}
             .contact-bar {{
                 gap: 12px;
@@ -2305,12 +2307,15 @@ def generate_html():
             <!-- HOME -->
             <div class="page active" id="home">
                 <div class="hero">
-                    <div class="hero-logo">📷</div>
+                    <div class="hero-img-wrap">
+                        <img src="hero.jpg" alt="Rsquare Studios" class="hero-image">
+                    </div>
+                    <div class="hero-body">
                     <h1>Rsquare Studios</h1>
                     <p>Baby showers, maternity, birthdays, weddings &amp; family celebrations. Photography &amp; video across DFW.</p>
                     <div class="hero-stats">
                         <div class="hero-stat">
-                            <div class="number">{total_galleries}+</div>
+                            <div class="number">300+</div>
                             <div class="label">GALLERIES</div>
                         </div>
                         <div class="hero-stat">
@@ -2318,11 +2323,12 @@ def generate_html():
                             <div class="label">YEARS</div>
                         </div>
                         <div class="hero-stat">
-                            <div class="number">100+</div>
+                            <div class="number">50+</div>
                             <div class="label">WEDDINGS</div>
                         </div>
                     </div>
                     <a href="#" class="hero-cta" onclick="showSection('portfolio-home'); return false;">View Portfolio</a>
+                    </div>
                 </div>
 
                 <!-- Testimonials -->

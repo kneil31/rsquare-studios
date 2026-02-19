@@ -23,6 +23,10 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 
 - **Mobile-first:** Bottom nav bar, floating WhatsApp button, large touch targets
 - **Dark theme:** Notion-inspired (#191919 background, #8b5cf6 accent purple)
+- **Hero layout:** Option D split (image left, text right) with CSS `mask-image` blend — photo dissolves into a purple-to-black gradient (`#2d1854` → `#0e0518` → `#050208`). On mobile, stacks vertically with bottom-fade blend.
+- **Hero stats:** 300+ Galleries, 5+ Years, 50+ Weddings (real numbers from SmugMug + Ram)
+- **Hero image:** `hero.jpg` — purple silhouette wedding photo (145KB, 1600px wide)
+- **AES-256-GCM encryption:** Protected sections (pricing, booking, workflow, posing guides) are encrypted at build time. No plaintext in HTML source. Rate amounts stored in encrypted `__config__` key.
 - **Cover images:** Pulled from SmugMug API (highlight images per album). Each category tile has a background photo with gradient overlay
 - **Background position:** Per-category `background-position` values in `category_covers` dict (tuples of URL + position). Adjust position values when photos crop subjects poorly
 - **No external dependencies:** Single self-contained HTML file, no frameworks
@@ -56,7 +60,7 @@ Current covers:
 | Birthday | Xq8BHgp | — |
 | Cradle | R3QTwKk | Vayu Skanda Cradle |
 
-Homepage hero: `i-VqnMPLz` (Krishna Maternity)
+Homepage hero: `hero.jpg` — purple silhouette wedding photo (local file, not SmugMug). Option D split layout with CSS mask blend.
 
 Spare image (not yet used): `i-6trRsbK`
 
@@ -80,12 +84,24 @@ git push
 # Cache busting — tell user to add ?v=N or use incognito
 ```
 
-## Pricing (Hardcoded in generator)
+## Pricing (AES-encrypted in output)
 
 - Solo Photography: $150/hr
 - Solo Photo + Video: $235/hr
 - Dual Coverage (Photo + Video): $325/hr
 - All packages include: edited images, cinematic teaser, SmugMug gallery, lifetime cloud storage
+- **Rate amounts are inside the encrypted `__config__` blob** — not visible in HTML source or JS
+- Dropdown uses stable IDs (`photo_only`, `photo_video`, `dual_coverage`) instead of display strings
+
+## Security
+
+- **AES-256-GCM** encryption at build time (Python `cryptography` package)
+- **Web Crypto API** decryption at runtime (PBKDF2, 100k iterations, SHA-256)
+- Random 16-byte salt + 12-byte IV per build (`os.urandom`)
+- No sessionStorage/localStorage — decrypted content is memory-only (`_decryptedPages`, `_appConfig`)
+- 3-strike lockout with 15s cooldown on wrong password
+- Password hint shown below input
+- Git history cleaned with `filter-repo` — no plaintext in old commits
 
 ## Mobile-Specific Notes
 
@@ -93,5 +109,6 @@ git push
 - Floating WhatsApp button (bottom-right, above nav bar)
 - Category tiles use 2-column grid on mobile
 - `safe-area-inset-bottom` for iPhone notch/home indicator
-- Hero image uses XLarge (1024px) on mobile, X3Large (1600px) on desktop
+- Hero: split layout on desktop (image left 50%, text right), stacks vertically on mobile
+- Hero image uses CSS `mask-image` to blend into background gradient (no hard edge)
 - Test every layout change at 375px width minimum
