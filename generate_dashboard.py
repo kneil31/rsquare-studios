@@ -1375,8 +1375,6 @@ def generate_html():
             {posing_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link wf-link"')}
 
 
-            <div class="sidebar-divider"></div>
-            <a href="#" class="sidebar-link" onclick="sharePage(event)">📤 Share This Page</a>
 
             <div class="sidebar-footer">
                 Updated {now}<br>
@@ -1928,7 +1926,7 @@ View our work → https://www.rsquarestudios.com/2025-Fam/Bakedbysarvanii/n-SJjj
 We can't wait to capture your special day!
 — Ram, Rsquare Studios
 
-https://dot.cards/rsquarestudios`;
+`;
 
             document.getElementById('quote-preview').textContent = text;
         }}
@@ -1963,35 +1961,6 @@ https://dot.cards/rsquarestudios`;
         // Initialize quote preview
         updateQuote();
 
-        // Share page (like ByteByteGo dashboard)
-        function sharePage(e) {{
-            e.preventDefault();
-            const url = 'https://kneil31.github.io/rsquare-studios/';
-            const shareData = {{
-                title: 'Rsquare Studios — Photography',
-                text: 'Check out Rsquare Studios for wedding, maternity, and event photography in the Dallas–Fort Worth area.',
-                url: url
-            }};
-            if (navigator.share) {{
-                navigator.share(shareData).catch(() => fallbackShare(url));
-            }} else {{
-                fallbackShare(url);
-            }}
-        }}
-
-        function fallbackShare(url) {{
-            navigator.clipboard.writeText(url).then(() => {{
-                showToast('Link copied to clipboard!');
-            }}).catch(() => {{
-                const ta = document.createElement('textarea');
-                ta.value = url;
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-                showToast('Link copied!');
-            }});
-        }}
     </script>
 </body>
 </html>"""
