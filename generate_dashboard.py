@@ -329,44 +329,44 @@ def build_gallery_cards(galleries):
 def build_pricing_section():
     """Build pricing cards with professional photographer language."""
     html = """
-            <!-- Solo Coverage -->
+            <!-- Solo -->
             <div class="pricing-card" style="--accent: #8b5cf6;">
                 <div class="pricing-header">
                     <span class="pricing-icon">📷</span>
-                    <span class="pricing-name">Solo Coverage</span>
+                    <span class="pricing-name">Solo</span>
                 </div>
                 <div class="price-tier">
                     <div class="tier-header">
-                        <span class="tier-name">Photography</span>
+                        <span class="tier-name">Photo Only</span>
                         <span class="tier-price">$150<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
                     </div>
-                    <div class="tier-details">Just me and my camera — I'll cover everything from start to finish</div>
+                    <div class="tier-details">Just me and my camera</div>
                 </div>
                 <div class="price-tier">
                     <div class="tier-header">
-                        <span class="tier-name">Photography &amp; Cinematography</span>
+                        <span class="tier-name">Photo + Video</span>
                         <span class="tier-price">$235<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
                     </div>
-                    <div class="tier-details">I shoot both photo and video myself &mdash; works great for smaller events</div>
+                    <div class="tier-details">I shoot both photo and video &mdash; great for smaller events</div>
                 </div>
             </div>
 
-            <!-- Dual Coverage -->
+            <!-- Dual -->
             <div class="pricing-card" style="--accent: #3b82f6;">
                 <div class="pricing-header">
                     <span class="pricing-icon">📷&thinsp;📹</span>
-                    <span class="pricing-name">Dual Coverage</span>
+                    <span class="pricing-name">Dual</span>
                 </div>
                 <div class="price-tier">
                     <div class="tier-header">
-                        <span class="tier-name">Photography &amp; Cinematography</span>
+                        <span class="tier-name">Photo + Video</span>
                         <span class="tier-price">$325<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
                     </div>
-                    <div class="tier-details">Me on photos + a videographer on video &mdash; best for weddings and big events where you don't want to miss anything</div>
+                    <div class="tier-details">Me on photos, videographer on video &mdash; nothing gets missed</div>
                 </div>
             </div>
 
-            <!-- Add-on: Live -->
+            <!-- Live -->
             <div class="pricing-card" style="--accent: #10b981;">
                 <div class="pricing-header">
                     <span class="pricing-icon">📡</span>
@@ -377,7 +377,7 @@ def build_pricing_section():
                         <span class="tier-name">Live Streaming</span>
                         <span class="tier-price">+$100<span style="font-size:13px;font-weight:400;color:#6b7280;"> flat</span></span>
                     </div>
-                    <div class="tier-details">For family back home who can't be there &mdash; they can watch live on YouTube/Facebook</div>
+                    <div class="tier-details">Family back home can watch live on YouTube/Facebook</div>
                 </div>
             </div>"""
 
@@ -1723,7 +1723,7 @@ def generate_html():
 
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label">PRICING</div>
-            <a class="sidebar-link" onclick="showSection('pricing')">💰 Packages &amp; Pricing</a>
+            <a class="sidebar-link" onclick="showSection('pricing')">💰 Pricing</a>
             <a class="sidebar-link" onclick="showSection('booking')">📋 Book / Get Quote</a>
 
             <div class="sidebar-divider"></div>
@@ -1769,7 +1769,6 @@ def generate_html():
                         </div>
                     </div>
                     <a href="#" class="hero-cta" onclick="showSection('portfolio-home'); return false;">View Portfolio</a>
-                    <div class="hero-scroll-hint">↓ scroll to explore</div>
                 </div>
             </div>
 
@@ -1794,9 +1793,9 @@ def generate_html():
 
             <!-- PRICING -->
             <div class="page" id="pricing">
-                <div class="page-breadcrumb">Investment</div>
-                <h1 class="page-title">Investment</h1>
-                <div class="page-meta">Hourly rates, no packages, no surprises. You pay for what you need.</div>
+                <div class="page-breadcrumb">Pricing</div>
+                <h1 class="page-title">Pricing</h1>
+                <div class="page-meta">Hourly rates. No packages, no hidden stuff. You pay for what you need.</div>
                 <div class="pricing-grid">
                     {pricing_html}
                 </div>
@@ -1811,12 +1810,6 @@ def generate_html():
                     </div>
                 </div>
 
-                <div class="includes-box" style="margin-top:12px; border-color:#4a3520;">
-                    <h3 style="color:#f59e0b;">Payment</h3>
-                    <div style="font-size:14px; color:#fef3c7; line-height:1.7;">
-                        Cash only &mdash; keeps things simple and saves you money. You'll get a signed receipt.
-                    </div>
-                </div>
 
                 <!-- Solo vs Dual comparison -->
                 <div style="margin-top:28px;">
@@ -2263,10 +2256,10 @@ def generate_html():
                     ${{hasLive ? '<div class="quote-row"><span class="qlabel">Live Streaming</span><span class="qvalue" style="color:#10b981;">Included</span></div>' : ''}}
                 </div>
                 <div class="quote-section">
-                    <div class="quote-section-title">Investment</div>
+                    <div class="quote-section-title">Pricing</div>
                     <div class="quote-row"><span class="qlabel">Total</span><span class="qvalue quote-total">${{quote}}</span></div>
                     <div class="quote-row"><span class="qlabel">Retainer</span><span class="qvalue">${{deposit}}</span></div>
-                    <div class="quote-note">Remaining balance due on event day (cash)</div>
+                    <div class="quote-note">Rest due on event day</div>
                 </div>
                 <div class="quote-section">
                     <div class="quote-section-title">What You Get</div>
@@ -2295,10 +2288,10 @@ Setting: ${{shootType}}
 Coverage: ${{svcText}}
 Hours: ${{hours || '___'}}${{hasLive ? '\\nLive Streaming: Yes (+$100)' : ''}}
 
-*Investment*
+*Pricing*
 Total: ${{quote}}
 Retainer: ${{deposit}}
-Remaining balance due on event day (cash)
+Rest due on event day
 
 *What You Get*
 • All edited pictures — ready in 12–15 days
