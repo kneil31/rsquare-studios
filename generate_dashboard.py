@@ -268,6 +268,18 @@ def build_gallery_cards(galleries):
         "cradle": ("https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg", "center 47%"),
         "celebrations": ("https://photos.smugmug.com/photos/i-J8zjNdj/0/K3bnLswZ7LjTxLtFZ6TB3K35XXfx2PhcRnDg4fCG6/X3/i-J8zjNdj-X3.jpg", "38% 30%"),
     }
+    # Hero banner positions (wide landscape strip — needs different crop than tiles)
+    category_hero_positions = {
+        "wedding": "center 30%",
+        "engagement": "38% 35%",
+        "pre_wedding": "center 20%",
+        "half_saree": "68% 35%",
+        "maternity": "center 15%",
+        "baby_shower": "37% 15%",
+        "birthday": "center 30%",
+        "cradle": "center 35%",
+        "celebrations": "38% 20%",
+    }
 
     cards_by_category = {}
     # Iterate in display order, skip categories not in data
@@ -343,6 +355,7 @@ def build_gallery_cards(galleries):
             "count": len(items),
             "cover": category_covers.get(cat, ("", "center center"))[0],
             "cover_pos": category_covers.get(cat, ("", "center center"))[1],
+            "hero_pos": category_hero_positions.get(cat, "center center"),
         }
     return cards_by_category
 
@@ -529,7 +542,7 @@ def generate_html():
             <div class="page gallery-page-wrap" id="portfolio-{cat}">
                 <div class="gallery-backdrop" style="background-image:url('{info['cover']}')"></div>
                 <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
-                <div class="cat-hero" style="background-image:url('{info['cover']}');background-position:{info['cover_pos']}">
+                <div class="cat-hero" style="background-image:url('{info['cover']}');background-position:{info['hero_pos']}">
                     <div class="cat-hero-content">
                         <div class="cat-hero-title">{info['label']}</div>
                         <div class="cat-hero-sub">{info['count']} galleries</div>
@@ -1128,7 +1141,7 @@ def generate_html():
             position: relative;
             border-radius: 16px;
             overflow: hidden;
-            height: 200px;
+            height: 240px;
             background-size: cover;
             background-position: center;
             margin-bottom: 28px;
