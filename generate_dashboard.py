@@ -826,6 +826,10 @@ def generate_html():
             filter: blur(30px) brightness(0.15);
             z-index: -1;
             transform: scale(1.2);
+            display: none;
+        }}
+        .page.active .gallery-backdrop {{
+            display: block;
         }}
 
         /* Gallery cards */
