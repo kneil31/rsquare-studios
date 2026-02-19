@@ -1947,6 +1947,13 @@ def generate_html():
                         </div>
                         <div class="video-title">Ratna &amp; Janu Wedding</div>
                     </a>
+                    <a href="https://www.youtube.com/watch?v=NIFPgrPOYCo" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/NIFPgrPOYCo/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:34</div>
+                        </div>
+                        <div class="video-title">Anurag &amp; Madhu Gender Reveal</div>
+                    </a>
                 </div>
                 <div style="margin-top:20px; text-align:center;">
                     <a href="https://www.youtube.com/@rsquarestudios" target="_blank" rel="noopener" style="color:#8b5cf6; text-decoration:none; font-size:14px;">View all on YouTube &rarr;</a>
