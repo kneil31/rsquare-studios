@@ -1933,6 +1933,13 @@ def generate_html():
                         </div>
                         <div class="video-title">Keerthi's Half Saree Ceremony</div>
                     </a>
+                    <a href="https://www.youtube.com/watch?v=AbwBEGaop8k" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/AbwBEGaop8k/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:21</div>
+                        </div>
+                        <div class="video-title">Laya Half Saree</div>
+                    </a>
                 </div>
                 <div style="margin-top:20px; text-align:center;">
                     <a href="https://www.youtube.com/@rsquarestudios" target="_blank" rel="noopener" style="color:#8b5cf6; text-decoration:none; font-size:14px;">View all on YouTube &rarr;</a>
