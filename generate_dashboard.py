@@ -266,7 +266,7 @@ def build_gallery_cards(galleries):
         "baby_shower": ("https://photos.smugmug.com/photos/i-3MjgbV3/0/NWkJRQPLmfwjxBJ2qLpKLS2RHVpb39NtfssFhZJxp/X3/i-3MjgbV3-X3.jpg", "37% 18%"),
         "birthday": ("https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg", "center 40%"),
         "cradle": ("https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg", "center 47%"),
-        "celebrations": ("https://photos.smugmug.com/photos/i-MPN69Q3/0/LGSxZbpLfpcb7j3kqQkkTdfwDHcJbV6XdxnGNq6Hb/X3/i-MPN69Q3-X3.jpg", "76% 17%"),
+        "celebrations": ("https://photos.smugmug.com/photos/i-J8zjNdj/0/K3bnLswZ7LjTxLtFZ6TB3K35XXfx2PhcRnDg4fCG6/X3/i-J8zjNdj-X3.jpg", "38% 30%"),
     }
 
     cards_by_category = {}
@@ -1094,42 +1094,34 @@ def generate_html():
             margin-top: 24px;
         }}
         .cat-tile {{
-            position: relative;
-            border-radius: 12px;
-            padding: 0;
-            text-align: center;
+            display: flex;
+            flex-direction: column;
             cursor: pointer;
             transition: transform 0.15s, box-shadow 0.2s;
             text-decoration: none;
             color: inherit;
-            overflow: hidden;
-            aspect-ratio: 3/4;
-            display: flex;
-            align-items: flex-end;
-            background-size: cover;
-            background-position: center;
-        }}
-        .cat-tile::before {{
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.75) 100%);
-            z-index: 0;
         }}
         .cat-tile:hover {{
             transform: translateY(-3px);
+        }}
+        .cat-tile-img {{
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 3/4;
+            background-size: cover;
+            background-position: center;
+        }}
+        .cat-tile:hover .cat-tile-img {{
             box-shadow: 0 8px 24px rgba(139,92,246,0.25);
         }}
         .cat-tile-content {{
-            position: relative;
-            z-index: 1;
-            padding: 16px 20px;
-            width: 100%;
+            padding: 10px 4px 0;
             text-align: left;
         }}
         .cat-icon {{ display: none; }}
-        .cat-name {{ font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }}
-        .cat-count {{ font-size: 13px; color: #d1d5db; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }}
+        .cat-name {{ font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 1px; }}
+        .cat-count {{ font-size: 13px; color: #9ca3af; }}
 
         /* Category hero banner */
         .cat-hero {{
@@ -2003,11 +1995,11 @@ def generate_html():
                 grid-template-columns: 1fr;
                 gap: 12px;
             }}
-            .cat-tile {{
+            .cat-tile-img {{
                 aspect-ratio: 16/9;
             }}
             .cat-tile-content {{
-                padding: 10px 12px;
+                padding: 8px 4px 0;
             }}
             .cat-name {{ font-size: 15px; }}
 
@@ -2404,7 +2396,8 @@ def generate_html():
                 <div class="page-meta">{total_galleries} galleries &middot; Tap any category to browse</div>
                 <div class="cat-grid">
                     {"".join(f'''
-                    <div class="cat-tile" onclick="showSection('portfolio-{cat}')" style="background-image:url('{info['cover']}');background-position:{info['cover_pos']}">
+                    <div class="cat-tile" onclick="showSection('portfolio-{cat}')">
+                        <div class="cat-tile-img" style="background-image:url('{info['cover']}');background-position:{info['cover_pos']}"></div>
                         <div class="cat-tile-content">
                             <div class="cat-name">{info['label']}</div>
                             <div class="cat-count">{info['count']} galleries</div>
