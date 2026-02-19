@@ -293,7 +293,7 @@ def build_gallery_cards(galleries):
             # No icon element needed — handled by CSS class
 
             # Assign style per category for demo
-            demo_styles = {"wedding": "monogram", "cradle": "monogram", "engagement": "monogram", "half_saree": "monogram", "celebrations": "monogram", "maternity": "date", "birthday": "date", "baby_shower": "line", "pre_wedding": "line"}
+            demo_styles = {"wedding": "monogram", "cradle": "monogram", "engagement": "monogram", "half_saree": "monogram", "celebrations": "monogram", "maternity": "monogram", "birthday": "monogram", "baby_shower": "monogram", "pre_wedding": "monogram"}
             style = demo_styles.get(cat, "monogram")
 
             if style == "monogram":
@@ -1711,6 +1711,17 @@ def generate_html():
             .wf-content .wf-table {{ font-size: 12px; display: block; overflow-x: auto; }}
             .wf-code {{ font-size: 12px; }}
             .back-link {{ font-size: 14px; padding: 8px 0; }}
+
+            /* Testimonials mobile */
+            .testimonials-grid {{ grid-template-columns: 1fr; }}
+            .testimonial-card {{ padding: 16px; }}
+            .testimonial-quote {{ font-size: 13px; }}
+
+            /* How It Works mobile */
+            .how-steps {{ grid-template-columns: 1fr 1fr; gap: 10px; }}
+            .how-step {{ padding: 16px 10px; }}
+            .how-step-icon {{ font-size: 24px; }}
+            .how-step-label {{ font-size: 13px; }}
         }}
 
         /* Small phones */
@@ -1718,6 +1729,107 @@ def generate_html():
             .cat-grid {{ grid-template-columns: 1fr; }}
             .hero-stats {{ flex-wrap: wrap; gap: 16px; }}
             .wf-tile-grid {{ grid-template-columns: 1fr; }}
+        }}
+
+        /* Testimonials */
+        .testimonials-section {{
+            padding: 20px 16px 0;
+        }}
+        .testimonials-title {{
+            font-size: 13px;
+            font-weight: 700;
+            color: #525252;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 20px;
+        }}
+        .testimonials-grid {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }}
+        .testimonial-card {{
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+        }}
+        .testimonial-quote {{
+            font-size: 14px;
+            color: #d1d5db;
+            line-height: 1.6;
+            font-style: italic;
+            margin-bottom: 12px;
+        }}
+        .testimonial-quote::before {{
+            content: '\\201C';
+            font-size: 28px;
+            color: #8b5cf6;
+            font-style: normal;
+            line-height: 0;
+            position: relative;
+            top: 8px;
+            margin-right: 4px;
+        }}
+        .testimonial-name {{
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 600;
+        }}
+        .testimonial-event {{
+            font-size: 11px;
+            color: #525252;
+        }}
+
+        /* How It Works */
+        .how-section {{
+            padding: 0 16px;
+            margin-top: 8px;
+        }}
+        .how-title {{
+            font-size: 13px;
+            font-weight: 700;
+            color: #525252;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 20px;
+        }}
+        .how-steps {{
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }}
+        .how-step {{
+            text-align: center;
+            padding: 20px 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+        }}
+        .how-step-num {{
+            font-size: 11px;
+            font-weight: 700;
+            color: #8b5cf6;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }}
+        .how-step-icon {{
+            font-size: 28px;
+            margin-bottom: 8px;
+        }}
+        .how-step-label {{
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 4px;
+        }}
+        .how-step-desc {{
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.4;
         }}
 
         /* Toast */
@@ -1818,7 +1930,7 @@ def generate_html():
                 <div class="hero">
                     <div class="hero-logo">📷</div>
                     <h1>Rsquare Studios</h1>
-                    <p>Wedding &amp; event photography in DFW. Photos and videos that actually look like you.</p>
+                    <p>Your moments, captured the way they felt. Wedding &amp; event photography across DFW.</p>
                     <div class="hero-stats">
                         <div class="hero-stat">
                             <div class="number">{total_galleries}+</div>
@@ -1834,6 +1946,64 @@ def generate_html():
                         </div>
                     </div>
                     <a href="#" class="hero-cta" onclick="showSection('portfolio-home'); return false;">View Portfolio</a>
+                </div>
+
+                <!-- Testimonials -->
+                <div class="testimonials-section">
+                    <div class="testimonials-title">What Clients Say</div>
+                    <div class="testimonials-grid">
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">Pictures came out so well. We feel that we made the right choice. We definitely recommend too.</div>
+                            <div class="testimonial-name">Client</div>
+                            <div class="testimonial-event">Event Photography</div>
+                        </div>
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">Your relaxed, personable approach made us feel very welcome. Your work is flawless. Thank you so much for capturing the strong emotions of the day.</div>
+                            <div class="testimonial-name">Client</div>
+                            <div class="testimonial-event">Wedding Photography</div>
+                        </div>
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">Editing and videography looks so amazing and thanks for being so flexible to add changes that we asked for. It was so good working with you.</div>
+                            <div class="testimonial-name">Client</div>
+                            <div class="testimonial-event">Photo &amp; Video</div>
+                        </div>
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">All the photos look stunning! Everyone in the house loved the pictures a lot.</div>
+                            <div class="testimonial-name">Client</div>
+                            <div class="testimonial-event">Event Photography</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- How It Works -->
+                <div class="how-section">
+                    <div class="how-title">How It Works</div>
+                    <div class="how-steps">
+                        <div class="how-step">
+                            <div class="how-step-num">01</div>
+                            <div class="how-step-icon">💬</div>
+                            <div class="how-step-label">Reach Out</div>
+                            <div class="how-step-desc">Tell me about your event via WhatsApp or call</div>
+                        </div>
+                        <div class="how-step">
+                            <div class="how-step-num">02</div>
+                            <div class="how-step-icon">📋</div>
+                            <div class="how-step-label">Plan</div>
+                            <div class="how-step-desc">We lock in date, location, and coverage details</div>
+                        </div>
+                        <div class="how-step">
+                            <div class="how-step-num">03</div>
+                            <div class="how-step-icon">📸</div>
+                            <div class="how-step-label">Shoot</div>
+                            <div class="how-step-desc">I capture every moment &mdash; candids, portraits, all of it</div>
+                        </div>
+                        <div class="how-step">
+                            <div class="how-step-num">04</div>
+                            <div class="how-step-icon">🎨</div>
+                            <div class="how-step-label">Deliver</div>
+                            <div class="how-step-desc">Edited photos in 12&ndash;15 days, video in 3&ndash;4 weeks</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
