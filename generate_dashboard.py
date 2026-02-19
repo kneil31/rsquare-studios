@@ -1863,6 +1863,13 @@ def generate_html():
                 <h1 class="page-title">Videos</h1>
                 <div class="page-meta">Highlight reels and cinematic teasers from our events</div>
                 <div class="video-grid">
+                    <a href="https://www.youtube.com/watch?v=ATyq7m_gLtY" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/ATyq7m_gLtY/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:25</div>
+                        </div>
+                        <div class="video-title">Rashmi Baby Shower</div>
+                    </a>
                     <a href="https://www.youtube.com/watch?v=B4WH92E3ov4" target="_blank" rel="noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/B4WH92E3ov4/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
