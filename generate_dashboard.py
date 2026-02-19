@@ -199,11 +199,20 @@ def md_to_html_simple(md_text):
 
 def build_gallery_cards(galleries):
     """Build gallery card HTML for each category."""
-    # Display order for categories
+    # Merge anniversary, pooja, naming, housewarming into "celebrations"
+    # Do this before processing
+    merge_into_celebrations = ["housewarming", "anniversary", "pooja", "naming"]
+    if "celebrations" not in galleries:
+        galleries["celebrations"] = []
+    for merge_cat in merge_into_celebrations:
+        if merge_cat in galleries:
+            galleries["celebrations"].extend(galleries.pop(merge_cat))
+
+    # Display order for categories (9 tiles)
     category_order = [
         "wedding", "engagement", "pre_wedding", "half_saree",
         "maternity", "baby_shower", "birthday", "cradle",
-        "housewarming", "anniversary", "pooja", "naming",
+        "celebrations",
     ]
     category_icons = {
         "wedding": "💍",
@@ -214,10 +223,7 @@ def build_gallery_cards(galleries):
         "baby_shower": "👶",
         "birthday": "🎂",
         "cradle": "🍼",
-        "housewarming": "🏠",
-        "anniversary": "🥂",
-        "pooja": "🪔",
-        "naming": "✨",
+        "celebrations": "🎊",
     }
     category_labels = {
         "wedding": "Wedding",
@@ -228,10 +234,7 @@ def build_gallery_cards(galleries):
         "baby_shower": "Baby Shower",
         "birthday": "Birthday",
         "cradle": "Cradle Ceremony",
-        "housewarming": "Housewarming",
-        "anniversary": "Anniversary",
-        "pooja": "Pooja",
-        "naming": "Naming Ceremony",
+        "celebrations": "Celebrations",
     }
     category_covers = {
         "wedding": ("https://photos.smugmug.com/photos/i-BvTChsc/0/LwhGTh2B2pCPDgNpjPJp8J3nCSfRNdKwd3j5CVTKN/X3/i-BvTChsc-X3.jpg", "center center"),
@@ -242,10 +245,7 @@ def build_gallery_cards(galleries):
         "baby_shower": ("https://photos.smugmug.com/photos/i-3MjgbV3/0/NWkJRQPLmfwjxBJ2qLpKLS2RHVpb39NtfssFhZJxp/X3/i-3MjgbV3-X3.jpg", "center 25%"),
         "birthday": ("https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg", "center center"),
         "cradle": ("https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg", "center center"),
-        "housewarming": ("https://photos.smugmug.com/photos/i-MPN69Q3/0/LGSxZbpLfpcb7j3kqQkkTdfwDHcJbV6XdxnGNq6Hb/X3/i-MPN69Q3-X3.jpg", "center center"),
-        "anniversary": ("https://photos.smugmug.com/photos/i-BxZBSsw/0/NPrN8GFPvVsm6HZnznxrGgLHmK954XMNtc7X8QSjz/X3/i-BxZBSsw-X3.jpg", "center center"),
-        "pooja": ("https://photos.smugmug.com/photos/i-PH8MsxV/0/NhJtD4s8NGDq5pDbNb6R5v7L4KFkLp5frQ8Bb7dXw/X3/i-PH8MsxV-X3.jpg", "center center"),
-        "naming": ("https://photos.smugmug.com/photos/i-Qczdg8B/0/NCxFpSt3358Zs4vdKDxmPXb88jdFqFQGJmD2gLqtN/X3/i-Qczdg8B-X3.jpg", "center center"),
+        "celebrations": ("https://photos.smugmug.com/photos/i-MPN69Q3/0/LGSxZbpLfpcb7j3kqQkkTdfwDHcJbV6XdxnGNq6Hb/X3/i-MPN69Q3-X3.jpg", "center center"),
     }
 
     cards_by_category = {}
@@ -293,7 +293,7 @@ def build_gallery_cards(galleries):
             # No icon element needed — handled by CSS class
 
             # Assign style per category for demo
-            demo_styles = {"wedding": "monogram", "cradle": "monogram", "engagement": "monogram", "half_saree": "monogram", "housewarming": "monogram", "naming": "monogram", "maternity": "date", "birthday": "date", "anniversary": "date", "pooja": "date", "baby_shower": "line", "pre_wedding": "line"}
+            demo_styles = {"wedding": "monogram", "cradle": "monogram", "engagement": "monogram", "half_saree": "monogram", "celebrations": "monogram", "maternity": "date", "birthday": "date", "baby_shower": "line", "pre_wedding": "line"}
             style = demo_styles.get(cat, "monogram")
 
             if style == "monogram":
@@ -340,14 +340,14 @@ def build_pricing_section():
                         <span class="tier-name">Photography</span>
                         <span class="tier-price">$150<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
                     </div>
-                    <div class="tier-details">One dedicated photographer capturing every key moment of your event</div>
+                    <div class="tier-details">Just me and my camera — I'll cover everything from start to finish</div>
                 </div>
                 <div class="price-tier">
                     <div class="tier-header">
                         <span class="tier-name">Photography &amp; Cinematography</span>
                         <span class="tier-price">$235<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
                     </div>
-                    <div class="tier-details">A single creative professional handling both photo and video &mdash; ideal for intimate events and smaller gatherings</div>
+                    <div class="tier-details">I shoot both photo and video myself &mdash; works great for smaller events</div>
                 </div>
             </div>
 
@@ -362,7 +362,7 @@ def build_pricing_section():
                         <span class="tier-name">Photography &amp; Cinematography</span>
                         <span class="tier-price">$325<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
                     </div>
-                    <div class="tier-details">A dedicated photographer and a dedicated videographer working in tandem &mdash; recommended for weddings, large celebrations, and multi-location events</div>
+                    <div class="tier-details">Me on photos + a videographer on video &mdash; best for weddings and big events where you don't want to miss anything</div>
                 </div>
             </div>
 
@@ -377,7 +377,7 @@ def build_pricing_section():
                         <span class="tier-name">Live Streaming</span>
                         <span class="tier-price">+$100<span style="font-size:13px;font-weight:400;color:#6b7280;"> flat</span></span>
                     </div>
-                    <div class="tier-details">Live stream your event so family and friends who can't make it can still watch in real time</div>
+                    <div class="tier-details">For family back home who can't be there &mdash; they can watch live on YouTube/Facebook</div>
                 </div>
             </div>"""
 
@@ -452,7 +452,7 @@ def generate_html():
                 <div class="cat-hero" style="background-image:url('{info['cover']}');background-position:{info['cover_pos']}">
                     <div class="cat-hero-content">
                         <div class="cat-hero-title">{info['label']}</div>
-                        <div class="cat-hero-sub">{info['count']} curated galleries</div>
+                        <div class="cat-hero-sub">{info['count']} galleries</div>
                     </div>
                 </div>
                 <div class="gallery-grid">{info['html']}</div>
@@ -1753,7 +1753,7 @@ def generate_html():
                 <div class="hero">
                     <div class="hero-logo">📷</div>
                     <h1>Rsquare Studios</h1>
-                    <p>Wedding &amp; event photography in Dallas&ndash;Fort Worth. Let's make your day look amazing.</p>
+                    <p>Wedding &amp; event photography in DFW. Photos and videos that actually look like you.</p>
                     <div class="hero-stats">
                         <div class="hero-stat">
                             <div class="number">{total_galleries}+</div>
@@ -1777,7 +1777,7 @@ def generate_html():
             <div class="page" id="portfolio-home">
                 <div class="page-breadcrumb">Portfolio</div>
                 <h1 class="page-title">Portfolio</h1>
-                <div class="page-meta">{total_galleries} galleries &middot; Tap a category to see our work</div>
+                <div class="page-meta">{total_galleries} galleries &middot; Tap any category to browse</div>
                 <div class="cat-grid">
                     {"".join(f'''
                     <div class="cat-tile" onclick="showSection('portfolio-{cat}')" style="background-image:url('{info['cover']}');background-position:{info['cover_pos']}">
@@ -1796,47 +1796,47 @@ def generate_html():
             <div class="page" id="pricing">
                 <div class="page-breadcrumb">Investment</div>
                 <h1 class="page-title">Investment</h1>
-                <div class="page-meta">Simple hourly rates, no hidden fees. What you see is what you pay.</div>
+                <div class="page-meta">Hourly rates, no packages, no surprises. You pay for what you need.</div>
                 <div class="pricing-grid">
                     {pricing_html}
                 </div>
 
                 <div class="includes-box">
-                    <h3>What You Receive</h3>
+                    <h3>What's Included</h3>
                     <div class="includes-list">
-                        <span>&#10003; Professionally edited high-resolution images</span>
-                        <span>&#10003; Cinematic highlight teaser (4&ndash;6 min)</span>
-                        <span>&#10003; Private online gallery with downloads</span>
-                        <span>&#10003; Full print release</span>
+                        <span>&#10003; All edited photos &mdash; usually ready in 12&ndash;15 days</span>
+                        <span>&#10003; Cinematic highlight video (4&ndash;6 min)</span>
+                        <span>&#10003; Online gallery &mdash; download, share, print</span>
+                        <span>&#10003; Full print rights &mdash; print anywhere you want</span>
                     </div>
                 </div>
 
                 <div class="includes-box" style="margin-top:12px; border-color:#4a3520;">
                     <h3 style="color:#f59e0b;">Payment</h3>
                     <div style="font-size:14px; color:#fef3c7; line-height:1.7;">
-                        We accept <strong>cash</strong> payments to keep our pricing accessible and pass savings directly to you. A signed receipt is provided for every transaction.
+                        Cash only &mdash; keeps things simple and saves you money. You'll get a signed receipt.
                     </div>
                 </div>
 
                 <!-- Solo vs Dual comparison -->
                 <div style="margin-top:28px;">
-                    <h3 style="font-size:16px; font-weight:700; color:#fff; margin-bottom:4px;">Solo vs. Dual Coverage &mdash; Which Is Right for You?</h3>
+                    <h3 style="font-size:16px; font-weight:700; color:#fff; margin-bottom:4px;">Solo or Dual &mdash; which one do you need?</h3>
                     <div class="proscons">
                         <div class="proscons-col" style="border:1px solid #2d4a2d;">
-                            <h4 style="color:#10b981;">Solo Coverage</h4>
+                            <h4 style="color:#10b981;">Solo</h4>
                             <ul>
-                                <li>&#10003; More accessible investment</li>
-                                <li>&#10003; Every key moment &mdash; ceremony, portraits, reception &mdash; captured in both photo and video</li>
-                                <li style="color:#6b7280; font-style:italic; margin-top:6px;">Best for: intimate events, elopements, smaller gatherings</li>
+                                <li>&#10003; Easier on the budget</li>
+                                <li>&#10003; I handle both photo and video &mdash; ceremony, portraits, reception, all covered</li>
+                                <li style="color:#6b7280; font-style:italic; margin-top:6px;">Good for: birthdays, baby showers, smaller events</li>
                             </ul>
                         </div>
                         <div class="proscons-col" style="border:1px solid #2d3a5e;">
-                            <h4 style="color:#3b82f6;">Dual Coverage</h4>
+                            <h4 style="color:#3b82f6;">Dual</h4>
                             <ul>
-                                <li>&#10003; Simultaneous angles &mdash; nothing missed</li>
-                                <li>&#10003; More candid moments and guest coverage</li>
-                                <li>&#10003; Richer highlight reel with dedicated video footage</li>
-                                <li style="color:#6b7280; font-style:italic; margin-top:6px;">Recommended for: weddings, 100+ guests, multi-location events</li>
+                                <li>&#10003; Two people, two angles &mdash; nothing gets missed</li>
+                                <li>&#10003; Way more candid shots and guest moments</li>
+                                <li>&#10003; Better highlight video with dedicated video guy</li>
+                                <li style="color:#6b7280; font-style:italic; margin-top:6px;">Go with this for: weddings, 100+ guests, multi-spot events</li>
                             </ul>
                         </div>
                     </div>
@@ -1851,7 +1851,7 @@ def generate_html():
             <div class="page" id="booking">
                 <div class="page-breadcrumb">Book</div>
                 <h1 class="page-title">Request a Quote</h1>
-                <div class="page-meta">Put in your event details and I'll put together a quick quote for you.</div>
+                <div class="page-meta">Fill in your details and I'll send you a quote on WhatsApp.</div>
 
                 <div class="book-form" id="book-form">
                     <div class="form-row">
@@ -2012,15 +2012,15 @@ def generate_html():
             <!-- CONTACT -->
             <div class="page" id="contact">
                 <div class="page-breadcrumb">Contact</div>
-                <h1 class="page-title">Let's Connect</h1>
-                <div class="page-meta">We'd love to hear about your event. Reach out and let's start planning.</div>
+                <h1 class="page-title">Get in Touch</h1>
+                <div class="page-meta">WhatsApp is the easiest way to reach me. Just say hi!</div>
 
                 <div class="gallery-grid" style="max-width:400px;">
                     <a href="https://wa.me/15307278598?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." target="_blank" rel="noopener" class="gallery-card" style="border-color:#25D366;">
                         <div class="gallery-icon" style="font-size:28px;">💬</div>
                         <div class="gallery-info">
                             <div class="gallery-name">WhatsApp</div>
-                            <div class="gallery-meta">Fastest way to reach us</div>
+                            <div class="gallery-meta">Quickest way to reach me</div>
                         </div>
                         <div class="gallery-arrow">&#8599;</div>
                     </a>
