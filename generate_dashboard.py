@@ -1286,10 +1286,6 @@ def generate_html():
         }}
 
         /* Site lock — hide everything until password entered */
-        .site-locked .sidebar {{ display: none; }}
-        .site-locked .bottom-nav {{ display: none; }}
-        .site-locked .wa-float {{ display: none; }}
-        .site-locked .mobile-toggle {{ display: none; }}
 
         /* Password gate */
         .pw-gate {{
@@ -1743,7 +1739,7 @@ def generate_html():
         .toast.show {{ opacity: 1; transform: translateY(0); }}
     </style>
 </head>
-<body class="site-locked">
+<body>
     <button class="mobile-toggle" onclick="toggleSidebar()">&#9776;</button>
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
@@ -1818,7 +1814,7 @@ def generate_html():
         <div class="content" id="main-content">
 
             <!-- HOME -->
-            <div class="page" id="home">
+            <div class="page active" id="home">
                 <div class="hero">
                     <div class="hero-logo">📷</div>
                     <h1>Rsquare Studios</h1>
@@ -2067,10 +2063,10 @@ def generate_html():
             </div>
 
             <!-- PASSWORD GATE -->
-            <div class="page active" id="pw-gate">
+            <div class="page" id="pw-gate">
                 <div class="pw-gate">
                     <h2>📷 Rsquare Studios</h2>
-                    <p>Enter the password to view the site.</p>
+                    <p>This section is password-protected.</p>
                     <div>
                         <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPassword()">
                         <button class="pw-btn" onclick="checkPassword()">Enter</button>
@@ -2259,10 +2255,9 @@ def generate_html():
             if (hashHex === PASSWORD_HASH) {{
                 isUnlocked = true;
                 sessionStorage.setItem('rsquare_unlocked', 'true');
-                document.body.classList.remove('site-locked');
                 updateLockIcon();
-                showToast('Welcome!');
-                const target = window._pendingSection || 'home';
+                showToast('Unlocked!');
+                const target = window._pendingSection || 'pricing';
                 showSection(target);
             }} else {{
                 document.getElementById('pw-error').style.display = 'block';
@@ -2362,14 +2357,10 @@ def generate_html():
             if (tabId) document.getElementById(tabId)?.classList.add('active');
         }}
 
-        // Check if already unlocked (restore full site access on refresh)
+        // Check if already unlocked (pricing/workflow access persists in tab)
         if (sessionStorage.getItem('rsquare_unlocked') === 'true') {{
             isUnlocked = true;
-            document.body.classList.remove('site-locked');
             updateLockIcon();
-            // Switch from pw-gate to home
-            document.getElementById('pw-gate').classList.remove('active');
-            document.getElementById('home').classList.add('active');
         }}
 
         // Load checklists on page load
