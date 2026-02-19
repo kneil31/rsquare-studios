@@ -327,46 +327,99 @@ def build_gallery_cards(galleries):
 
 
 def build_pricing_section():
-    """Build pricing cards with professional photographer language."""
+    """Build pricing cards with event-based packages."""
     html = """
-            <!-- Solo -->
+            <!-- Photo Only -->
             <div class="pricing-card" style="--accent: #8b5cf6;">
                 <div class="pricing-header">
                     <span class="pricing-icon">📷</span>
-                    <span class="pricing-name">Solo</span>
+                    <span class="pricing-name">Photo Only</span>
+                </div>
+                <div class="tier-details" style="margin-bottom:12px;">Just me and my camera &mdash; all edited photos delivered</div>
+                <div class="price-tier">
+                    <div class="tier-header">
+                        <span class="tier-name">2 Hours</span>
+                        <span class="tier-price">$300</span>
+                    </div>
+                    <div class="tier-details">Maternity, portraits, small celebrations</div>
                 </div>
                 <div class="price-tier">
                     <div class="tier-header">
-                        <span class="tier-name">Photo Only</span>
-                        <span class="tier-price">$150<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
+                        <span class="tier-name">3 Hours</span>
+                        <span class="tier-price">$450</span>
                     </div>
-                    <div class="tier-details">Just me and my camera</div>
+                    <div class="tier-details">Baby showers, birthdays, cradle ceremonies</div>
                 </div>
                 <div class="price-tier">
                     <div class="tier-header">
-                        <span class="tier-name">Photo + Video</span>
-                        <span class="tier-price">$235<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
+                        <span class="tier-name">4 Hours</span>
+                        <span class="tier-price">$600</span>
                     </div>
-                    <div class="tier-details">I shoot both photo and video &mdash; great for smaller events</div>
+                    <div class="tier-details">Half saree, housewarming, larger events</div>
                 </div>
             </div>
 
-            <!-- Dual -->
+            <!-- Photo + Video (Solo) -->
             <div class="pricing-card" style="--accent: #3b82f6;">
                 <div class="pricing-header">
                     <span class="pricing-icon">📷&thinsp;📹</span>
-                    <span class="pricing-name">Dual</span>
+                    <span class="pricing-name">Photo + Video</span>
+                </div>
+                <div class="tier-details" style="margin-bottom:12px;">I shoot both photo and video &mdash; great for events you want to relive</div>
+                <div class="price-tier">
+                    <div class="tier-header">
+                        <span class="tier-name">2 Hours</span>
+                        <span class="tier-price">$470</span>
+                    </div>
+                    <div class="tier-details">Maternity, portraits, intimate events</div>
                 </div>
                 <div class="price-tier">
                     <div class="tier-header">
-                        <span class="tier-name">Photo + Video</span>
-                        <span class="tier-price">$325<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
+                        <span class="tier-name">3 Hours</span>
+                        <span class="tier-price">$705</span>
                     </div>
-                    <div class="tier-details">Me on photos, videographer on video &mdash; nothing gets missed</div>
+                    <div class="tier-details">Baby showers, birthdays, cradle ceremonies</div>
+                </div>
+                <div class="price-tier">
+                    <div class="tier-header">
+                        <span class="tier-name">4 Hours</span>
+                        <span class="tier-price">$940</span>
+                    </div>
+                    <div class="tier-details">Half saree, housewarming, engagement</div>
                 </div>
             </div>
 
-            <!-- Live -->
+            <!-- Dual Coverage -->
+            <div class="pricing-card" style="--accent: #f59e0b;">
+                <div class="pricing-header">
+                    <span class="pricing-icon">📷📷</span>
+                    <span class="pricing-name">Dual Coverage</span>
+                </div>
+                <div class="tier-details" style="margin-bottom:12px;">Me on photos, videographer on video &mdash; nothing gets missed</div>
+                <div class="price-tier">
+                    <div class="tier-header">
+                        <span class="tier-name">4 Hours</span>
+                        <span class="tier-price">$1,300</span>
+                    </div>
+                    <div class="tier-details">Half saree, engagement, smaller weddings</div>
+                </div>
+                <div class="price-tier">
+                    <div class="tier-header">
+                        <span class="tier-name">8 Hours</span>
+                        <span class="tier-price">$2,600</span>
+                    </div>
+                    <div class="tier-details">Full wedding day coverage</div>
+                </div>
+                <div class="price-tier">
+                    <div class="tier-header">
+                        <span class="tier-name">12 Hours</span>
+                        <span class="tier-price">$3,900</span>
+                    </div>
+                    <div class="tier-details">Full wedding &mdash; morning prep to reception</div>
+                </div>
+            </div>
+
+            <!-- Add-on -->
             <div class="pricing-card" style="--accent: #10b981;">
                 <div class="pricing-header">
                     <span class="pricing-icon">📡</span>
@@ -378,6 +431,13 @@ def build_pricing_section():
                         <span class="tier-price">+$100<span style="font-size:13px;font-weight:400;color:#6b7280;"> flat</span></span>
                     </div>
                     <div class="tier-details">Family back home can watch live on YouTube/Facebook</div>
+                </div>
+                <div class="price-tier">
+                    <div class="tier-header">
+                        <span class="tier-name">Extra Hour</span>
+                        <span class="tier-price">+$150<span style="font-size:13px;font-weight:400;color:#6b7280;"> &ndash; $325</span></span>
+                    </div>
+                    <div class="tier-details">Add more time to any package (rate depends on coverage type)</div>
                 </div>
             </div>"""
 
@@ -1900,19 +1960,19 @@ def generate_html():
             {gallery_sidebar}
 
             <div class="sidebar-divider"></div>
-            <div class="sidebar-section-label" id="wf-section-label">
-                <span class="lock-icon" id="lock-icon">🔒</span> PRIVATE
+            <a class="sidebar-link wf-link" onclick="accessWorkflow('pricing')" style="display:none;">💰 Pricing</a>
+            <a class="sidebar-link wf-link" onclick="accessWorkflow('booking')" style="display:none;">📋 Book / Get Quote</a>
+            <div id="wf-sidebar-block" style="display:none;">
+                <div class="sidebar-section-label" id="wf-section-label">WORKFLOW</div>
+                <a class="sidebar-link wf-link" onclick="accessWorkflow('workflow-home')">📋 Dashboard</a>
+                <a class="sidebar-link wf-link" onclick="accessWorkflow('checklists')">✅ Checklists</a>
+                <a class="sidebar-link wf-link" onclick="accessWorkflow('workflow-ref')">📖 Workflow Reference</a>
+                <div class="sidebar-section-label" style="padding-top:8px">POSING GUIDES</div>
+                {posing_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link wf-link"')}
             </div>
-            <a class="sidebar-link wf-link" onclick="accessWorkflow('pricing')">💰 Pricing</a>
-            <a class="sidebar-link wf-link" onclick="accessWorkflow('booking')">📋 Book / Get Quote</a>
-            <div class="sidebar-section-label wf-link" style="padding-top:8px">WORKFLOW
-            </div>
-            <a class="sidebar-link wf-link" onclick="accessWorkflow('workflow-home')">📋 Dashboard</a>
-            <a class="sidebar-link wf-link" onclick="accessWorkflow('checklists')">✅ Checklists</a>
-            <a class="sidebar-link wf-link" onclick="accessWorkflow('workflow-ref')">📖 Workflow Reference</a>
-
-            <div class="sidebar-section-label wf-link" style="padding-top:8px">POSING GUIDES</div>
-            {posing_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link wf-link"')}
+            <a class="sidebar-link" onclick="accessWorkflow('pricing')" style="margin-top:4px;">
+                <span class="lock-icon" id="lock-icon">🔒</span> Private
+            </a>
 
 
 
@@ -1930,7 +1990,7 @@ def generate_html():
                 <div class="hero">
                     <div class="hero-logo">📷</div>
                     <h1>Rsquare Studios</h1>
-                    <p>Your moments, captured the way they felt. Wedding &amp; event photography across DFW.</p>
+                    <p>Baby showers, maternity, birthdays, weddings &amp; family celebrations. Photography &amp; video across DFW.</p>
                     <div class="hero-stats">
                         <div class="hero-stat">
                             <div class="number">{total_galleries}+</div>
@@ -2189,8 +2249,8 @@ def generate_html():
             <!-- PRICING -->
             <div class="page" id="pricing">
                 <div class="page-breadcrumb">Pricing</div>
-                <h1 class="page-title">Pricing</h1>
-                <div class="page-meta">Hourly rates. No packages, no hidden stuff. You pay for what you need.</div>
+                <h1 class="page-title">Investment</h1>
+                <div class="page-meta">Simple packages. Pick your coverage and hours &mdash; everything else is included.</div>
                 <div class="pricing-grid">
                     {pricing_html}
                 </div>
@@ -2232,6 +2292,23 @@ def generate_html():
 
                 <div style="margin-top:24px; text-align:center;">
                     <button class="copy-btn" onclick="showSection('booking')" style="background:#8b5cf6;">Request a Quote</button>
+                </div>
+
+                <!-- Testimonials near pricing -->
+                <div style="margin-top:32px;">
+                    <div class="testimonials-title">What Clients Say</div>
+                    <div class="testimonials-grid">
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">Pictures came out so well. We feel that we made the right choice. We definitely recommend too.</div>
+                            <div class="testimonial-name">Client</div>
+                            <div class="testimonial-event">Event Photography</div>
+                        </div>
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">Editing and videography looks so amazing and thanks for being so flexible to add changes that we asked for.</div>
+                            <div class="testimonial-name">Client</div>
+                            <div class="testimonial-event">Photo &amp; Video</div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -2276,9 +2353,9 @@ def generate_html():
                         <div class="form-row">
                             <label class="form-label">COVERAGE TYPE</label>
                             <select class="form-select" id="q-services" onchange="updateQuote()">
-                                <option value="Photography &mdash; Solo ($150/hr)">Photography &mdash; Solo ($150/hr)</option>
-                                <option value="Photo &amp; Video &mdash; Solo ($235/hr)">Photo &amp; Video &mdash; Solo ($235/hr)</option>
-                                <option value="Photo &amp; Video &mdash; Dual ($325/hr)">Photo &amp; Video &mdash; Dual ($325/hr)</option>
+                                <option value="Photo Only ($150/hr)">Photo Only ($150/hr)</option>
+                                <option value="Photo + Video ($235/hr)">Photo + Video ($235/hr)</option>
+                                <option value="Dual Coverage ($325/hr)">Dual Coverage ($325/hr)</option>
                             </select>
                         </div>
                     </div>
@@ -2305,6 +2382,12 @@ def generate_html():
                 <div class="btn-row">
                     <button class="copy-btn" onclick="copyQuote()">📋 Copy to Clipboard</button>
                     <a class="share-wa-btn" id="wa-share-btn" href="#" target="_blank" rel="noopener" onclick="shareQuoteWA(event)">💬 Share via WhatsApp</a>
+                </div>
+
+                <div id="booking-confirmation" style="display:none; margin-top:20px; padding:20px; background:#1a2e1a; border:1px solid #2d4a2d; border-radius:12px; text-align:center;">
+                    <div style="font-size:24px; margin-bottom:8px;">&#10003;</div>
+                    <div style="font-size:16px; font-weight:600; color:#10b981; margin-bottom:6px;">Quote sent!</div>
+                    <div style="font-size:14px; color:#9ca3af; line-height:1.6;">I'll confirm availability and get back to you within 24 hours.<br>Feel free to message me on WhatsApp if you have any questions.</div>
                 </div>
 
             </div>
@@ -2519,6 +2602,13 @@ def generate_html():
                 icon.textContent = '🔓';
                 icon.classList.add('unlocked');
             }}
+            // Show hidden workflow sidebar links
+            const wfBlock = document.getElementById('wf-sidebar-block');
+            if (wfBlock) wfBlock.style.display = 'block';
+            // Show pricing/booking links in sidebar
+            document.querySelectorAll('.sidebar-link.wf-link').forEach(link => {{
+                link.style.display = 'block';
+            }});
         }}
 
         // Make all wf-links go through accessWorkflow
@@ -2615,9 +2705,9 @@ def generate_html():
 
         // Quote form logic
         const rateMap = {{
-            'Photography — Solo ($150/hr)': 150,
-            'Photo & Video — Solo ($235/hr)': 235,
-            'Photo & Video — Dual ($325/hr)': 325,
+            'Photo Only ($150/hr)': 150,
+            'Photo + Video ($235/hr)': 235,
+            'Dual Coverage ($325/hr)': 325,
         }};
 
         function updateQuote() {{
@@ -2739,6 +2829,9 @@ Looking forward to it! 🙌
             const text = getQuoteText();
             const encoded = encodeURIComponent(text);
             window.open('https://wa.me/?text=' + encoded, '_blank');
+            // Show confirmation
+            const conf = document.getElementById('booking-confirmation');
+            if (conf) conf.style.display = 'block';
         }}
 
         // Initialize quote preview
