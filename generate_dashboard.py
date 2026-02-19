@@ -538,8 +538,24 @@ def generate_html():
 
         /* Hero */
         .hero {{
+            position: relative;
             text-align: center;
-            padding: 60px 20px 40px;
+            padding: 80px 20px 60px;
+            background: url('https://photos.smugmug.com/photos/i-VqnMPLz/0/KG7kc3wMPKBWdFkVhTsWfp4LJQCNzQkxK4ww4DZJv/X3/i-VqnMPLz-X3.jpg') center center / cover no-repeat;
+            border-radius: 16px;
+            margin: 0 16px 24px;
+            overflow: hidden;
+        }}
+        .hero::before {{
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.7) 100%);
+            z-index: 0;
+        }}
+        .hero > * {{
+            position: relative;
+            z-index: 1;
         }}
         .hero-logo {{
             font-size: 48px;
@@ -551,13 +567,15 @@ def generate_html():
             color: #fff;
             margin-bottom: 8px;
             letter-spacing: -1px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.4);
         }}
         .hero p {{
             font-size: 16px;
-            color: #6b7280;
+            color: #d1d5db;
             max-width: 500px;
             margin: 0 auto 32px;
             line-height: 1.6;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }}
         .hero-stats {{
             display: flex;
@@ -571,13 +589,15 @@ def generate_html():
         .hero-stat .number {{
             font-size: 28px;
             font-weight: 700;
-            color: #8b5cf6;
+            color: #c4b5fd;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }}
         .hero-stat .label {{
             font-size: 12px;
-            color: #525252;
+            color: #d1d5db;
             letter-spacing: 0.5px;
             margin-top: 4px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
         }}
         .hero-cta {{
             display: inline-block;
@@ -589,6 +609,7 @@ def generate_html():
             font-weight: 600;
             font-size: 15px;
             transition: background 0.2s;
+            box-shadow: 0 4px 12px rgba(139,92,246,0.4);
         }}
         .hero-cta:hover {{ background: #7c3aed; }}
 
@@ -1184,7 +1205,10 @@ def generate_html():
 
             /* Hero mobile */
             .hero {{
-                padding: 32px 8px 24px;
+                padding: 48px 16px 36px;
+                margin: 0 8px 16px;
+                border-radius: 12px;
+                background-image: url('https://photos.smugmug.com/photos/i-VqnMPLz/0/Kd2nZQ6mNq7gxWCvG9bnXfk4xpp9JSX64npLRHHNV/XL/i-VqnMPLz-XL.jpg');
             }}
             .hero-logo {{ font-size: 40px; }}
             .hero h1 {{
