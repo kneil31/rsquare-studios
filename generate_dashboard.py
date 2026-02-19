@@ -764,6 +764,140 @@ def generate_html():
             color: #525252;
         }}
 
+        /* Booking form */
+        .book-form {{
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-width: 500px;
+        }}
+        .form-row {{
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }}
+        .form-label {{
+            font-size: 12px;
+            font-weight: 700;
+            color: #525252;
+            letter-spacing: 0.5px;
+        }}
+        .form-input, .form-select {{
+            padding: 10px 14px;
+            background: #202020;
+            border: 1px solid #2d2d2d;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 15px;
+            outline: none;
+            font-family: inherit;
+            -webkit-appearance: none;
+        }}
+        .form-input:focus, .form-select:focus {{ border-color: #8b5cf6; }}
+        .form-input::placeholder {{ color: #3d3d3d; }}
+        .form-select {{ cursor: pointer; }}
+        .form-select option {{ background: #202020; }}
+        .form-row-inline {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }}
+        .quote-preview {{
+            background: #1a1a2e;
+            border: 1px solid #2d2d4e;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 8px;
+            white-space: pre-line;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #c4b5fd;
+        }}
+        .quote-preview strong {{ color: #e0e7ff; }}
+        .copy-btn {{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 24px;
+            background: #8b5cf6;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }}
+        .copy-btn:hover {{ background: #7c3aed; }}
+        .copy-btn:active {{ transform: scale(0.97); }}
+        .share-wa-btn {{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 24px;
+            background: #25D366;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }}
+        .share-wa-btn:hover {{ background: #1da851; }}
+        .btn-row {{
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }}
+        .crosssell-card {{
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            background: #1c1917;
+            border: 1px solid #4a3520;
+            border-radius: 12px;
+            margin-top: 28px;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.2s;
+        }}
+        .crosssell-card:hover {{ border-color: #f59e0b; }}
+        .crosssell-icon {{ font-size: 36px; }}
+        .crosssell-info {{ flex: 1; }}
+        .crosssell-title {{ font-size: 15px; font-weight: 600; color: #fef3c7; }}
+        .crosssell-desc {{ font-size: 13px; color: #a8956e; margin-top: 2px; }}
+        .proscons {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }}
+        .proscons-col {{
+            background: #202020;
+            border-radius: 10px;
+            padding: 16px;
+        }}
+        .proscons-col h4 {{
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }}
+        .proscons-col ul {{
+            list-style: none;
+            padding: 0;
+        }}
+        .proscons-col li {{
+            font-size: 13px;
+            color: #9ca3af;
+            padding: 4px 0;
+            line-height: 1.5;
+        }}
+
         /* Password gate */
         .pw-gate {{
             text-align: center;
@@ -1135,6 +1269,12 @@ def generate_html():
             .pipeline-row {{ flex-direction: column; gap: 6px; }}
             .pipeline-stage {{ min-width: auto; padding: 10px; font-size: 13px; }}
 
+            /* Booking form mobile */
+            .form-row-inline {{ grid-template-columns: 1fr; }}
+            .btn-row {{ flex-direction: column; }}
+            .copy-btn, .share-wa-btn {{ width: 100%; justify-content: center; padding: 14px; }}
+            .proscons {{ grid-template-columns: 1fr; }}
+
             /* Password gate */
             .pw-gate {{ padding: 40px 16px; }}
             .pw-input {{ width: 100%; max-width: 260px; font-size: 16px; padding: 12px 16px; }}
@@ -1198,6 +1338,10 @@ def generate_html():
                 <span class="bnav-icon">💰</span>
                 Pricing
             </div>
+            <div class="bnav-item" onclick="mobileNav('booking')" id="bnav-booking">
+                <span class="bnav-icon">📋</span>
+                Book
+            </div>
             <div class="bnav-item" onclick="mobileNav('contact')" id="bnav-contact">
                 <span class="bnav-icon">📞</span>
                 Contact
@@ -1220,6 +1364,7 @@ def generate_html():
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label">PRICING</div>
             <a class="sidebar-link" onclick="showSection('pricing')">💰 Packages &amp; Pricing</a>
+            <a class="sidebar-link" onclick="showSection('booking')">📋 Book / Get Quote</a>
 
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label" id="wf-section-label">
@@ -1312,6 +1457,107 @@ def generate_html():
                         Full payment must be in <strong>CASH</strong>
                     </div>
                 </div>
+
+                <!-- 1 vs 2 person comparison -->
+                <div style="margin-top:28px;">
+                    <h3 style="font-size:16px; font-weight:700; color:#fff; margin-bottom:4px;">1 Person vs 2 Persons — What to Expect</h3>
+                    <div class="proscons">
+                        <div class="proscons-col" style="border:1px solid #2d4a2d;">
+                            <h4 style="color:#10b981;">1 Person — Pros</h4>
+                            <ul>
+                                <li>&#10003; Lower price point</li>
+                                <li>&#10003; All major moments captured (photos &amp; video)</li>
+                            </ul>
+                        </div>
+                        <div class="proscons-col" style="border:1px solid #4a2d2d;">
+                            <h4 style="color:#ef4444;">1 Person — Trade-offs</h4>
+                            <ul>
+                                <li>Fewer candid moments (one person doing both jobs)</li>
+                                <li>Footage may be less &mdash; teaser a little shorter, fewer photos compared to 2 persons</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top:24px; text-align:center;">
+                    <button class="copy-btn" onclick="showSection('booking')" style="background:#8b5cf6;">📋 Get a Quote</button>
+                </div>
+            </div>
+
+            <!-- BOOKING -->
+            <div class="page" id="booking">
+                <div class="page-breadcrumb">Book</div>
+                <h1 class="page-title">Get a Quote</h1>
+                <div class="page-meta">Fill in the details and share via WhatsApp or copy to clipboard</div>
+
+                <div class="book-form" id="book-form">
+                    <div class="form-row">
+                        <label class="form-label">CLIENT NAME</label>
+                        <input class="form-input" id="q-name" placeholder="Client name" oninput="updateQuote()">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">EVENT</label>
+                        <input class="form-input" id="q-event" placeholder="e.g. Wedding, Birthday, Maternity" oninput="updateQuote()">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">LOCATION</label>
+                        <input class="form-input" id="q-location" placeholder="Venue / City" oninput="updateQuote()">
+                    </div>
+                    <div class="form-row-inline">
+                        <div class="form-row">
+                            <label class="form-label">DATE</label>
+                            <input class="form-input" id="q-date" type="date" oninput="updateQuote()">
+                        </div>
+                        <div class="form-row">
+                            <label class="form-label">TOTAL HOURS</label>
+                            <input class="form-input" id="q-hours" type="number" min="1" placeholder="Hours" oninput="updateQuote()">
+                        </div>
+                    </div>
+                    <div class="form-row-inline">
+                        <div class="form-row">
+                            <label class="form-label">SHOOT TYPE</label>
+                            <select class="form-select" id="q-shoottype" onchange="updateQuote()">
+                                <option value="Outdoor">Outdoor</option>
+                                <option value="Indoor">Indoor</option>
+                                <option value="Outdoor + Indoor">Outdoor + Indoor</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label class="form-label">SERVICES</label>
+                            <select class="form-select" id="q-services" onchange="updateQuote()">
+                                <option value="Photography — 1 Person ($150/hr)">Photography — 1 Person ($150/hr)</option>
+                                <option value="Photo &amp; Video — 1 Person ($235/hr)">Photo &amp; Video — 1 Person ($235/hr)</option>
+                                <option value="Photo &amp; Video — 2 Persons ($325/hr)">Photo &amp; Video — 2 Persons ($325/hr)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row-inline">
+                        <div class="form-row">
+                            <label class="form-label">QUOTE (auto-calculated)</label>
+                            <input class="form-input" id="q-quote" readonly style="color:#8b5cf6; font-weight:700;">
+                        </div>
+                        <div class="form-row">
+                            <label class="form-label">DEPOSIT</label>
+                            <input class="form-input" id="q-deposit" placeholder="e.g. $100" oninput="updateQuote()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quote-preview" id="quote-preview" style="margin-top:20px;"></div>
+
+                <div class="btn-row">
+                    <button class="copy-btn" onclick="copyQuote()">📋 Copy Quote</button>
+                    <a class="share-wa-btn" id="wa-share-btn" href="#" target="_blank" rel="noopener" onclick="shareQuoteWA(event)">💬 Send via WhatsApp</a>
+                </div>
+
+                <a href="https://www.rsquarestudios.com/2025-Fam/Bakedbysarvanii/n-SJjjvn" target="_blank" rel="noopener" class="crosssell-card">
+                    <div class="crosssell-icon">🎂</div>
+                    <div class="crosssell-info">
+                        <div class="crosssell-title">We also bake cakes for events &amp; parties!</div>
+                        <div class="crosssell-desc">Check out @bakedbysarvani — custom cakes, desserts &amp; more</div>
+                    </div>
+                    <div class="gallery-arrow">&#8599;</div>
+                </a>
             </div>
 
             <!-- PASSWORD GATE -->
@@ -1593,6 +1839,7 @@ def generate_html():
                 'home': 'bnav-home',
                 'portfolio-home': 'bnav-portfolio',
                 'pricing': 'bnav-pricing',
+                'booking': 'bnav-booking',
                 'contact': 'bnav-contact',
             }};
             const tabId = tabMap[sectionId];
@@ -1607,6 +1854,92 @@ def generate_html():
 
         // Load checklists on page load
         loadChecklist();
+
+        // Quote form logic
+        const rateMap = {{
+            'Photography — 1 Person ($150/hr)': 150,
+            'Photo & Video — 1 Person ($235/hr)': 235,
+            'Photo & Video — 2 Persons ($325/hr)': 325,
+        }};
+
+        function updateQuote() {{
+            const svc = document.getElementById('q-services').value;
+            // Decode HTML entities for matching
+            const svcText = svc.replace(/&amp;/g, '&');
+            const hours = parseInt(document.getElementById('q-hours').value) || 0;
+            const rate = rateMap[svcText] || 0;
+            const total = rate * hours;
+            document.getElementById('q-quote').value = total > 0 ? '$' + total.toLocaleString() : '';
+
+            // Update preview
+            const name = document.getElementById('q-name').value || '___';
+            const event = document.getElementById('q-event').value || '___';
+            const location = document.getElementById('q-location').value || '___';
+            const dateVal = document.getElementById('q-date').value;
+            const shootType = document.getElementById('q-shoottype').value;
+            const deposit = document.getElementById('q-deposit').value || '___';
+
+            let dateDisplay = '___';
+            if (dateVal) {{
+                const d = new Date(dateVal + 'T12:00:00');
+                dateDisplay = d.toLocaleDateString('en-US', {{ weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }});
+            }}
+
+            const quote = total > 0 ? '$' + total.toLocaleString() : '___';
+
+            const text = `Client Name: ${{name}}
+Event: ${{event}}
+Location: ${{location}}
+Date: ${{dateDisplay}}
+Shoot Type: ${{shootType}}
+Services: ${{svcText}}
+Quote: ${{quote}}
+Total Hours: ${{hours || '___'}}
+Deposit: ${{deposit}}
+
+Deliverables:
+• Edited pictures (Delivered in 12-15 Days)
+• Cinematic Teaser (Delivered in 3-4 Weeks)
+
+Download Instructions:
+Pictures can be downloaded in one go from Desktop only. Download link will be sent to the provided email. Usually takes 15-30 mins to prepare. Link expires in 3 months — please download ASAP.
+
+We also bake cakes for events and parties! Check our work: https://www.rsquarestudios.com/2025-Fam/Bakedbysarvanii/n-SJjjvn
+
+https://dot.cards/rsquarestudios`;
+
+            document.getElementById('quote-preview').textContent = text;
+        }}
+
+        function getQuoteText() {{
+            return document.getElementById('quote-preview').textContent;
+        }}
+
+        function copyQuote() {{
+            const text = getQuoteText();
+            navigator.clipboard.writeText(text).then(() => {{
+                showToast('Quote copied to clipboard!');
+            }}).catch(() => {{
+                // Fallback
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('Quote copied!');
+            }});
+        }}
+
+        function shareQuoteWA(e) {{
+            e.preventDefault();
+            const text = getQuoteText();
+            const encoded = encodeURIComponent(text);
+            window.open('https://wa.me/?text=' + encoded, '_blank');
+        }}
+
+        // Initialize quote preview
+        updateQuote();
     </script>
 </body>
 </html>"""
