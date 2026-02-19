@@ -199,30 +199,63 @@ def md_to_html_simple(md_text):
 
 def build_gallery_cards(galleries):
     """Build gallery card HTML for each category."""
+    # Display order for categories
+    category_order = [
+        "wedding", "engagement", "pre_wedding", "half_saree",
+        "maternity", "baby_shower", "birthday", "cradle",
+        "housewarming", "anniversary", "pooja", "naming",
+    ]
     category_icons = {
         "wedding": "💍",
+        "engagement": "💎",
+        "pre_wedding": "💐",
+        "half_saree": "🪷",
         "maternity": "🤰",
-        "newborn": "👶",
+        "baby_shower": "👶",
         "birthday": "🎂",
         "cradle": "🍼",
+        "housewarming": "🏠",
+        "anniversary": "🥂",
+        "pooja": "🪔",
+        "naming": "✨",
     }
     category_labels = {
         "wedding": "Wedding",
+        "engagement": "Engagement",
+        "pre_wedding": "Pre-Wedding",
+        "half_saree": "Half Saree",
         "maternity": "Maternity",
-        "newborn": "Baby Shower",
+        "baby_shower": "Baby Shower",
         "birthday": "Birthday",
         "cradle": "Cradle Ceremony",
+        "housewarming": "Housewarming",
+        "anniversary": "Anniversary",
+        "pooja": "Pooja",
+        "naming": "Naming Ceremony",
     }
     category_covers = {
         "wedding": ("https://photos.smugmug.com/photos/i-BvTChsc/0/LwhGTh2B2pCPDgNpjPJp8J3nCSfRNdKwd3j5CVTKN/X3/i-BvTChsc-X3.jpg", "center center"),
+        "engagement": ("https://photos.smugmug.com/photos/i-8NfsLKT/0/LVnhsbXXV3JPcX2r2PhvcKfCj9gK9czpWsZ2VXrSH/X3/i-8NfsLKT-X3.jpg", "center center"),
+        "pre_wedding": ("https://photos.smugmug.com/photos/i-GfR24FT/0/MHQbxRCTTvn8x7WXCkzHRjCWR96TC6TnBsTfQRFQ7/X3/i-GfR24FT-X3.jpg", "center center"),
+        "half_saree": ("https://photos.smugmug.com/photos/i-MCmGphP/0/NZvk2KBMQzVZvJJTQh23xdmRRsvzNzGRdBgx2HX66/X3/i-MCmGphP-X3.jpg", "center center"),
         "maternity": ("https://photos.smugmug.com/photos/i-ZqWs3n5/0/NcPVRqqFJXR3MJfcVn45gshTHXpxkZFvfv655D3mB/X3/i-ZqWs3n5-X3.jpg", "center 15%"),
-        "newborn": ("https://photos.smugmug.com/photos/i-3MjgbV3/0/NWkJRQPLmfwjxBJ2qLpKLS2RHVpb39NtfssFhZJxp/X3/i-3MjgbV3-X3.jpg", "center 25%"),
+        "baby_shower": ("https://photos.smugmug.com/photos/i-3MjgbV3/0/NWkJRQPLmfwjxBJ2qLpKLS2RHVpb39NtfssFhZJxp/X3/i-3MjgbV3-X3.jpg", "center 25%"),
         "birthday": ("https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg", "center center"),
         "cradle": ("https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg", "center center"),
+        "housewarming": ("https://photos.smugmug.com/photos/i-MPN69Q3/0/LGSxZbpLfpcb7j3kqQkkTdfwDHcJbV6XdxnGNq6Hb/X3/i-MPN69Q3-X3.jpg", "center center"),
+        "anniversary": ("https://photos.smugmug.com/photos/i-BxZBSsw/0/NPrN8GFPvVsm6HZnznxrGgLHmK954XMNtc7X8QSjz/X3/i-BxZBSsw-X3.jpg", "center center"),
+        "pooja": ("https://photos.smugmug.com/photos/i-PH8MsxV/0/NhJtD4s8NGDq5pDbNb6R5v7L4KFkLp5frQ8Bb7dXw/X3/i-PH8MsxV-X3.jpg", "center center"),
+        "naming": ("https://photos.smugmug.com/photos/i-Qczdg8B/0/NCxFpSt3358Zs4vdKDxmPXb88jdFqFQGJmD2gLqtN/X3/i-Qczdg8B-X3.jpg", "center center"),
     }
 
     cards_by_category = {}
-    for cat, items in galleries.items():
+    # Iterate in display order, skip categories not in data
+    ordered_cats = [(c, galleries[c]) for c in category_order if c in galleries]
+    # Add any categories in data but not in order list
+    for c in galleries:
+        if c not in category_order:
+            ordered_cats.append((c, galleries[c]))
+    for cat, items in ordered_cats:
         cards = ""
         for g in items:
             name = g["name"]
@@ -260,7 +293,7 @@ def build_gallery_cards(galleries):
             # No icon element needed — handled by CSS class
 
             # Assign style per category for demo
-            demo_styles = {"wedding": "monogram", "cradle": "monogram", "maternity": "date", "birthday": "date", "newborn": "line"}
+            demo_styles = {"wedding": "monogram", "cradle": "monogram", "engagement": "monogram", "half_saree": "monogram", "housewarming": "monogram", "naming": "monogram", "maternity": "date", "birthday": "date", "anniversary": "date", "pooja": "date", "baby_shower": "line", "pre_wedding": "line"}
             style = demo_styles.get(cat, "monogram")
 
             if style == "monogram":
