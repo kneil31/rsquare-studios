@@ -213,6 +213,13 @@ def build_gallery_cards(galleries):
         "birthday": "Birthday",
         "cradle": "Cradle Ceremony",
     }
+    category_covers = {
+        "wedding": "https://photos.smugmug.com/photos/i-BvTChsc/0/LwhGTh2B2pCPDgNpjPJp8J3nCSfRNdKwd3j5CVTKN/X3/i-BvTChsc-X3.jpg",
+        "maternity": "https://photos.smugmug.com/photos/i-ZqWs3n5/0/NcPVRqqFJXR3MJfcVn45gshTHXpxkZFvfv655D3mB/X3/i-ZqWs3n5-X3.jpg",
+        "newborn": "https://photos.smugmug.com/photos/i-mCbjVpK/0/LPPzwRcP7Q4BxJtcLzFfxGJz6TcDPWzPZGDX8M64F/X3/i-mCbjVpK-X3.jpg",
+        "birthday": "https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg",
+        "cradle": "https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg",
+    }
 
     cards_by_category = {}
     for cat, items in galleries.items():
@@ -240,6 +247,7 @@ def build_gallery_cards(galleries):
             "icon": category_icons.get(cat, "📷"),
             "label": category_labels.get(cat, cat.title()),
             "count": len(items),
+            "cover": category_covers.get(cat, ""),
         }
     return cards_by_category
 
@@ -621,23 +629,42 @@ def generate_html():
             margin-top: 24px;
         }}
         .cat-tile {{
-            background: #202020;
-            border: 1px solid #2d2d2d;
+            position: relative;
             border-radius: 12px;
-            padding: 24px;
+            padding: 0;
             text-align: center;
             cursor: pointer;
-            transition: border-color 0.2s, transform 0.15s;
+            transition: transform 0.15s, box-shadow 0.2s;
             text-decoration: none;
             color: inherit;
+            overflow: hidden;
+            aspect-ratio: 4/3;
+            display: flex;
+            align-items: flex-end;
+            background-size: cover;
+            background-position: center;
+        }}
+        .cat-tile::before {{
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.75) 100%);
+            z-index: 0;
         }}
         .cat-tile:hover {{
-            border-color: #8b5cf6;
-            transform: translateY(-2px);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(139,92,246,0.25);
         }}
-        .cat-icon {{ font-size: 36px; margin-bottom: 10px; }}
-        .cat-name {{ font-size: 16px; font-weight: 600; color: #e0e0e0; margin-bottom: 4px; }}
-        .cat-count {{ font-size: 13px; color: #525252; }}
+        .cat-tile-content {{
+            position: relative;
+            z-index: 1;
+            padding: 16px 20px;
+            width: 100%;
+            text-align: left;
+        }}
+        .cat-icon {{ display: none; }}
+        .cat-name {{ font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }}
+        .cat-count {{ font-size: 13px; color: #d1d5db; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }}
 
         /* Gallery cards */
         .gallery-grid {{
@@ -1241,10 +1268,12 @@ def generate_html():
                 gap: 10px;
             }}
             .cat-tile {{
-                padding: 18px 12px;
+                aspect-ratio: 3/2;
             }}
-            .cat-icon {{ font-size: 30px; margin-bottom: 6px; }}
-            .cat-name {{ font-size: 14px; }}
+            .cat-tile-content {{
+                padding: 10px 12px;
+            }}
+            .cat-name {{ font-size: 15px; }}
 
             /* Gallery cards mobile — bigger touch targets */
             .gallery-grid {{ gap: 10px; }}
@@ -1445,10 +1474,11 @@ def generate_html():
                 <div class="page-meta">{total_galleries} curated galleries &middot; Tap any category to browse our recent work</div>
                 <div class="cat-grid">
                     {"".join(f'''
-                    <div class="cat-tile" onclick="showSection('portfolio-{cat}')">
-                        <div class="cat-icon">{info['icon']}</div>
-                        <div class="cat-name">{info['label']}</div>
-                        <div class="cat-count">{info['count']} galleries</div>
+                    <div class="cat-tile" onclick="showSection('portfolio-{cat}')" style="background-image:url('{info['cover']}')">
+                        <div class="cat-tile-content">
+                            <div class="cat-name">{info['label']}</div>
+                            <div class="cat-count">{info['count']} galleries</div>
+                        </div>
                     </div>''' for cat, info in gallery_cards.items())}
                 </div>
             </div>
