@@ -832,6 +832,64 @@ def generate_html():
             display: block;
         }}
 
+        /* Video grid */
+        .video-grid {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }}
+        .video-card {{
+            text-decoration: none;
+            color: inherit;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #252525;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }}
+        .video-card:hover {{
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(139,92,246,0.2);
+        }}
+        .video-thumb {{
+            position: relative;
+            aspect-ratio: 16/9;
+            background-size: cover;
+            background-position: center;
+        }}
+        .video-play {{
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 48px;
+            height: 48px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #fff;
+        }}
+        .video-duration {{
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }}
+        .video-title {{
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #e0e0e0;
+            line-height: 1.3;
+        }}
+
         /* Gallery cards */
         .gallery-grid {{
             display: flex;
@@ -1574,6 +1632,11 @@ def generate_html():
             .cat-hero-content {{ padding: 16px; }}
             .cat-hero-title {{ font-size: 22px; }}
 
+            /* Video grid mobile */
+            .video-grid {{ grid-template-columns: 1fr; gap: 12px; }}
+            .video-play {{ width: 40px; height: 40px; font-size: 16px; }}
+            .video-title {{ font-size: 14px; padding: 8px 10px; }}
+
             /* Gallery cards mobile */
             .gallery-grid {{ gap: 8px; }}
             .gallery-card {{
@@ -1719,6 +1782,7 @@ def generate_html():
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label">PORTFOLIO</div>
             <a class="sidebar-link" onclick="showSection('portfolio-home')">📸 All Categories</a>
+            <a class="sidebar-link" onclick="showSection('videos')">🎬 Videos</a>
             {gallery_sidebar}
 
             <div class="sidebar-divider"></div>
@@ -1790,6 +1854,89 @@ def generate_html():
 
             <!-- PORTFOLIO CATEGORIES -->
             {portfolio_pages}
+
+            <!-- VIDEOS -->
+            <div class="page" id="videos">
+                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <div class="page-breadcrumb">Portfolio</div>
+                <h1 class="page-title">Videos</h1>
+                <div class="page-meta">Highlight reels and cinematic teasers from our events</div>
+                <div class="video-grid">
+                    <a href="https://www.youtube.com/watch?v=ATyq7m_gLtY" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/ATyq7m_gLtY/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:25</div>
+                        </div>
+                        <div class="video-title">Rashmi Baby Shower</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=Yvn_19i9S-g" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/Yvn_19i9S-g/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">7:03</div>
+                        </div>
+                        <div class="video-title">Nithya &amp; Sunil Housewarming</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=tz3Fv7_n5CE" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/tz3Fv7_n5CE/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">11:20</div>
+                        </div>
+                        <div class="video-title">SRI HouseWarming Ceremony</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=iNz3KN2RQc8" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/iNz3KN2RQc8/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">5:27</div>
+                        </div>
+                        <div class="video-title">Koluguri's Gruhapravesam</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=rrus2g4RouI" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/rrus2g4RouI/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">4:59</div>
+                        </div>
+                        <div class="video-title">Santosh &amp; Teju Housewarming</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=keUYBHOwrh0" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/keUYBHOwrh0/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">7:23</div>
+                        </div>
+                        <div class="video-title">Sandeep &amp; Swetha Housewarming</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=B4WH92E3ov4" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/B4WH92E3ov4/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">6:39</div>
+                        </div>
+                        <div class="video-title">ShravArt's Housewarming</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=tSe9bVIzG64" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/tSe9bVIzG64/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">5:53</div>
+                        </div>
+                        <div class="video-title">Aravind &amp; Srinidhi Housewarming</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=75X1g6tDQ00" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/75X1g6tDQ00/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">4:06</div>
+                        </div>
+                        <div class="video-title">Teju House Warming</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=yUGVo7AfTQY" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/yUGVo7AfTQY/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">6:10</div>
+                        </div>
+                        <div class="video-title">Nandhini &amp; Anand HW Ceremony</div>
+                    </a>
+                </div>
+                <div style="margin-top:20px; text-align:center;">
+                    <a href="https://www.youtube.com/@rsquarestudios" target="_blank" rel="noopener" style="color:#8b5cf6; text-decoration:none; font-size:14px;">View all on YouTube &rarr;</a>
+                </div>
+            </div>
 
             <!-- PRICING -->
             <div class="page" id="pricing">
