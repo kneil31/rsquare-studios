@@ -2074,8 +2074,10 @@ def generate_html():
             if (target) target.classList.add('active');
             // Update sidebar
             document.querySelectorAll('.sidebar-link').forEach(a => a.classList.remove('active'));
-            // Scroll to top
-            document.getElementById('main-content').scrollTop = 0;
+            // Scroll to top — both the content div and the window
+            const mc = document.getElementById('main-content');
+            if (mc) mc.scrollTop = 0;
+            window.scrollTo(0, 0);
             // Close mobile sidebar + overlay
             closeSidebar();
         }}
@@ -2291,7 +2293,7 @@ Location: ${{location}}
 Date: ${{dateDisplay}}
 Setting: ${{shootType}}
 Coverage: ${{svcText}}
-Hours: ${{hours || '___'}}${{hasLive ? '\nLive Streaming: Yes (+$100)' : ''}}
+Hours: ${{hours || '___'}}${{hasLive ? '\\nLive Streaming: Yes (+$100)' : ''}}
 
 *Investment*
 Total: ${{quote}}
