@@ -1905,6 +1905,13 @@ def generate_html():
                         </div>
                         <div class="video-title">Ranjith Pinky Gender Reveal</div>
                     </a>
+                    <a href="https://www.youtube.com/watch?v=lS1BdiEk3Pg" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/lS1BdiEk3Pg/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">4:43</div>
+                        </div>
+                        <div class="video-title">Vasundhra Baby Shower</div>
+                    </a>
                 </div>
                 <div style="margin-top:20px; text-align:center;">
                     <a href="https://www.youtube.com/@rsquarestudios" target="_blank" rel="noopener" style="color:#8b5cf6; text-decoration:none; font-size:14px;">View all on YouTube &rarr;</a>
