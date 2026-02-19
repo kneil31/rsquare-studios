@@ -233,14 +233,24 @@ def build_gallery_cards(galleries):
             location = parts[2] if len(parts) > 2 else ""
             date_str = parts[0] if len(parts) > 0 else ""
 
+            # Format date nicely
+            try:
+                from datetime import datetime as dt
+                d = dt.strptime(date_str.strip(), "%Y-%m-%d")
+                display_date = d.strftime("%b %d, %Y")
+            except Exception:
+                display_date = date_str
+
+            loc_display = f"{escape_html(location)} &middot; " if location else ""
+
             cards += f"""
                 <a href="{escape_html(url)}" target="_blank" rel="noopener" class="gallery-card">
-                    <div class="gallery-icon">{category_icons.get(cat, '📷')}</div>
+                    <div class="gallery-icon">📷</div>
                     <div class="gallery-info">
                         <div class="gallery-name">{escape_html(short_name)}</div>
-                        <div class="gallery-meta">{escape_html(location)} &middot; {escape_html(date_str)}</div>
+                        <div class="gallery-meta">{loc_display}{escape_html(display_date)}</div>
                     </div>
-                    <div class="gallery-arrow">&#8599;</div>
+                    <div class="gallery-arrow">→</div>
                 </a>"""
         cards_by_category[cat] = {
             "html": cards,
@@ -360,9 +370,12 @@ def generate_html():
         portfolio_pages += f"""
             <div class="page" id="portfolio-{cat}">
                 <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
-                <div class="page-breadcrumb">Portfolio</div>
-                <h1 class="page-title">{info['icon']} {info['label']}</h1>
-                <div class="page-meta">{info['count']} galleries on SmugMug</div>
+                <div class="cat-hero" style="background-image:url('{info['cover']}');background-position:{info['cover_pos']}">
+                    <div class="cat-hero-content">
+                        <div class="cat-hero-title">{info['label']}</div>
+                        <div class="cat-hero-sub">{info['count']} curated galleries</div>
+                    </div>
+                </div>
                 <div class="gallery-grid">{info['html']}</div>
             </div>"""
 
@@ -516,15 +529,21 @@ def generate_html():
         @keyframes fadeIn {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
 
         .back-link {{
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
             font-size: 13px;
-            color: #8b5cf6;
+            font-weight: 500;
+            color: #9ca3af;
             text-decoration: none;
-            margin-bottom: 16px;
-            padding: 4px 0;
+            margin-bottom: 20px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 8px;
             cursor: pointer;
+            transition: color 0.2s, background 0.2s;
         }}
-        .back-link:hover {{ color: #a78bfa; }}
+        .back-link:hover {{ color: #fff; background: rgba(255,255,255,0.08); }}
 
         .page-breadcrumb {{
             font-size: 12px;
@@ -667,33 +686,99 @@ def generate_html():
         .cat-name {{ font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }}
         .cat-count {{ font-size: 13px; color: #d1d5db; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }}
 
+        /* Category hero banner */
+        .cat-hero {{
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: flex-end;
+        }}
+        .cat-hero::before {{
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.7) 100%);
+        }}
+        .cat-hero-content {{
+            position: relative;
+            z-index: 1;
+            padding: 24px;
+        }}
+        .cat-hero-title {{
+            font-size: 28px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }}
+        .cat-hero-sub {{
+            font-size: 14px;
+            color: #d1d5db;
+            margin-top: 4px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+        }}
+
         /* Gallery cards */
         .gallery-grid {{
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 12px;
         }}
         .gallery-card {{
             display: flex;
             align-items: center;
-            gap: 14px;
-            padding: 14px 18px;
-            background: #202020;
-            border: 1px solid #2d2d2d;
-            border-radius: 10px;
+            gap: 16px;
+            padding: 18px 20px;
+            background: #1a1a1a;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
             text-decoration: none;
             color: inherit;
-            transition: border-color 0.15s, transform 0.15s;
+            transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
         }}
         .gallery-card:hover {{
-            border-color: #3d3d3d;
-            transform: translateX(3px);
+            background: #222;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
         }}
-        .gallery-icon {{ font-size: 24px; }}
+        .gallery-icon {{
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }}
         .gallery-info {{ flex: 1; }}
-        .gallery-name {{ font-size: 15px; font-weight: 600; color: #e0e0e0; }}
-        .gallery-meta {{ font-size: 12px; color: #525252; margin-top: 2px; }}
-        .gallery-arrow {{ font-size: 16px; color: #525252; }}
+        .gallery-name {{
+            font-size: 15px;
+            font-weight: 600;
+            color: #f0f0f0;
+            letter-spacing: -0.2px;
+        }}
+        .gallery-meta {{
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 3px;
+            letter-spacing: 0.2px;
+        }}
+        .gallery-arrow {{
+            font-size: 14px;
+            color: #6b7280;
+            transition: color 0.2s, transform 0.2s;
+        }}
+        .gallery-card:hover .gallery-arrow {{
+            color: #8b5cf6;
+            transform: translateX(2px);
+        }}
 
         /* Pricing cards */
         .pricing-grid {{
@@ -1276,12 +1361,27 @@ def generate_html():
             }}
             .cat-name {{ font-size: 15px; }}
 
-            /* Gallery cards mobile — bigger touch targets */
+            /* Category hero mobile */
+            .cat-hero {{
+                height: 160px;
+                border-radius: 12px;
+                margin-bottom: 20px;
+            }}
+            .cat-hero-content {{ padding: 16px; }}
+            .cat-hero-title {{ font-size: 22px; }}
+
+            /* Gallery cards mobile */
             .gallery-grid {{ gap: 10px; }}
             .gallery-card {{
-                padding: 16px;
+                padding: 14px 16px;
                 gap: 12px;
-                min-height: 64px;
+                border-radius: 12px;
+            }}
+            .gallery-icon {{
+                width: 38px;
+                height: 38px;
+                border-radius: 8px;
+                font-size: 16px;
             }}
             .gallery-name {{ font-size: 14px; }}
             .gallery-meta {{ font-size: 11px; }}
