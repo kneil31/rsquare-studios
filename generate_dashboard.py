@@ -214,11 +214,11 @@ def build_gallery_cards(galleries):
         "cradle": "Cradle Ceremony",
     }
     category_covers = {
-        "wedding": "https://photos.smugmug.com/photos/i-BvTChsc/0/LwhGTh2B2pCPDgNpjPJp8J3nCSfRNdKwd3j5CVTKN/X3/i-BvTChsc-X3.jpg",
-        "maternity": "https://photos.smugmug.com/photos/i-ZqWs3n5/0/NcPVRqqFJXR3MJfcVn45gshTHXpxkZFvfv655D3mB/X3/i-ZqWs3n5-X3.jpg",
-        "newborn": "https://photos.smugmug.com/photos/i-hXrN3Fk/0/LfdM2tXQMkRMVZjPKm6wn8bqkCFTRBWRTNSdZmhMp/X3/i-hXrN3Fk-X3.jpg",
-        "birthday": "https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg",
-        "cradle": "https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg",
+        "wedding": ("https://photos.smugmug.com/photos/i-BvTChsc/0/LwhGTh2B2pCPDgNpjPJp8J3nCSfRNdKwd3j5CVTKN/X3/i-BvTChsc-X3.jpg", "center center"),
+        "maternity": ("https://photos.smugmug.com/photos/i-ZqWs3n5/0/NcPVRqqFJXR3MJfcVn45gshTHXpxkZFvfv655D3mB/X3/i-ZqWs3n5-X3.jpg", "center 20%"),
+        "newborn": ("https://photos.smugmug.com/photos/i-3MjgbV3/0/NWkJRQPLmfwjxBJ2qLpKLS2RHVpb39NtfssFhZJxp/X3/i-3MjgbV3-X3.jpg", "center center"),
+        "birthday": ("https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg", "center center"),
+        "cradle": ("https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg", "center center"),
     }
 
     cards_by_category = {}
@@ -247,7 +247,8 @@ def build_gallery_cards(galleries):
             "icon": category_icons.get(cat, "📷"),
             "label": category_labels.get(cat, cat.title()),
             "count": len(items),
-            "cover": category_covers.get(cat, ""),
+            "cover": category_covers.get(cat, ("", "center center"))[0],
+            "cover_pos": category_covers.get(cat, ("", "center center"))[1],
         }
     return cards_by_category
 
@@ -1474,7 +1475,7 @@ def generate_html():
                 <div class="page-meta">{total_galleries} curated galleries &middot; Tap any category to browse our recent work</div>
                 <div class="cat-grid">
                     {"".join(f'''
-                    <div class="cat-tile" onclick="showSection('portfolio-{cat}')" style="background-image:url('{info['cover']}')">
+                    <div class="cat-tile" onclick="showSection('portfolio-{cat}')" style="background-image:url('{info['cover']}');background-position:{info['cover_pos']}">
                         <div class="cat-tile-content">
                             <div class="cat-name">{info['label']}</div>
                             <div class="cat-count">{info['count']} galleries</div>
