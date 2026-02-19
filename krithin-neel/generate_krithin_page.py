@@ -3,20 +3,33 @@
 KRITHIN NEEL FAMILY MEMORIES PAGE GENERATOR
 Generates a warm, baby/family-themed single-page site for GitHub Pages.
 
-Tabs: Krithin | Monika | Family
+Tabs: Krithin | Monika | Family | Reels
 Each tab shows gallery cards (SmugMug links) and video cards (YouTube links).
 
 Usage:
-    python3 generate_krithin_page.py
+    KRITHIN_PAGE_PASSWORD="your-passphrase" python3 generate_krithin_page.py
     # Generates output/index.html
+
+    # Or with .secret file:
+    echo "your-passphrase" > .secret
+    python3 generate_krithin_page.py
 
 Data source:
     ../album_stats.json (image counts + SmugMug URLs)
+
+Security:
+    - AES-256-GCM encryption (all content encrypted at build time)
+    - PBKDF2 key derivation (400k iterations)
+    - Data-driven DOM building (no innerHTML for user data)
+    - URL allowlist validation in JS
+    - No external dependencies (system fonts, no Google Fonts)
+    - Referrer policy: no-referrer
 """
 
 import json
 import os
 import base64
+import sys
 import webbrowser
 from pathlib import Path
 from datetime import datetime
@@ -29,10 +42,31 @@ OUTPUT_DIR = SCRIPT_DIR / "output"
 OUTPUT_FILE = OUTPUT_DIR / "index.html"
 ALBUM_STATS_FILE = SCRIPT_DIR.parent / "album_stats.json"
 COVER_IMAGES_FILE = SCRIPT_DIR / "cover_images.json"
+SECRET_FILE = SCRIPT_DIR / ".secret"
 
-# Password for AES-256-GCM encryption
-PAGE_PASSWORD = "Kn!7h$Xw9#mP2@vR4&qZ"
-PBKDF2_ITERATIONS = 100_000
+# AES-256-GCM encryption settings
+PBKDF2_ITERATIONS = 400_000
+
+
+def get_password():
+    """Read password from env var, .secret file, or prompt."""
+    # 1. Environment variable
+    pw = os.environ.get("KRITHIN_PAGE_PASSWORD", "").strip()
+    if pw:
+        return pw
+    # 2. .secret file (untracked)
+    if SECRET_FILE.exists():
+        pw = SECRET_FILE.read_text(encoding="utf-8").strip()
+        if pw:
+            return pw
+    # 3. Interactive prompt
+    print("No password found in KRITHIN_PAGE_PASSWORD env var or .secret file.")
+    print("Enter password (will be visible): ", end="", flush=True)
+    pw = input().strip()
+    if not pw:
+        print("ERROR: Password cannot be empty.")
+        sys.exit(1)
+    return pw
 
 
 def encrypt_content(plaintext, password):
@@ -288,7 +322,7 @@ FAMILY_GALLERIES = [
         "date": "December 29, 2024",
         "url": "https://www.rsquarestudios.com/2024/2024-12-29---Monika-Neel-HW---Corinth/n-cDsRTB",
         "node_id": "cDsRTB",
-        "icon": "👨‍👩‍👦",
+        "icon": "👨\u200d👩\u200d👦",
         "cover": "https://photos.smugmug.com/photos/i-2vgmVNq/0/NLBrZ6bJRj78FcHMGhh8VPGPPfQhBCB67KfKmmRQF/XL/i-2vgmVNq-XL.jpg",
     },
 ]
@@ -315,141 +349,346 @@ def load_cover_images():
     return {}
 
 
-def escape_html(text):
-    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
+# ─── Data Resolvers (produce plain dicts, no HTML) ─────────────────────────────
 
-
-def build_gallery_card(gallery, image_counts, cover_images):
-    title = escape_html(gallery["title"])
-    subtitle = escape_html(gallery.get("subtitle", ""))
-    date = escape_html(gallery.get("date", ""))
-    url = gallery["url"]
-    icon = gallery.get("icon", "📷")
+def resolve_gallery(gallery, image_counts, cover_images):
+    """Resolve a gallery dict into a serializable data dict."""
     node_id = gallery.get("node_id", "")
     count = image_counts.get(node_id, 0)
 
-    count_badge = f'<span class="tile-badge">{count} images</span>' if count > 0 else ""
-    location_html = f' &middot; {subtitle}' if subtitle else ""
-
-    # Use custom cover if provided, otherwise fall back to cover_images.json
     custom_cover = gallery.get("cover")
-    cover = cover_images.get(node_id)
+    cover_entry = cover_images.get(node_id)
     if custom_cover:
-        bg_url = custom_cover
-    elif cover and cover.get("large"):
-        bg_url = cover["large"]
+        cover_url = custom_cover
+    elif cover_entry and cover_entry.get("large"):
+        cover_url = cover_entry["large"]
     else:
-        bg_url = None
-    if bg_url:
-        return f"""
-      <a href="{url}" target="_blank" rel="noopener" class="tile" style="background-image:url('{bg_url}')">
-        <div class="tile-content">
-          <div class="tile-title">{title}</div>
-          <div class="tile-meta">{date}{location_html}</div>
-          {count_badge}
-        </div>
-      </a>"""
-    else:
-        # Fallback for galleries without cover images
-        return f"""
-      <a href="{url}" target="_blank" rel="noopener" class="tile tile-no-image">
-        <div class="tile-icon">{icon}</div>
-        <div class="tile-content">
-          <div class="tile-title">{title}</div>
-          <div class="tile-meta">{date}{location_html}</div>
-          {count_badge}
-        </div>
-      </a>"""
+        cover_url = None
+
+    return {
+        "title": gallery["title"],
+        "subtitle": gallery.get("subtitle", ""),
+        "date": gallery.get("date", ""),
+        "url": gallery["url"],
+        "icon": gallery.get("icon", "📷"),
+        "count": count,
+        "cover_url": cover_url,
+    }
 
 
-def build_video_card(video):
-    title = escape_html(video["title"])
+def resolve_video(video):
+    """Resolve a video dict into a serializable data dict."""
     url = video.get("url", "")
-
-    if not url:
-        return ""
-
-    # Use custom cover if provided, otherwise YouTube thumbnail
     thumb_url = video.get("cover", "")
-    if not thumb_url:
+    if not thumb_url and url:
         vid_id = url.split("v=")[-1].split("&")[0] if "v=" in url else ""
         thumb_url = f"https://img.youtube.com/vi/{vid_id}/hqdefault.jpg" if vid_id else ""
+    return {
+        "title": video["title"],
+        "subtitle": video.get("subtitle", ""),
+        "url": url,
+        "thumb_url": thumb_url,
+    }
 
-    return f"""
-      <a href="{url}" target="_blank" rel="noopener" class="video-card" style="background-image:url('{thumb_url}')">
-        <div class="video-card-content">
-          <div class="tile-title">{title}</div>
-        </div>
-      </a>"""
 
-
-def build_reel_card(video):
-    title = escape_html(video["title"])
-    url = video.get("url", "")
-    if not url:
-        return ""
-    # Use custom cover image if provided, otherwise YouTube thumbnail
-    thumb_url = video.get("cover", "")
-    if not thumb_url:
+def resolve_reel(reel):
+    """Resolve a reel dict into a serializable data dict."""
+    url = reel.get("url", "")
+    thumb_url = reel.get("cover", "")
+    if not thumb_url and url:
         vid_id = url.split("v=")[-1].split("&")[0] if "v=" in url else ""
         thumb_url = f"https://img.youtube.com/vi/{vid_id}/hqdefault.jpg" if vid_id else ""
-    return f"""
-      <a href="{url}" target="_blank" rel="noopener" class="reel-tile">
-        <img src="{thumb_url}" alt="{title}" loading="lazy">
-        <div class="reel-content">
-          <div class="reel-title">{title}</div>
-        </div>
-      </a>"""
+    return {
+        "title": reel["title"],
+        "url": url,
+        "thumb_url": thumb_url,
+    }
 
 
-def build_reels_tab(reels):
-    cards_html = '<div class="reels-grid">\n'
-    for r in reels:
-        cards_html += build_reel_card(r)
-    cards_html += "\n</div>\n"
-    return f"""
-    <div id="tab-reels" class="tab-content">
-      {cards_html}
-    </div>"""
-
-
-def build_tab_content(tab_id, galleries, videos, image_counts, cover_images):
-    cards_html = ""
-    if galleries:
-        cards_html += '<div class="section-label">Photo Galleries</div>\n'
-        cards_html += '<div class="cards-list">\n'
-        for g in galleries:
-            cards_html += build_gallery_card(g, image_counts, cover_images)
-        cards_html += "\n</div>\n"
-    if videos:
-        cards_html += '<div class="section-label">Videos</div>\n'
-        cards_html += '<div class="cards-list video-grid">\n'
-        for v in videos:
-            cards_html += build_video_card(v)
-        cards_html += "\n</div>\n"
-    return f"""
-    <div id="tab-{tab_id}" class="tab-content">
-      {cards_html}
-    </div>"""
-
-
-def generate_html(image_counts, cover_images):
+def generate_html(image_counts, cover_images, password):
     """Generate the full HTML page with AES-256-GCM encrypted content."""
-    krithin_content = build_tab_content("krithin", KRITHIN_GALLERIES, KRITHIN_VIDEOS, image_counts, cover_images)
-    monika_content = build_tab_content("monika", MONIKA_GALLERIES, MONIKA_VIDEOS, image_counts, cover_images)
-    family_content = build_tab_content("family", FAMILY_GALLERIES, [], image_counts, cover_images)
-    reels_content = build_reels_tab(REELS)
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
-    # Encrypt all tab content into a single blob
+    # Build data-only payload (no HTML strings)
     content_payload = json.dumps({
-        "krithin": krithin_content,
-        "monika": monika_content,
-        "family": family_content,
-        "reels": reels_content,
+        "v": 1,
+        "krithin": {
+            "galleries": [resolve_gallery(g, image_counts, cover_images) for g in KRITHIN_GALLERIES],
+            "videos": [resolve_video(v) for v in KRITHIN_VIDEOS],
+        },
+        "monika": {
+            "galleries": [resolve_gallery(g, image_counts, cover_images) for g in MONIKA_GALLERIES],
+            "videos": [resolve_video(v) for v in MONIKA_VIDEOS],
+        },
+        "family": {
+            "galleries": [resolve_gallery(g, image_counts, cover_images) for g in FAMILY_GALLERIES],
+            "videos": [],
+        },
+        "reels": [resolve_reel(r) for r in REELS],
     })
-    encrypted_blob = encrypt_content(content_payload, PAGE_PASSWORD)
+    encrypted_blob = encrypt_content(content_payload, password)
     print(f"  Encrypted content: {len(encrypted_blob)} chars")
+
+    # JS block as a separate string to avoid f-string brace escaping
+    js_block = """
+    const ENCRYPTED_BLOB = "__BLOB__";
+    const PBKDF2_ITERATIONS = __ITERATIONS__;
+    const ALLOWED_HOSTS = ['www.rsquarestudios.com', 'rsquarestudios.com',
+      'photos.smugmug.com', 'www.youtube.com', 'youtube.com', 'youtu.be',
+      'img.youtube.com', 'wa.me', 'kneil31.github.io'];
+
+    // ─── URL Validation ──────────────────────────────────────────────
+    function isAllowedUrl(url) {
+      if (!url) return false;
+      try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'https:') return false;
+        return ALLOWED_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h));
+      } catch { return false; }
+    }
+
+    // ─── DOM Builders ────────────────────────────────────────────────
+    function makeEl(tag, className, text) {
+      const el = document.createElement(tag);
+      if (className) el.className = className;
+      if (text) el.textContent = text;
+      return el;
+    }
+
+    function makeLink(url, className) {
+      const a = document.createElement('a');
+      if (isAllowedUrl(url)) {
+        a.href = url;
+      } else {
+        a.href = '#';
+        a.addEventListener('click', e => e.preventDefault());
+      }
+      a.target = '_blank';
+      a.rel = 'noreferrer noopener';
+      a.referrerPolicy = 'no-referrer';
+      if (className) a.className = className;
+      return a;
+    }
+
+    function setBgImage(el, url) {
+      if (url && isAllowedUrl(url)) {
+        el.style.backgroundImage = "url('" + url + "')";
+      }
+    }
+
+    function buildGalleryCard(g) {
+      if (!g.url) return null;
+      const hasCover = !!g.cover_url;
+      const a = makeLink(g.url, hasCover ? 'tile' : 'tile tile-no-image');
+      if (hasCover) setBgImage(a, g.cover_url);
+
+      if (!hasCover && g.icon) {
+        a.appendChild(makeEl('div', 'tile-icon', g.icon));
+      }
+
+      const content = makeEl('div', 'tile-content');
+      content.appendChild(makeEl('div', 'tile-title', g.title));
+
+      const metaParts = [g.date, g.subtitle].filter(Boolean).join(' \\u00B7 ');
+      if (metaParts) content.appendChild(makeEl('div', 'tile-meta', metaParts));
+
+      if (g.count > 0) {
+        content.appendChild(makeEl('span', 'tile-badge', g.count + ' images'));
+      }
+
+      a.appendChild(content);
+      return a;
+    }
+
+    function buildVideoCard(v) {
+      if (!v.url) return null;
+      const a = makeLink(v.url, 'video-card');
+      if (v.thumb_url) setBgImage(a, v.thumb_url);
+      const inner = makeEl('div', 'video-card-content');
+      inner.appendChild(makeEl('div', 'tile-title', v.title));
+      a.appendChild(inner);
+      return a;
+    }
+
+    function buildReelCard(r) {
+      if (!r.url) return null;
+      const a = makeLink(r.url, 'reel-tile');
+      if (r.thumb_url && isAllowedUrl(r.thumb_url)) {
+        const img = document.createElement('img');
+        img.src = r.thumb_url;
+        img.alt = r.title;
+        img.loading = 'lazy';
+        img.referrerPolicy = 'no-referrer';
+        a.appendChild(img);
+      }
+      const inner = makeEl('div', 'reel-content');
+      inner.appendChild(makeEl('div', 'reel-title', r.title));
+      a.appendChild(inner);
+      return a;
+    }
+
+    function buildTabContent(tabId, tabData) {
+      const container = document.getElementById('tab-' + tabId);
+      if (!container) return;
+      const galleries = tabData.galleries || [];
+      const videos = tabData.videos || [];
+
+      if (galleries.length > 0) {
+        container.appendChild(makeEl('div', 'section-label', 'Photo Galleries'));
+        const grid = makeEl('div', 'cards-list');
+        galleries.forEach(g => {
+          const card = buildGalleryCard(g);
+          if (card) grid.appendChild(card);
+        });
+        container.appendChild(grid);
+      }
+
+      if (videos.length > 0) {
+        container.appendChild(makeEl('div', 'section-label', 'Videos'));
+        const grid = makeEl('div', 'cards-list video-grid');
+        videos.forEach(v => {
+          const card = buildVideoCard(v);
+          if (card) grid.appendChild(card);
+        });
+        container.appendChild(grid);
+      }
+    }
+
+    function buildReelsTab(reels) {
+      const container = document.getElementById('tab-reels');
+      if (!container) return;
+      const grid = makeEl('div', 'reels-grid');
+      reels.forEach(r => {
+        const card = buildReelCard(r);
+        if (card) grid.appendChild(card);
+      });
+      container.appendChild(grid);
+    }
+
+    // ─── Tab Switching ───────────────────────────────────────────────
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // ─── Crypto ──────────────────────────────────────────────────────
+    async function deriveKey(password, salt) {
+      const enc = new TextEncoder();
+      const keyMaterial = await crypto.subtle.importKey(
+        'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+      );
+      return crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt: salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+        keyMaterial,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['decrypt']
+      );
+    }
+
+    async function decryptContent(password, blob) {
+      const raw = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
+      const salt = raw.slice(0, 16);
+      const iv = raw.slice(16, 28);
+      const ciphertext = raw.slice(28);
+      const key = await deriveKey(password, salt);
+      const decrypted = await crypto.subtle.decrypt(
+        { name: 'AES-GCM', iv: iv }, key, ciphertext
+      );
+      return new TextDecoder().decode(decrypted);
+    }
+
+    // ─── Lockout ─────────────────────────────────────────────────────
+    let _failCount = 0;
+    let _lockedOut = false;
+
+    function startLockout() {
+      _lockedOut = true;
+      let seconds = 15;
+      const lockoutEl = document.getElementById('pw-lockout');
+      const btn = document.getElementById('pw-btn');
+      btn.disabled = true;
+      lockoutEl.style.display = 'block';
+      lockoutEl.textContent = 'Too many attempts. Wait ' + seconds + 's...';
+      const timer = setInterval(() => {
+        seconds--;
+        if (seconds <= 0) {
+          clearInterval(timer);
+          _lockedOut = false;
+          _failCount = 0;
+          lockoutEl.style.display = 'none';
+          btn.disabled = false;
+        } else {
+          lockoutEl.textContent = 'Too many attempts. Wait ' + seconds + 's...';
+        }
+      }, 1000);
+    }
+
+    // ─── Password Toggle ─────────────────────────────────────────────
+    function togglePasswordVisibility() {
+      const input = document.getElementById('pw-input');
+      const icon = document.getElementById('eye-icon');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        icon.textContent = '👁';
+      }
+    }
+
+    // ─── Unlock ──────────────────────────────────────────────────────
+    async function checkPassword() {
+      if (_lockedOut) return;
+      const input = document.getElementById('pw-input').value;
+      if (!input) return;
+      const btn = document.getElementById('pw-btn');
+      btn.disabled = true;
+      btn.textContent = 'Checking...';
+
+      try {
+        const plaintext = await decryptContent(input, ENCRYPTED_BLOB);
+        const data = JSON.parse(plaintext);
+
+        // Build DOM from data (no innerHTML)
+        buildTabContent('krithin', data.krithin);
+        buildTabContent('monika', data.monika);
+        buildTabContent('family', data.family);
+        buildReelsTab(data.reels);
+
+        // Show app, hide gate
+        document.getElementById('pw-gate').style.display = 'none';
+        document.getElementById('app-content').classList.add('unlocked');
+        document.getElementById('app-footer').style.display = 'block';
+        document.getElementById('logout-btn').style.display = 'inline-block';
+        _failCount = 0;
+      } catch(e) {
+        _failCount++;
+        document.getElementById('pw-error').style.display = 'block';
+        document.getElementById('pw-input').value = '';
+        document.getElementById('pw-input').focus();
+        if (_failCount >= 3) startLockout();
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Enter';
+    }
+
+    // ─── Logout ──────────────────────────────────────────────────────
+    function logout() {
+      ['krithin', 'monika', 'family', 'reels'].forEach(id => {
+        const el = document.getElementById('tab-' + id);
+        if (el) el.replaceChildren();
+      });
+      location.reload();
+    }
+
+    // Focus password input on load
+    document.getElementById('pw-input').focus();
+    """.replace("__BLOB__", encrypted_blob).replace("__ITERATIONS__", str(PBKDF2_ITERATIONS))
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -457,11 +696,11 @@ def generate_html(image_counts, cover_images):
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Krithin Neel — Family Memories</title>
-  <meta name="description" content="One stop for Krithin Neel's family memories — photo galleries and videos">
+  <meta name="description" content="Family memories page">
   <meta name="theme-color" content="#FFF8F0">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow, noarchive">
+  <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
   <style>
     *, *::before, *::after {{
       margin: 0;
@@ -470,6 +709,7 @@ def generate_html(image_counts, cover_images):
     }}
 
     :root {{
+      --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       --bg: #FFF8F0;
       --bg-card: #FFFFFF;
       --text: #3D2C2E;
@@ -489,7 +729,7 @@ def generate_html(image_counts, cover_images):
     }}
 
     body {{
-      font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-family: var(--font);
       background: var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -523,6 +763,25 @@ def generate_html(image_counts, cover_images):
       font-weight: 600;
     }}
 
+    .logout-btn {{
+      margin-top: 12px;
+      padding: 6px 18px;
+      border: 1.5px solid var(--accent);
+      border-radius: 50px;
+      background: transparent;
+      color: var(--accent);
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+    }}
+
+    .logout-btn:hover {{
+      background: var(--accent);
+      color: #fff;
+    }}
+
     /* ── Tabs ──────────────────────────────────────── */
     .tabs {{
       display: flex;
@@ -540,7 +799,7 @@ def generate_html(image_counts, cover_images):
       padding: 10px 24px;
       border: none;
       border-radius: 50px;
-      font-family: 'Nunito', sans-serif;
+      font-family: inherit;
       font-size: 15px;
       font-weight: 700;
       cursor: pointer;
@@ -824,12 +1083,17 @@ def generate_html(image_counts, cover_images):
       width: 100%;
     }}
 
-    .pw-form input {{
+    .pw-input-wrap {{
+      position: relative;
       flex: 1;
-      padding: 12px 16px;
+    }}
+
+    .pw-input-wrap input {{
+      width: 100%;
+      padding: 12px 44px 12px 16px;
       border: 2px solid var(--accent-soft);
       border-radius: 12px;
-      font-family: 'Nunito', sans-serif;
+      font-family: inherit;
       font-size: 15px;
       font-weight: 600;
       background: var(--bg-card);
@@ -838,24 +1102,41 @@ def generate_html(image_counts, cover_images):
       transition: border-color 0.2s;
     }}
 
-    .pw-form input:focus {{
+    .pw-input-wrap input:focus {{
       border-color: var(--accent);
     }}
 
-    .pw-form button {{
+    .pw-eye-btn {{
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      font-size: 16px;
+      opacity: 0.6;
+    }}
+
+    .pw-eye-btn:hover {{
+      opacity: 1;
+    }}
+
+    .pw-form > button {{
       padding: 12px 20px;
       border: none;
       border-radius: 12px;
       background: var(--accent);
       color: #fff;
-      font-family: 'Nunito', sans-serif;
+      font-family: inherit;
       font-size: 15px;
       font-weight: 700;
       cursor: pointer;
       transition: opacity 0.2s;
     }}
 
-    .pw-form button:hover {{
+    .pw-form > button:hover {{
       opacity: 0.85;
     }}
 
@@ -873,6 +1154,15 @@ def generate_html(image_counts, cover_images):
       font-weight: 700;
       margin-top: 8px;
       display: none;
+    }}
+
+    .pw-reminder {{
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 20px;
+      max-width: 260px;
+      line-height: 1.5;
+      opacity: 0.75;
     }}
 
     .app-content {{
@@ -958,6 +1248,7 @@ def generate_html(image_counts, cover_images):
     <div class="header-icon">👶</div>
     <h1>Krithin Neel</h1>
     <p class="subtitle">One stop for family memories</p>
+    <button id="logout-btn" class="logout-btn" onclick="logout()" style="display:none">Log out</button>
   </div>
 
   <!-- Password Gate -->
@@ -966,12 +1257,18 @@ def generate_html(image_counts, cover_images):
     <h2>Family Access</h2>
     <p>Enter the password to view memories</p>
     <div class="pw-form">
-      <input type="password" id="pw-input" placeholder="Password" autocomplete="off"
-             onkeydown="if(event.key==='Enter')checkPassword()">
+      <div class="pw-input-wrap">
+        <input type="password" id="pw-input" placeholder="Password" autocomplete="off" inputmode="text"
+               onkeydown="if(event.key==='Enter')checkPassword()">
+        <button type="button" class="pw-eye-btn" onclick="togglePasswordVisibility()" aria-label="Toggle password visibility">
+          <span id="eye-icon">👁</span>
+        </button>
+      </div>
       <button id="pw-btn" onclick="checkPassword()">Enter</button>
     </div>
     <div id="pw-error" class="pw-error">Wrong password. Try again.</div>
     <div id="pw-lockout" class="pw-lockout"></div>
+    <p class="pw-reminder">Please don't share this link or password outside family</p>
   </div>
 
   <!-- Encrypted content injected here after unlock -->
@@ -990,123 +1287,25 @@ def generate_html(image_counts, cover_images):
   </div>
 
   <div class="footer" style="display:none" id="app-footer">
-    <p>Captured with love by <a href="https://kneil31.github.io/rsquare-studios/" target="_blank">Rsquare Studios</a></p>
-    <a href="https://wa.me/14697095978" class="whatsapp-link" target="_blank">
+    <p>Captured with love by <a href="https://kneil31.github.io/rsquare-studios/" target="_blank" rel="noreferrer noopener">Rsquare Studios</a></p>
+    <a href="https://wa.me/14697095978" class="whatsapp-link" target="_blank" rel="noreferrer noopener">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.948 11.948 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.35 0-4.514-.81-6.228-2.164l-.435-.347-3.012 1.01 1.01-3.012-.348-.436A9.948 9.948 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
       WhatsApp
     </a>
     <p style="margin-top: 12px; font-size: 11px; opacity: 0.5;">Generated {now}</p>
   </div>
 
-  <script>
-    const ENCRYPTED_BLOB = "{encrypted_blob}";
-    const PBKDF2_ITERATIONS = {PBKDF2_ITERATIONS};
-
-    function switchTab(tabId) {{
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-      document.getElementById('tab-' + tabId).classList.add('active');
-      event.currentTarget.classList.add('active');
-      window.scrollTo({{ top: 0, behavior: 'smooth' }});
-    }}
-
-    async function deriveKey(password, salt) {{
-      const enc = new TextEncoder();
-      const keyMaterial = await crypto.subtle.importKey(
-        'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
-      );
-      return crypto.subtle.deriveKey(
-        {{ name: 'PBKDF2', salt: salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' }},
-        keyMaterial,
-        {{ name: 'AES-GCM', length: 256 }},
-        false,
-        ['decrypt']
-      );
-    }}
-
-    async function decryptContent(password, blob) {{
-      const raw = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
-      const salt = raw.slice(0, 16);
-      const iv = raw.slice(16, 28);
-      const ciphertext = raw.slice(28);
-      const key = await deriveKey(password, salt);
-      const decrypted = await crypto.subtle.decrypt(
-        {{ name: 'AES-GCM', iv: iv }}, key, ciphertext
-      );
-      return new TextDecoder().decode(decrypted);
-    }}
-
-    let _failCount = 0;
-    let _lockedOut = false;
-
-    function startLockout() {{
-      _lockedOut = true;
-      let seconds = 15;
-      const lockoutEl = document.getElementById('pw-lockout');
-      const btn = document.getElementById('pw-btn');
-      btn.disabled = true;
-      lockoutEl.style.display = 'block';
-      lockoutEl.textContent = `Too many attempts. Wait ${{seconds}}s...`;
-      const timer = setInterval(() => {{
-        seconds--;
-        if (seconds <= 0) {{
-          clearInterval(timer);
-          _lockedOut = false;
-          _failCount = 0;
-          lockoutEl.style.display = 'none';
-          btn.disabled = false;
-        }} else {{
-          lockoutEl.textContent = `Too many attempts. Wait ${{seconds}}s...`;
-        }}
-      }}, 1000);
-    }}
-
-    async function checkPassword() {{
-      if (_lockedOut) return;
-      const input = document.getElementById('pw-input').value;
-      if (!input) return;
-      const btn = document.getElementById('pw-btn');
-      btn.disabled = true;
-      btn.textContent = 'Checking...';
-
-      try {{
-        const plaintext = await decryptContent(input, ENCRYPTED_BLOB);
-        const sections = JSON.parse(plaintext);
-
-        // Inject decrypted content into tab containers
-        for (const [tabId, html] of Object.entries(sections)) {{
-          const el = document.getElementById('tab-' + tabId);
-          if (el) el.innerHTML = html;
-        }}
-
-        // Show app, hide gate
-        document.getElementById('pw-gate').style.display = 'none';
-        document.getElementById('app-content').classList.add('unlocked');
-        document.getElementById('app-footer').style.display = 'block';
-        _failCount = 0;
-      }} catch(e) {{
-        _failCount++;
-        document.getElementById('pw-error').style.display = 'block';
-        document.getElementById('pw-input').value = '';
-        document.getElementById('pw-input').focus();
-        if (_failCount >= 3) {{
-          startLockout();
-        }}
-      }}
-
-      btn.disabled = false;
-      btn.textContent = 'Enter';
-    }}
-
-    // Focus password input on load
-    document.getElementById('pw-input').focus();
-  </script>
+  <script>{js_block}</script>
 </body>
 </html>"""
 
 
 def main():
-    print("Loading album stats...")
+    password = get_password()
+    print(f"Using password: {'*' * len(password)} ({len(password)} chars)")
+    print(f"PBKDF2 iterations: {PBKDF2_ITERATIONS:,}")
+
+    print("\nLoading album stats...")
     image_counts = load_image_counts()
     print(f"  Found {len(image_counts)} albums with image counts")
 
@@ -1127,7 +1326,7 @@ def main():
             print(f"  [-] {g['title']}: no node_id")
 
     print("\nGenerating HTML...")
-    html = generate_html(image_counts, cover_images)
+    html = generate_html(image_counts, cover_images, password)
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
