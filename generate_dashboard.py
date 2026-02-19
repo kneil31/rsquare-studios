@@ -1040,17 +1040,57 @@ def generate_html():
             gap: 12px;
         }}
         .quote-preview {{
-            background: #1a1a2e;
-            border: 1px solid #2d2d4e;
-            border-radius: 10px;
-            padding: 20px;
-            margin-top: 8px;
-            white-space: pre-line;
-            font-size: 14px;
-            line-height: 1.7;
-            color: #c4b5fd;
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 16px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #9ca3af;
         }}
-        .quote-preview strong {{ color: #e0e7ff; }}
+        .quote-section {{
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }}
+        .quote-section:last-child {{ border-bottom: none; margin-bottom: 0; padding-bottom: 0; }}
+        .quote-section-title {{
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #8b5cf6;
+            margin-bottom: 8px;
+        }}
+        .quote-row {{
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }}
+        .quote-row .qlabel {{ color: #6b7280; }}
+        .quote-row .qvalue {{ color: #e0e0e0; font-weight: 500; text-align: right; }}
+        .quote-total {{
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+        }}
+        .quote-note {{
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.5;
+            margin-top: 4px;
+        }}
+        .quote-greeting {{
+            font-size: 14px;
+            color: #d1d5db;
+            line-height: 1.6;
+        }}
+        .quote-signoff {{
+            font-size: 13px;
+            color: #9ca3af;
+            font-style: italic;
+        }}
         .copy-btn {{
             display: inline-flex;
             align-items: center;
@@ -1661,7 +1701,7 @@ def generate_html():
                 <div class="hero">
                     <div class="hero-logo">📷</div>
                     <h1>Rsquare Studios</h1>
-                    <p>Capturing life's most meaningful moments &mdash; weddings, maternity, newborn, birthday, and cradle ceremonies across the Dallas&ndash;Fort Worth area.</p>
+                    <p>Wedding &amp; event photography in Dallas&ndash;Fort Worth. Let's make your day look amazing.</p>
                     <div class="hero-stats">
                         <div class="hero-stat">
                             <div class="number">{total_galleries}+</div>
@@ -1685,7 +1725,7 @@ def generate_html():
             <div class="page" id="portfolio-home">
                 <div class="page-breadcrumb">Portfolio</div>
                 <h1 class="page-title">Portfolio</h1>
-                <div class="page-meta">{total_galleries} curated galleries &middot; Tap any category to browse our recent work</div>
+                <div class="page-meta">{total_galleries} galleries &middot; Tap a category to see our work</div>
                 <div class="cat-grid">
                     {"".join(f'''
                     <div class="cat-tile" onclick="showSection('portfolio-{cat}')" style="background-image:url('{info['cover']}');background-position:{info['cover_pos']}">
@@ -1704,7 +1744,7 @@ def generate_html():
             <div class="page" id="pricing">
                 <div class="page-breadcrumb">Investment</div>
                 <h1 class="page-title">Investment</h1>
-                <div class="page-meta">Transparent pricing for every milestone worth remembering</div>
+                <div class="page-meta">Simple hourly rates, no hidden fees. What you see is what you pay.</div>
                 <div class="pricing-grid">
                     {pricing_html}
                 </div>
@@ -1759,7 +1799,7 @@ def generate_html():
             <div class="page" id="booking">
                 <div class="page-breadcrumb">Book</div>
                 <h1 class="page-title">Request a Quote</h1>
-                <div class="page-meta">Fill in the details below. Preview your quote, then share it via WhatsApp or copy to clipboard.</div>
+                <div class="page-meta">Put in your event details and I'll put together a quick quote for you.</div>
 
                 <div class="book-form" id="book-form">
                     <div class="form-row">
@@ -1821,14 +1861,6 @@ def generate_html():
                     <a class="share-wa-btn" id="wa-share-btn" href="#" target="_blank" rel="noopener" onclick="shareQuoteWA(event)">💬 Share via WhatsApp</a>
                 </div>
 
-                <a href="https://www.rsquarestudios.com/2025-Fam/Bakedbysarvanii/n-SJjjvn" target="_blank" rel="noopener" class="crosssell-card">
-                    <div class="crosssell-icon">🎂</div>
-                    <div class="crosssell-info">
-                        <div class="crosssell-title">Need a custom cake for your event?</div>
-                        <div class="crosssell-desc">We craft bespoke cakes and desserts for weddings, birthdays, and celebrations &mdash; @bakedbysarvani</div>
-                    </div>
-                    <div class="gallery-arrow">&#8599;</div>
-                </a>
             </div>
 
             <!-- PASSWORD GATE -->
@@ -2151,13 +2183,46 @@ def generate_html():
 
             const quote = total > 0 ? '$' + total.toLocaleString() : '___';
 
-            const text = `Hi ${{name}},
+            // HTML preview (styled)
+            const html = `
+                <div class="quote-section">
+                    <div class="quote-greeting">Hey ${{name}}! 👋<br>Thanks for reaching out — here's the quote for your ${{event.toLowerCase()}}:</div>
+                </div>
+                <div class="quote-section">
+                    <div class="quote-section-title">Details</div>
+                    <div class="quote-row"><span class="qlabel">Client</span><span class="qvalue">${{name}}</span></div>
+                    <div class="quote-row"><span class="qlabel">Event</span><span class="qvalue">${{event}}</span></div>
+                    <div class="quote-row"><span class="qlabel">Location</span><span class="qvalue">${{location}}</span></div>
+                    <div class="quote-row"><span class="qlabel">Date</span><span class="qvalue">${{dateDisplay}}</span></div>
+                    <div class="quote-row"><span class="qlabel">Setting</span><span class="qvalue">${{shootType}}</span></div>
+                    <div class="quote-row"><span class="qlabel">Coverage</span><span class="qvalue">${{svcText}}</span></div>
+                    <div class="quote-row"><span class="qlabel">Hours</span><span class="qvalue">${{hours || '___'}}</span></div>
+                </div>
+                <div class="quote-section">
+                    <div class="quote-section-title">Investment</div>
+                    <div class="quote-row"><span class="qlabel">Total</span><span class="qvalue quote-total">${{quote}}</span></div>
+                    <div class="quote-row"><span class="qlabel">Retainer</span><span class="qvalue">${{deposit}}</span></div>
+                    <div class="quote-note">Remaining balance due on event day (cash)</div>
+                </div>
+                <div class="quote-section">
+                    <div class="quote-section-title">What You Get</div>
+                    <div class="quote-note">• All edited pictures — ready in 12–15 days<br>• Cinematic teaser (4–6 min) — ready in 3–4 weeks</div>
+                </div>
+                <div class="quote-section">
+                    <div class="quote-section-title">How You Get Your Photos</div>
+                    <div class="quote-note">You'll get a private gallery link. Download all pics at once from desktop — email with the download link usually takes 15–30 min. Link works for 3 months so grab them soon!</div>
+                </div>
+                <div class="quote-section">
+                    <div class="quote-signoff">Looking forward to it! 🙌<br>— Ram, Rsquare Studios</div>
+                </div>
+            `;
+            document.getElementById('quote-preview').innerHTML = html;
 
-Thank you for your interest in Rsquare Studios! Here are the details for your upcoming session:
+            // Plain text version (for copy/WhatsApp)
+            const text = `Hey ${{name}}! 👋
+Thanks for reaching out — here's the quote for your ${{event.toLowerCase()}}:
 
-━━━━━━━━━━━━━━━━━━━━
-📋  SESSION DETAILS
-━━━━━━━━━━━━━━━━━━━━
+*Details*
 Client: ${{name}}
 Event: ${{event}}
 Location: ${{location}}
@@ -2166,41 +2231,26 @@ Setting: ${{shootType}}
 Coverage: ${{svcText}}
 Hours: ${{hours || '___'}}
 
-━━━━━━━━━━━━━━━━━━━━
-💰  INVESTMENT
-━━━━━━━━━━━━━━━━━━━━
+*Investment*
 Total: ${{quote}}
 Retainer: ${{deposit}}
-Balance due on event day (cash)
+Remaining balance due on event day (cash)
 
-━━━━━━━━━━━━━━━━━━━━
-📸  DELIVERABLES
-━━━━━━━━━━━━━━━━━━━━
-• Professionally edited high-resolution images — delivered within 12–15 days
-• Cinematic highlight teaser (4–6 min) — delivered within 3–4 weeks
+*What You Get*
+• All edited pictures — ready in 12–15 days
+• Cinematic teaser (4–6 min) — ready in 3–4 weeks
 
-━━━━━━━━━━━━━━━━━━━━
-📥  GALLERY & DOWNLOADS
-━━━━━━━━━━━━━━━━━━━━
-Your images will be hosted in a private online gallery. Once ready, you'll receive an email with a download link. For the best experience, download from a desktop computer. The link typically takes 15–30 minutes to prepare and expires after 3 months — please save your images promptly.
+*How You Get Your Photos*
+You'll get a private gallery link. Download all pics at once from desktop — email with the download link usually takes 15–30 min. Link works for 3 months so grab them soon!
 
-━━━━━━━━━━━━━━━━━━━━
-🎂  BONUS
-━━━━━━━━━━━━━━━━━━━━
-Need a custom cake for your celebration? We also craft bespoke cakes and desserts!
-View our work → https://www.rsquarestudios.com/2025-Fam/Bakedbysarvanii/n-SJjjvn
+Looking forward to it! 🙌
+— Ram, Rsquare Studios`;
 
-━━━━━━━━━━━━━━━━━━━━
-We can't wait to capture your special day!
-— Ram, Rsquare Studios
-
-`;
-
-            document.getElementById('quote-preview').textContent = text;
+            document.getElementById('quote-preview').dataset.plaintext = text;
         }}
 
         function getQuoteText() {{
-            return document.getElementById('quote-preview').textContent;
+            return document.getElementById('quote-preview').dataset.plaintext || document.getElementById('quote-preview').textContent;
         }}
 
         function copyQuote() {{
