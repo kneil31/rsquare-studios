@@ -337,10 +337,6 @@ def generate_html():
     posing_pages = build_posing_html(posing_guides)
     workflow_md = load_workflow()
     workflow_html = md_to_html_simple(workflow_md)
-    chapters = load_twomann_chapters()
-    twomann_sidebar = build_twomann_sidebar(chapters)
-    twomann_pages = build_twomann_pages(chapters)
-
     total_galleries = sum(c["count"] for c in gallery_cards.values())
 
     # Build sidebar gallery links
@@ -1377,12 +1373,10 @@ def generate_html():
             <div class="sidebar-section-label wf-link" style="padding-top:8px">POSING GUIDES</div>
             {posing_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link wf-link"')}
 
-            <div class="sidebar-section-label wf-link" style="padding-top:8px">TWOMANN COURSE</div>
-            {twomann_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link wf-link"')}
 
             <div class="sidebar-footer">
                 Updated {now}<br>
-                {total_galleries} galleries &middot; {len(chapters)} course chapters
+                {total_galleries} galleries
             </div>
         </div>
 
@@ -1608,10 +1602,6 @@ def generate_html():
                         <div class="wf-tile-icon">💍</div>
                         <div class="wf-tile-label">Wedding Poses</div>
                     </div>
-                    <div class="wf-tile" onclick="showSection('twomann-0')">
-                        <div class="wf-tile-icon">📚</div>
-                        <div class="wf-tile-label">TwoMann Course</div>
-                    </div>
                 </div>
             </div>
 
@@ -1651,8 +1641,6 @@ def generate_html():
             <!-- POSING GUIDES -->
             {posing_pages}
 
-            <!-- TWOMANN COURSE PAGES -->
-            {twomann_pages}
 
             <!-- CONTACT -->
             <div class="page" id="contact">
@@ -1963,10 +1951,6 @@ def main():
     print("📋 Loading workflow reference...")
     workflow = load_workflow()
     print(f"   {'Loaded' if workflow else 'Not found'}")
-
-    print("🎓 Loading TwoMann course chapters...")
-    chapters = load_twomann_chapters()
-    print(f"   Found {len(chapters)} chapters")
 
     print("\n🔨 Generating Notion-style dashboard...")
     html = generate_html()
