@@ -21,10 +21,14 @@ Data sources:
 """
 
 import json
-import hashlib
+import os
+import base64
 import webbrowser
 from pathlib import Path
 from datetime import datetime
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+from cryptography.hazmat.primitives import hashes
 
 SCRIPT_DIR = Path(__file__).parent
 OUTPUT_FILE = SCRIPT_DIR / "index.html"
@@ -33,9 +37,26 @@ WORKFLOW_FILE = SCRIPT_DIR.parent.parent / "photo_workflow" / "PHOTO_WORKFLOW_CH
 POSING_DIR = SCRIPT_DIR.parent.parent.parent / "Upskill" / "Posing_Upskill" / "prompts"
 TWOMANN_DIR = SCRIPT_DIR.parent / "TwoMann_Course" / "chapters"
 
-# Password hash for internal section (SHA-256 of the password)
-# Default password: "rsquare2026"
-PASSWORD_HASH = hashlib.sha256("rsquare2026".encode()).hexdigest()
+# Password for AES-256-GCM encryption of protected sections
+DASHBOARD_PASSWORD = "rsquare2026"
+PBKDF2_ITERATIONS = 100_000
+
+
+def encrypt_content(plaintext, password):
+    """AES-256-GCM encrypt plaintext using password via PBKDF2 key derivation.
+    Returns base64-encoded salt(16) + iv(12) + ciphertext."""
+    salt = os.urandom(16)
+    iv = os.urandom(12)
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=PBKDF2_ITERATIONS,
+    )
+    key = kdf.derive(password.encode("utf-8"))
+    aesgcm = AESGCM(key)
+    ciphertext = aesgcm.encrypt(iv, plaintext.encode("utf-8"), None)
+    return base64.b64encode(salt + iv + ciphertext).decode("ascii")
 
 
 def load_galleries():
@@ -492,7 +513,6 @@ def generate_html():
     gallery_cards = build_gallery_cards(galleries)
     pricing_html = build_pricing_section()
     posing_guides = load_posing_guides()
-    posing_pages = build_posing_html(posing_guides)
     workflow_md = load_workflow()
     workflow_html = md_to_html_simple(workflow_md)
     total_galleries = sum(c["count"] for c in gallery_cards.values())
@@ -572,6 +592,258 @@ def generate_html():
     dayof_html = checklist_html(day_of_items, "day")
     post_html = checklist_html(post_shoot_items, "post")
 
+    # Build protected content dict — these get AES-encrypted, not embedded as plaintext
+    protected_content = {}
+
+    # Pricing page inner HTML
+    protected_content["pricing"] = f"""
+                <div class="page-breadcrumb">Pricing</div>
+                <h1 class="page-title">Investment</h1>
+                <div class="page-meta">Simple packages. Pick your coverage and hours &mdash; everything else is included.</div>
+                <div class="pricing-grid">
+                    {pricing_html}
+                </div>
+
+                <div class="includes-box">
+                    <h3>What's Included</h3>
+                    <div class="includes-list">
+                        <span>&#10003; All edited photos &mdash; usually ready in 12&ndash;15 days</span>
+                        <span>&#10003; Cinematic highlight video (4&ndash;6 min)</span>
+                        <span>&#10003; Online gallery &mdash; download, share, print</span>
+                        <span>&#10003; Full print rights &mdash; print anywhere you want</span>
+                    </div>
+                </div>
+
+
+                <!-- Solo vs Dual comparison -->
+                <div style="margin-top:28px;">
+                    <h3 style="font-size:16px; font-weight:700; color:#fff; margin-bottom:4px;">Solo or Dual &mdash; which one do you need?</h3>
+                    <div class="proscons">
+                        <div class="proscons-col" style="border:1px solid #2d4a2d;">
+                            <h4 style="color:#10b981;">Solo</h4>
+                            <ul>
+                                <li>&#10003; Easier on the budget</li>
+                                <li>&#10003; I handle both photo and video &mdash; ceremony, portraits, reception, all covered</li>
+                                <li style="color:#6b7280; font-style:italic; margin-top:6px;">Good for: birthdays, baby showers, smaller events</li>
+                            </ul>
+                        </div>
+                        <div class="proscons-col" style="border:1px solid #2d3a5e;">
+                            <h4 style="color:#3b82f6;">Dual</h4>
+                            <ul>
+                                <li>&#10003; Two people, two angles &mdash; nothing gets missed</li>
+                                <li>&#10003; Way more candid shots and guest moments</li>
+                                <li>&#10003; Better highlight video with dedicated video guy</li>
+                                <li style="color:#6b7280; font-style:italic; margin-top:6px;">Go with this for: weddings, 100+ guests, multi-spot events</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-top:24px; text-align:center;">
+                    <button class="copy-btn" onclick="showSection('booking')" style="background:#8b5cf6;">Request a Quote</button>
+                </div>
+
+                <!-- Testimonials near pricing -->
+                <div style="margin-top:32px;">
+                    <div class="testimonials-title">What Clients Say</div>
+                    <div class="testimonials-grid">
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">Pictures came out so well. We feel that we made the right choice. We definitely recommend too.</div>
+                            <div class="testimonial-name">Client</div>
+                            <div class="testimonial-event">Event Photography</div>
+                        </div>
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">Editing and videography looks so amazing and thanks for being so flexible to add changes that we asked for.</div>
+                            <div class="testimonial-name">Client</div>
+                            <div class="testimonial-event">Photo &amp; Video</div>
+                        </div>
+                    </div>
+                </div>"""
+
+    # Booking page inner HTML
+    protected_content["booking"] = """
+                <div class="page-breadcrumb">Book</div>
+                <h1 class="page-title">Request a Quote</h1>
+                <div class="page-meta">Fill in your details and I'll send you a quote on WhatsApp.</div>
+
+                <div class="book-form" id="book-form">
+                    <div class="form-row">
+                        <label class="form-label">CLIENT NAME</label>
+                        <input class="form-input" id="q-name" placeholder="Full name" oninput="updateQuote()">
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">EVENT</label>
+                        <select class="form-select" id="q-event" onchange="updateQuote()">
+                            <option value="">Select event type</option>
+                            <option value="Wedding">Wedding</option>
+                            <option value="Engagement">Engagement</option>
+                            <option value="Pre-Wedding">Pre-Wedding</option>
+                            <option value="Half Saree">Half Saree</option>
+                            <option value="Baby Shower">Baby Shower</option>
+                            <option value="Maternity">Maternity</option>
+                            <option value="Birthday">Birthday</option>
+                            <option value="Cradle Ceremony">Cradle Ceremony</option>
+                            <option value="Housewarming">Housewarming</option>
+                            <option value="Anniversary">Anniversary</option>
+                            <option value="Pooja">Pooja</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label class="form-label">LOCATION</label>
+                        <input class="form-input" id="q-location" placeholder="Venue name or city" oninput="updateQuote()">
+                    </div>
+                    <div class="form-row-inline">
+                        <div class="form-row">
+                            <label class="form-label">DATE</label>
+                            <input class="form-input" id="q-date" type="date" oninput="updateQuote()">
+                        </div>
+                        <div class="form-row">
+                            <label class="form-label">HOURS OF COVERAGE</label>
+                            <input class="form-input" id="q-hours" type="number" min="1" placeholder="Hours" oninput="updateQuote()">
+                        </div>
+                    </div>
+                    <div class="form-row-inline">
+                        <div class="form-row">
+                            <label class="form-label">SETTING</label>
+                            <select class="form-select" id="q-shoottype" onchange="updateQuote()">
+                                <option value="Outdoor">Outdoor</option>
+                                <option value="Indoor">Indoor</option>
+                                <option value="Outdoor + Indoor">Outdoor + Indoor</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label class="form-label">COVERAGE TYPE</label>
+                            <select class="form-select" id="q-services" onchange="updateQuote()">
+                                <option value="Photo Only ($150/hr)">Photo Only ($150/hr)</option>
+                                <option value="Photo + Video ($235/hr)">Photo + Video ($235/hr)</option>
+                                <option value="Dual Coverage ($325/hr)">Dual Coverage ($325/hr)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row" style="margin-top:4px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:#d1d5db;">
+                            <input type="checkbox" id="q-live" onchange="updateQuote()" style="width:18px; height:18px; accent-color:#10b981;">
+                            Add Live Streaming (+$100)
+                        </label>
+                    </div>
+                    <div class="form-row-inline">
+                        <div class="form-row">
+                            <label class="form-label">ESTIMATED INVESTMENT</label>
+                            <input class="form-input" id="q-quote" readonly style="color:#8b5cf6; font-weight:700;">
+                        </div>
+                        <div class="form-row">
+                            <label class="form-label">RETAINER</label>
+                            <input class="form-input" id="q-deposit" placeholder="e.g. $100" oninput="updateQuote()">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="quote-preview" id="quote-preview" style="margin-top:20px;"></div>
+
+                <div class="btn-row">
+                    <button class="copy-btn" onclick="copyQuote()">📋 Copy to Clipboard</button>
+                    <a class="share-wa-btn" id="wa-share-btn" href="#" target="_blank" rel="noopener" onclick="shareQuoteWA(event)">💬 Share via WhatsApp</a>
+                </div>
+
+                <div id="booking-confirmation" style="display:none; margin-top:20px; padding:20px; background:#1a2e1a; border:1px solid #2d4a2d; border-radius:12px; text-align:center;">
+                    <div style="font-size:24px; margin-bottom:8px;">&#10003;</div>
+                    <div style="font-size:16px; font-weight:600; color:#10b981; margin-bottom:6px;">Quote sent!</div>
+                    <div style="font-size:14px; color:#9ca3af; line-height:1.6;">I'll confirm availability and get back to you within 24 hours.<br>Feel free to message me on WhatsApp if you have any questions.</div>
+                </div>"""
+
+    # Workflow home inner HTML
+    protected_content["workflow-home"] = """
+                <div class="page-breadcrumb">Internal</div>
+                <h1 class="page-title">Workflow Dashboard</h1>
+                <div class="page-meta">Checklists, posing prompts, course notes &amp; workflow reference</div>
+
+                <div class="pipeline-row">
+                    <div class="pipeline-stage" style="background: #3b82f6;">Inquiry</div>
+                    <div class="pipeline-stage" style="background: #8b5cf6;">Booked</div>
+                    <div class="pipeline-stage" style="background: #f59e0b;">Shot</div>
+                    <div class="pipeline-stage" style="background: #ec4899;">Editing</div>
+                    <div class="pipeline-stage" style="background: #10b981;">Delivered</div>
+                </div>
+
+                <div class="wf-tile-grid">
+                    <div class="wf-tile" onclick="showSection('checklists')">
+                        <div class="wf-tile-icon">✅</div>
+                        <div class="wf-tile-label">Checklists</div>
+                    </div>
+                    <div class="wf-tile" onclick="showSection('workflow-ref')">
+                        <div class="wf-tile-icon">📖</div>
+                        <div class="wf-tile-label">Workflow Reference</div>
+                    </div>
+                    <div class="wf-tile" onclick="showSection('posing-couples')">
+                        <div class="wf-tile-icon">💑</div>
+                        <div class="wf-tile-label">Couple Poses</div>
+                    </div>
+                    <div class="wf-tile" onclick="showSection('posing-families')">
+                        <div class="wf-tile-icon">👨‍👩‍👧</div>
+                        <div class="wf-tile-label">Family Poses</div>
+                    </div>
+                    <div class="wf-tile" onclick="showSection('posing-weddings')">
+                        <div class="wf-tile-icon">💍</div>
+                        <div class="wf-tile-label">Wedding Poses</div>
+                    </div>
+                    <a class="wf-tile" href="https://literate-basketball-b5e.notion.site/PLAN-POSES-13e48bb472084196a825703d7e8a4d10" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;">
+                        <div class="wf-tile-icon">📸</div>
+                        <div class="wf-tile-label">Pose References</div>
+                    </a>
+                </div>"""
+
+    # Checklists inner HTML
+    protected_content["checklists"] = f"""
+                <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
+                <div class="page-breadcrumb">Workflow</div>
+                <h1 class="page-title">Shoot Checklists</h1>
+                <div class="page-meta">Check items off as you go &mdash; state is saved in your browser</div>
+
+                <div class="checklist-group">
+                    <div class="checklist-title">PRE-SHOOT</div>
+                    {pre_html}
+                </div>
+                <div class="checklist-group">
+                    <div class="checklist-title">DAY-OF GEAR</div>
+                    {dayof_html}
+                </div>
+                <div class="checklist-group">
+                    <div class="checklist-title">POST-SHOOT</div>
+                    {post_html}
+                </div>
+                <div style="margin-top: 20px;">
+                    <button class="pw-btn" onclick="resetChecklists()" style="background: #374151;">Reset All Checklists</button>
+                </div>"""
+
+    # Workflow reference inner HTML
+    protected_content["workflow-ref"] = f"""
+                <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
+                <div class="page-breadcrumb">Workflow</div>
+                <h1 class="page-title">Photo Workflow Reference</h1>
+                <div class="page-meta">Ingest &rarr; Sort &rarr; Cull &rarr; Edit &rarr; Export &rarr; Deliver</div>
+                <div class="wf-content">{workflow_html}</div>"""
+
+    # Posing guide pages — each gets its own key
+    posing_shells = ""
+    for name, content in posing_guides.items():
+        section_id = f"posing-{name.lower().replace(' ', '-')}"
+        converted = md_to_html_simple(content)
+        protected_content[section_id] = f"""
+                <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
+                <div class="page-breadcrumb">Posing Guides</div>
+                <h1 class="page-title">{name} Prompts</h1>
+                <div class="wf-content">{converted}</div>"""
+        posing_shells += f"""
+            <div class="page" id="{section_id}">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view posing guides.</div>
+            </div>"""
+
+    # Encrypt all protected content as a single blob
+    protected_json = json.dumps(protected_content)
+    encrypted_blob = encrypt_content(protected_json, DASHBOARD_PASSWORD)
+    print(f"   Encrypted {len(protected_content)} protected sections ({len(encrypted_blob)} chars)")
+
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -650,6 +922,14 @@ def generate_html():
         /* Lock icon for protected sections */
         .lock-icon {{ opacity: 0.5; }}
         .lock-icon.unlocked {{ opacity: 1; }}
+
+        /* Encrypted content placeholder */
+        .encrypted-placeholder {{
+            text-align: center;
+            color: #525252;
+            padding: 60px 20px;
+            font-size: 14px;
+        }}
 
         /* Content */
         .content {{
@@ -2246,164 +2526,14 @@ def generate_html():
                 </div>
             </div>
 
-            <!-- PRICING -->
+            <!-- PRICING (encrypted) -->
             <div class="page" id="pricing">
-                <div class="page-breadcrumb">Pricing</div>
-                <h1 class="page-title">Investment</h1>
-                <div class="page-meta">Simple packages. Pick your coverage and hours &mdash; everything else is included.</div>
-                <div class="pricing-grid">
-                    {pricing_html}
-                </div>
-
-                <div class="includes-box">
-                    <h3>What's Included</h3>
-                    <div class="includes-list">
-                        <span>&#10003; All edited photos &mdash; usually ready in 12&ndash;15 days</span>
-                        <span>&#10003; Cinematic highlight video (4&ndash;6 min)</span>
-                        <span>&#10003; Online gallery &mdash; download, share, print</span>
-                        <span>&#10003; Full print rights &mdash; print anywhere you want</span>
-                    </div>
-                </div>
-
-
-                <!-- Solo vs Dual comparison -->
-                <div style="margin-top:28px;">
-                    <h3 style="font-size:16px; font-weight:700; color:#fff; margin-bottom:4px;">Solo or Dual &mdash; which one do you need?</h3>
-                    <div class="proscons">
-                        <div class="proscons-col" style="border:1px solid #2d4a2d;">
-                            <h4 style="color:#10b981;">Solo</h4>
-                            <ul>
-                                <li>&#10003; Easier on the budget</li>
-                                <li>&#10003; I handle both photo and video &mdash; ceremony, portraits, reception, all covered</li>
-                                <li style="color:#6b7280; font-style:italic; margin-top:6px;">Good for: birthdays, baby showers, smaller events</li>
-                            </ul>
-                        </div>
-                        <div class="proscons-col" style="border:1px solid #2d3a5e;">
-                            <h4 style="color:#3b82f6;">Dual</h4>
-                            <ul>
-                                <li>&#10003; Two people, two angles &mdash; nothing gets missed</li>
-                                <li>&#10003; Way more candid shots and guest moments</li>
-                                <li>&#10003; Better highlight video with dedicated video guy</li>
-                                <li style="color:#6b7280; font-style:italic; margin-top:6px;">Go with this for: weddings, 100+ guests, multi-spot events</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                <div style="margin-top:24px; text-align:center;">
-                    <button class="copy-btn" onclick="showSection('booking')" style="background:#8b5cf6;">Request a Quote</button>
-                </div>
-
-                <!-- Testimonials near pricing -->
-                <div style="margin-top:32px;">
-                    <div class="testimonials-title">What Clients Say</div>
-                    <div class="testimonials-grid">
-                        <div class="testimonial-card">
-                            <div class="testimonial-quote">Pictures came out so well. We feel that we made the right choice. We definitely recommend too.</div>
-                            <div class="testimonial-name">Client</div>
-                            <div class="testimonial-event">Event Photography</div>
-                        </div>
-                        <div class="testimonial-card">
-                            <div class="testimonial-quote">Editing and videography looks so amazing and thanks for being so flexible to add changes that we asked for.</div>
-                            <div class="testimonial-name">Client</div>
-                            <div class="testimonial-event">Photo &amp; Video</div>
-                        </div>
-                    </div>
-                </div>
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view pricing.</div>
             </div>
 
-            <!-- BOOKING -->
+            <!-- BOOKING (encrypted) -->
             <div class="page" id="booking">
-                <div class="page-breadcrumb">Book</div>
-                <h1 class="page-title">Request a Quote</h1>
-                <div class="page-meta">Fill in your details and I'll send you a quote on WhatsApp.</div>
-
-                <div class="book-form" id="book-form">
-                    <div class="form-row">
-                        <label class="form-label">CLIENT NAME</label>
-                        <input class="form-input" id="q-name" placeholder="Full name" oninput="updateQuote()">
-                    </div>
-                    <div class="form-row">
-                        <label class="form-label">EVENT</label>
-                        <select class="form-select" id="q-event" onchange="updateQuote()">
-                            <option value="">Select event type</option>
-                            <option value="Wedding">Wedding</option>
-                            <option value="Engagement">Engagement</option>
-                            <option value="Pre-Wedding">Pre-Wedding</option>
-                            <option value="Half Saree">Half Saree</option>
-                            <option value="Baby Shower">Baby Shower</option>
-                            <option value="Maternity">Maternity</option>
-                            <option value="Birthday">Birthday</option>
-                            <option value="Cradle Ceremony">Cradle Ceremony</option>
-                            <option value="Housewarming">Housewarming</option>
-                            <option value="Anniversary">Anniversary</option>
-                            <option value="Pooja">Pooja</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <label class="form-label">LOCATION</label>
-                        <input class="form-input" id="q-location" placeholder="Venue name or city" oninput="updateQuote()">
-                    </div>
-                    <div class="form-row-inline">
-                        <div class="form-row">
-                            <label class="form-label">DATE</label>
-                            <input class="form-input" id="q-date" type="date" oninput="updateQuote()">
-                        </div>
-                        <div class="form-row">
-                            <label class="form-label">HOURS OF COVERAGE</label>
-                            <input class="form-input" id="q-hours" type="number" min="1" placeholder="Hours" oninput="updateQuote()">
-                        </div>
-                    </div>
-                    <div class="form-row-inline">
-                        <div class="form-row">
-                            <label class="form-label">SETTING</label>
-                            <select class="form-select" id="q-shoottype" onchange="updateQuote()">
-                                <option value="Outdoor">Outdoor</option>
-                                <option value="Indoor">Indoor</option>
-                                <option value="Outdoor + Indoor">Outdoor + Indoor</option>
-                            </select>
-                        </div>
-                        <div class="form-row">
-                            <label class="form-label">COVERAGE TYPE</label>
-                            <select class="form-select" id="q-services" onchange="updateQuote()">
-                                <option value="Photo Only ($150/hr)">Photo Only ($150/hr)</option>
-                                <option value="Photo + Video ($235/hr)">Photo + Video ($235/hr)</option>
-                                <option value="Dual Coverage ($325/hr)">Dual Coverage ($325/hr)</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row" style="margin-top:4px;">
-                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:#d1d5db;">
-                            <input type="checkbox" id="q-live" onchange="updateQuote()" style="width:18px; height:18px; accent-color:#10b981;">
-                            Add Live Streaming (+$100)
-                        </label>
-                    </div>
-                    <div class="form-row-inline">
-                        <div class="form-row">
-                            <label class="form-label">ESTIMATED INVESTMENT</label>
-                            <input class="form-input" id="q-quote" readonly style="color:#8b5cf6; font-weight:700;">
-                        </div>
-                        <div class="form-row">
-                            <label class="form-label">RETAINER</label>
-                            <input class="form-input" id="q-deposit" placeholder="e.g. $100" oninput="updateQuote()">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="quote-preview" id="quote-preview" style="margin-top:20px;"></div>
-
-                <div class="btn-row">
-                    <button class="copy-btn" onclick="copyQuote()">📋 Copy to Clipboard</button>
-                    <a class="share-wa-btn" id="wa-share-btn" href="#" target="_blank" rel="noopener" onclick="shareQuoteWA(event)">💬 Share via WhatsApp</a>
-                </div>
-
-                <div id="booking-confirmation" style="display:none; margin-top:20px; padding:20px; background:#1a2e1a; border:1px solid #2d4a2d; border-radius:12px; text-align:center;">
-                    <div style="font-size:24px; margin-bottom:8px;">&#10003;</div>
-                    <div style="font-size:16px; font-weight:600; color:#10b981; margin-bottom:6px;">Quote sent!</div>
-                    <div style="font-size:14px; color:#9ca3af; line-height:1.6;">I'll confirm availability and get back to you within 24 hours.<br>Feel free to message me on WhatsApp if you have any questions.</div>
-                </div>
-
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view booking.</div>
             </div>
 
             <!-- PASSWORD GATE -->
@@ -2419,83 +2549,23 @@ def generate_html():
                 </div>
             </div>
 
-            <!-- WORKFLOW HOME -->
+            <!-- WORKFLOW HOME (encrypted) -->
             <div class="page" id="workflow-home">
-                <div class="page-breadcrumb">Internal</div>
-                <h1 class="page-title">Workflow Dashboard</h1>
-                <div class="page-meta">Checklists, posing prompts, course notes &amp; workflow reference</div>
-
-                <div class="pipeline-row">
-                    <div class="pipeline-stage" style="background: #3b82f6;">Inquiry</div>
-                    <div class="pipeline-stage" style="background: #8b5cf6;">Booked</div>
-                    <div class="pipeline-stage" style="background: #f59e0b;">Shot</div>
-                    <div class="pipeline-stage" style="background: #ec4899;">Editing</div>
-                    <div class="pipeline-stage" style="background: #10b981;">Delivered</div>
-                </div>
-
-                <div class="wf-tile-grid">
-                    <div class="wf-tile" onclick="showSection('checklists')">
-                        <div class="wf-tile-icon">✅</div>
-                        <div class="wf-tile-label">Checklists</div>
-                    </div>
-                    <div class="wf-tile" onclick="showSection('workflow-ref')">
-                        <div class="wf-tile-icon">📖</div>
-                        <div class="wf-tile-label">Workflow Reference</div>
-                    </div>
-                    <div class="wf-tile" onclick="showSection('posing-couples')">
-                        <div class="wf-tile-icon">💑</div>
-                        <div class="wf-tile-label">Couple Poses</div>
-                    </div>
-                    <div class="wf-tile" onclick="showSection('posing-families')">
-                        <div class="wf-tile-icon">👨‍👩‍👧</div>
-                        <div class="wf-tile-label">Family Poses</div>
-                    </div>
-                    <div class="wf-tile" onclick="showSection('posing-weddings')">
-                        <div class="wf-tile-icon">💍</div>
-                        <div class="wf-tile-label">Wedding Poses</div>
-                    </div>
-                    <a class="wf-tile" href="https://literate-basketball-b5e.notion.site/PLAN-POSES-13e48bb472084196a825703d7e8a4d10" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;">
-                        <div class="wf-tile-icon">📸</div>
-                        <div class="wf-tile-label">Pose References</div>
-                    </a>
-                </div>
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view workflow.</div>
             </div>
 
-            <!-- CHECKLISTS -->
+            <!-- CHECKLISTS (encrypted) -->
             <div class="page" id="checklists">
-                <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
-                <div class="page-breadcrumb">Workflow</div>
-                <h1 class="page-title">Shoot Checklists</h1>
-                <div class="page-meta">Check items off as you go &mdash; state is saved in your browser</div>
-
-                <div class="checklist-group">
-                    <div class="checklist-title">PRE-SHOOT</div>
-                    {pre_html}
-                </div>
-                <div class="checklist-group">
-                    <div class="checklist-title">DAY-OF GEAR</div>
-                    {dayof_html}
-                </div>
-                <div class="checklist-group">
-                    <div class="checklist-title">POST-SHOOT</div>
-                    {post_html}
-                </div>
-                <div style="margin-top: 20px;">
-                    <button class="pw-btn" onclick="resetChecklists()" style="background: #374151;">Reset All Checklists</button>
-                </div>
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view checklists.</div>
             </div>
 
-            <!-- WORKFLOW REFERENCE -->
+            <!-- WORKFLOW REFERENCE (encrypted) -->
             <div class="page" id="workflow-ref">
-                <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
-                <div class="page-breadcrumb">Workflow</div>
-                <h1 class="page-title">Photo Workflow Reference</h1>
-                <div class="page-meta">Ingest &rarr; Sort &rarr; Cull &rarr; Edit &rarr; Export &rarr; Deliver</div>
-                <div class="wf-content">{workflow_html}</div>
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view workflow reference.</div>
             </div>
 
-            <!-- POSING GUIDES -->
-            {posing_pages}
+            <!-- POSING GUIDES (encrypted — shells injected dynamically) -->
+            {posing_shells}
 
 
             <!-- CONTACT -->
@@ -2554,20 +2624,18 @@ def generate_html():
     <div class="toast" id="toast"></div>
 
     <script>
-        const PASSWORD_HASH = "{PASSWORD_HASH}";
+        const ENCRYPTED_CONTENT = "{encrypted_blob}";
+        const PBKDF2_ITERATIONS = {PBKDF2_ITERATIONS};
         let isUnlocked = false;
 
         function showSection(id) {{
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             const target = document.getElementById(id);
             if (target) target.classList.add('active');
-            // Update sidebar
             document.querySelectorAll('.sidebar-link').forEach(a => a.classList.remove('active'));
-            // Scroll to top — both the content div and the window
             const mc = document.getElementById('main-content');
             if (mc) mc.scrollTop = 0;
             window.scrollTo(0, 0);
-            // Close mobile sidebar + overlay
             closeSidebar();
         }}
 
@@ -2576,34 +2644,75 @@ def generate_html():
                 showSection(sectionId);
                 return;
             }}
-            // Check sessionStorage
-            if (sessionStorage.getItem('rsquare_unlocked') === 'true') {{
-                isUnlocked = true;
-                showSection(sectionId);
-                updateLockIcon();
-                return;
+            // Check sessionStorage for cached decrypted content
+            const cached = sessionStorage.getItem('rsquare_decrypted');
+            if (cached) {{
+                try {{
+                    injectDecryptedContent(JSON.parse(cached));
+                    isUnlocked = true;
+                    updateLockIcon();
+                    showSection(sectionId);
+                    return;
+                }} catch(e) {{
+                    sessionStorage.removeItem('rsquare_decrypted');
+                }}
             }}
-            // Show password gate, remembering where they wanted to go
             window._pendingSection = sectionId;
             showSection('pw-gate');
         }}
 
+        async function deriveKey(password, salt) {{
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+            );
+            return crypto.subtle.deriveKey(
+                {{ name: 'PBKDF2', salt: salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' }},
+                keyMaterial,
+                {{ name: 'AES-GCM', length: 256 }},
+                false,
+                ['decrypt']
+            );
+        }}
+
+        async function decryptContent(password) {{
+            const raw = Uint8Array.from(atob(ENCRYPTED_CONTENT), c => c.charCodeAt(0));
+            const salt = raw.slice(0, 16);
+            const iv = raw.slice(16, 28);
+            const ciphertext = raw.slice(28);
+            const key = await deriveKey(password, salt);
+            const decrypted = await crypto.subtle.decrypt(
+                {{ name: 'AES-GCM', iv: iv }}, key, ciphertext
+            );
+            return new TextDecoder().decode(decrypted);
+        }}
+
+        function injectDecryptedContent(sections) {{
+            for (const [id, html] of Object.entries(sections)) {{
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = html;
+            }}
+            // Re-init checklists after injection
+            loadChecklist();
+            // Re-init quote builder if booking was injected
+            if (sections['booking'] && typeof updateQuote === 'function') {{
+                updateQuote();
+            }}
+        }}
+
         async function checkPassword() {{
             const input = document.getElementById('pw-input').value;
-            const encoder = new TextEncoder();
-            const data = encoder.encode(input);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-            if (hashHex === PASSWORD_HASH) {{
+            try {{
+                const plaintext = await decryptContent(input);
+                const sections = JSON.parse(plaintext);
+                injectDecryptedContent(sections);
                 isUnlocked = true;
-                sessionStorage.setItem('rsquare_unlocked', 'true');
+                sessionStorage.setItem('rsquare_decrypted', plaintext);
                 updateLockIcon();
                 showToast('Unlocked!');
                 const target = window._pendingSection || 'pricing';
                 showSection(target);
-            }} else {{
+            }} catch(e) {{
                 document.getElementById('pw-error').style.display = 'block';
                 document.getElementById('pw-input').value = '';
                 document.getElementById('pw-input').focus();
@@ -2616,10 +2725,8 @@ def generate_html():
                 icon.textContent = '🔓';
                 icon.classList.add('unlocked');
             }}
-            // Show hidden workflow sidebar links
             const wfBlock = document.getElementById('wf-sidebar-block');
             if (wfBlock) wfBlock.style.display = 'block';
-            // Show pricing/booking links in sidebar
             document.querySelectorAll('.sidebar-link.wf-link').forEach(link => {{
                 link.style.display = 'block';
             }});
@@ -2690,7 +2797,7 @@ def generate_html():
 
         function mobileNavProtected(sectionId) {{
             accessWorkflow(sectionId);
-            if (isUnlocked || sessionStorage.getItem('rsquare_unlocked') === 'true') {{
+            if (isUnlocked) {{
                 updateBottomNav(sectionId);
             }}
         }}
@@ -2708,11 +2815,19 @@ def generate_html():
             if (tabId) document.getElementById(tabId)?.classList.add('active');
         }}
 
-        // Check if already unlocked (pricing/workflow access persists in tab)
-        if (sessionStorage.getItem('rsquare_unlocked') === 'true') {{
-            isUnlocked = true;
-            updateLockIcon();
-        }}
+        // Check if already unlocked via cached decrypted content
+        (function() {{
+            const cached = sessionStorage.getItem('rsquare_decrypted');
+            if (cached) {{
+                try {{
+                    injectDecryptedContent(JSON.parse(cached));
+                    isUnlocked = true;
+                    updateLockIcon();
+                }} catch(e) {{
+                    sessionStorage.removeItem('rsquare_decrypted');
+                }}
+            }}
+        }})();
 
         // Load checklists on page load
         loadChecklist();
@@ -2725,9 +2840,10 @@ def generate_html():
         }};
 
         function updateQuote() {{
-            const svc = document.getElementById('q-services').value;
-            // Decode HTML entities for matching
-            const svcText = svc.replace(/&amp;/g, '&').replace(/&mdash;/g, '—');
+            const svcEl = document.getElementById('q-services');
+            if (!svcEl) return;
+            const svc = svcEl.value;
+            const svcText = svc.replace(/&amp;/g, '&').replace(/&mdash;/g, '\u2014');
             const hours = parseInt(document.getElementById('q-hours').value) || 0;
             const rate = rateMap[svcText] || 0;
             const live = document.getElementById('q-live').checked ? 100 : 0;
@@ -2741,7 +2857,6 @@ def generate_html():
             const shootType = document.getElementById('q-shoottype').value;
             const deposit = document.getElementById('q-deposit').value || '___';
             const hasLive = document.getElementById('q-live').checked;
-            const liveText = hasLive ? 'Yes' : 'No';
 
             let dateDisplay = '___';
             if (dateVal) {{
@@ -2751,7 +2866,6 @@ def generate_html():
 
             const quote = total > 0 ? '$' + total.toLocaleString() : '___';
 
-            // HTML preview (styled)
             const html = `
                 <div class="quote-section">
                     <div class="quote-greeting">Hey ${{name}}! 👋<br>Thanks for reaching out — here's the quote for your ${{event.toLowerCase()}}:</div>
@@ -2787,7 +2901,6 @@ def generate_html():
             `;
             document.getElementById('quote-preview').innerHTML = html;
 
-            // Plain text version (for copy/WhatsApp)
             const text = `Hey ${{name}}! 👋
 Thanks for reaching out — here's the quote for your ${{event.toLowerCase()}}:
 
@@ -2819,7 +2932,8 @@ Looking forward to it! 🙌
         }}
 
         function getQuoteText() {{
-            return document.getElementById('quote-preview').dataset.plaintext || document.getElementById('quote-preview').textContent;
+            const el = document.getElementById('quote-preview');
+            return el ? (el.dataset.plaintext || el.textContent) : '';
         }}
 
         function copyQuote() {{
@@ -2827,7 +2941,6 @@ Looking forward to it! 🙌
             navigator.clipboard.writeText(text).then(() => {{
                 showToast('Quote copied to clipboard!');
             }}).catch(() => {{
-                // Fallback
                 const ta = document.createElement('textarea');
                 ta.value = text;
                 document.body.appendChild(ta);
@@ -2843,13 +2956,9 @@ Looking forward to it! 🙌
             const text = getQuoteText();
             const encoded = encodeURIComponent(text);
             window.open('https://wa.me/?text=' + encoded, '_blank');
-            // Show confirmation
             const conf = document.getElementById('booking-confirmation');
             if (conf) conf.style.display = 'block';
         }}
-
-        // Initialize quote preview
-        updateQuote();
 
     </script>
 </body>
