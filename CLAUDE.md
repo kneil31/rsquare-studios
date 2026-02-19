@@ -52,14 +52,18 @@ Each portfolio category has a cover photo. To swap an image:
 4. Update the `category_covers` dict in `generate_dashboard.py`
 5. Adjust the background-position tuple value if the subject gets cropped
 
-Current covers:
-| Category | Image Key | Source Album |
-|----------|-----------|-------------|
-| Wedding | BvTChsc | — |
-| Maternity | ZqWs3n5 | — |
-| Baby Shower | 3MjgbV3 | Varsha Baby Shower |
-| Birthday | Xq8BHgp | — |
-| Cradle | R3QTwKk | Vayu Skanda Cradle |
+Current covers (all 9 categories have tuned `background-position`):
+| Category | Image Key | Position |
+|----------|-----------|----------|
+| Wedding | BvTChsc | center 43% |
+| Engagement | 8NfsLKT | 38% 47% |
+| Pre-Wedding | GfR24FT | center 24% |
+| Half Saree | MCmGphP | 68% 52% |
+| Maternity | ZqWs3n5 | center 18% |
+| Baby Shower | 3MjgbV3 | 37% 18% |
+| Birthday | Xq8BHgp | center 40% |
+| Cradle | R3QTwKk | center 47% |
+| Celebrations | MPN69Q3 | 76% 17% |
 
 Homepage hero: `hero.jpg` — purple silhouette wedding photo (local file, not SmugMug). Option D split layout with CSS mask blend.
 
@@ -69,7 +73,7 @@ Spare image (not yet used): `i-6trRsbK`
 
 - **API Key:** `nxtxC83BMVxbcJKJ8b89HLV2CBPHpSTD`
 - **Config:** `~/.smugmug_config.json` (OAuth1 tokens)
-- **Helper scripts:** `fetch_cover_images.py`, `fetch_smugmug_sizes.py`
+- **Helper scripts:** `fetch_cover_images.py`, `fetch_smugmug_sizes.py`, `fetch_album_stats.py`, `detect_cover_faces.py`
 
 ## Workflow
 
@@ -106,6 +110,10 @@ git push
 - Password hint shown below input
 - Git history cleaned with `filter-repo` — no plaintext in old commits
 - Client password cannot decrypt internal sections (verified via cross-test)
+
+## Subprojects
+
+- **krithin-neel/** — Separate page generator (`generate_krithin_page.py`) with its own cover images and output
 
 ## Mobile-Specific Notes
 
