@@ -1275,15 +1275,15 @@ def generate_html(image_counts, cover_images, password):
   <div id="app-content" class="app-content">
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('krithin')">Krithin</button>
+      <button class="tab-btn" onclick="switchTab('reels')">Reels</button>
       <button class="tab-btn" onclick="switchTab('monika')">Monika</button>
       <button class="tab-btn" onclick="switchTab('family')">Family</button>
-      <button class="tab-btn" onclick="switchTab('reels')">Reels</button>
     </div>
 
     <div id="tab-krithin" class="tab-content active"></div>
+    <div id="tab-reels" class="tab-content"></div>
     <div id="tab-monika" class="tab-content"></div>
     <div id="tab-family" class="tab-content"></div>
-    <div id="tab-reels" class="tab-content"></div>
   </div>
 
   <div class="footer" style="display:none" id="app-footer">
