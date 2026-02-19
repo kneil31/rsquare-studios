@@ -216,7 +216,7 @@ def build_gallery_cards(galleries):
     category_covers = {
         "wedding": "https://photos.smugmug.com/photos/i-BvTChsc/0/LwhGTh2B2pCPDgNpjPJp8J3nCSfRNdKwd3j5CVTKN/X3/i-BvTChsc-X3.jpg",
         "maternity": "https://photos.smugmug.com/photos/i-ZqWs3n5/0/NcPVRqqFJXR3MJfcVn45gshTHXpxkZFvfv655D3mB/X3/i-ZqWs3n5-X3.jpg",
-        "newborn": "https://photos.smugmug.com/photos/i-mCbjVpK/0/LPPzwRcP7Q4BxJtcLzFfxGJz6TcDPWzPZGDX8M64F/X3/i-mCbjVpK-X3.jpg",
+        "newborn": "https://photos.smugmug.com/photos/i-hXrN3Fk/0/LfdM2tXQMkRMVZjPKm6wn8bqkCFTRBWRTNSdZmhMp/X3/i-hXrN3Fk-X3.jpg",
         "birthday": "https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg",
         "cradle": "https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg",
     }
