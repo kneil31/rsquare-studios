@@ -1962,6 +1962,10 @@ def generate_html():
                         <div class="wf-tile-icon">💍</div>
                         <div class="wf-tile-label">Wedding Poses</div>
                     </div>
+                    <a class="wf-tile" href="https://literate-basketball-b5e.notion.site/PLAN-POSES-13e48bb472084196a825703d7e8a4d10" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;">
+                        <div class="wf-tile-icon">📸</div>
+                        <div class="wf-tile-label">Pose References</div>
+                    </a>
                 </div>
             </div>
 
