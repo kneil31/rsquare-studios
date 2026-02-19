@@ -1285,6 +1285,12 @@ def generate_html():
             line-height: 1.5;
         }}
 
+        /* Site lock — hide everything until password entered */
+        .site-locked .sidebar {{ display: none; }}
+        .site-locked .bottom-nav {{ display: none; }}
+        .site-locked .wa-float {{ display: none; }}
+        .site-locked .mobile-toggle {{ display: none; }}
+
         /* Password gate */
         .pw-gate {{
             text-align: center;
@@ -1737,7 +1743,7 @@ def generate_html():
         .toast.show {{ opacity: 1; transform: translateY(0); }}
     </style>
 </head>
-<body>
+<body class="site-locked">
     <button class="mobile-toggle" onclick="toggleSidebar()">&#9776;</button>
     <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
 
@@ -1757,11 +1763,11 @@ def generate_html():
                 <span class="bnav-icon">📸</span>
                 Portfolio
             </div>
-            <div class="bnav-item" onclick="mobileNav('pricing')" id="bnav-pricing">
+            <div class="bnav-item" onclick="mobileNavProtected('pricing')" id="bnav-pricing">
                 <span class="bnav-icon">💰</span>
                 Pricing
             </div>
-            <div class="bnav-item" onclick="mobileNav('booking')" id="bnav-booking">
+            <div class="bnav-item" onclick="mobileNavProtected('booking')" id="bnav-booking">
                 <span class="bnav-icon">📋</span>
                 Book
             </div>
@@ -1786,13 +1792,12 @@ def generate_html():
             {gallery_sidebar}
 
             <div class="sidebar-divider"></div>
-            <div class="sidebar-section-label">PRICING</div>
-            <a class="sidebar-link" onclick="showSection('pricing')">💰 Pricing</a>
-            <a class="sidebar-link" onclick="showSection('booking')">📋 Book / Get Quote</a>
-
-            <div class="sidebar-divider"></div>
             <div class="sidebar-section-label" id="wf-section-label">
-                <span class="lock-icon" id="lock-icon">🔒</span> WORKFLOW
+                <span class="lock-icon" id="lock-icon">🔒</span> PRIVATE
+            </div>
+            <a class="sidebar-link wf-link" onclick="accessWorkflow('pricing')">💰 Pricing</a>
+            <a class="sidebar-link wf-link" onclick="accessWorkflow('booking')">📋 Book / Get Quote</a>
+            <div class="sidebar-section-label wf-link" style="padding-top:8px">WORKFLOW
             </div>
             <a class="sidebar-link wf-link" onclick="accessWorkflow('workflow-home')">📋 Dashboard</a>
             <a class="sidebar-link wf-link" onclick="accessWorkflow('checklists')">✅ Checklists</a>
@@ -1813,7 +1818,7 @@ def generate_html():
         <div class="content" id="main-content">
 
             <!-- HOME -->
-            <div class="page active" id="home">
+            <div class="page" id="home">
                 <div class="hero">
                     <div class="hero-logo">📷</div>
                     <h1>Rsquare Studios</h1>
@@ -2062,15 +2067,15 @@ def generate_html():
             </div>
 
             <!-- PASSWORD GATE -->
-            <div class="page" id="pw-gate">
+            <div class="page active" id="pw-gate">
                 <div class="pw-gate">
-                    <h2>🔒 Workflow Dashboard</h2>
-                    <p>This section is password-protected. Enter the password to access checklists, posing guides, and course notes.</p>
+                    <h2>📷 Rsquare Studios</h2>
+                    <p>Enter the password to view the site.</p>
                     <div>
                         <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPassword()">
-                        <button class="pw-btn" onclick="checkPassword()">Unlock</button>
+                        <button class="pw-btn" onclick="checkPassword()">Enter</button>
                     </div>
-                    <div class="pw-error" id="pw-error">Incorrect password. Try again.</div>
+                    <div class="pw-error" id="pw-error">Wrong password. Try again.</div>
                 </div>
             </div>
 
@@ -2254,9 +2259,10 @@ def generate_html():
             if (hashHex === PASSWORD_HASH) {{
                 isUnlocked = true;
                 sessionStorage.setItem('rsquare_unlocked', 'true');
+                document.body.classList.remove('site-locked');
                 updateLockIcon();
-                showToast('Unlocked! Welcome to the workflow dashboard.');
-                const target = window._pendingSection || 'workflow-home';
+                showToast('Welcome!');
+                const target = window._pendingSection || 'home';
                 showSection(target);
             }} else {{
                 document.getElementById('pw-error').style.display = 'block';
@@ -2333,9 +2339,18 @@ def generate_html():
         // Bottom nav handler
         function mobileNav(sectionId) {{
             showSection(sectionId);
-            // Update active state on bottom nav
+            updateBottomNav(sectionId);
+        }}
+
+        function mobileNavProtected(sectionId) {{
+            accessWorkflow(sectionId);
+            if (isUnlocked || sessionStorage.getItem('rsquare_unlocked') === 'true') {{
+                updateBottomNav(sectionId);
+            }}
+        }}
+
+        function updateBottomNav(sectionId) {{
             document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
-            // Map section to tab
             const tabMap = {{
                 'home': 'bnav-home',
                 'portfolio-home': 'bnav-portfolio',
@@ -2347,10 +2362,14 @@ def generate_html():
             if (tabId) document.getElementById(tabId)?.classList.add('active');
         }}
 
-        // Check if already unlocked
+        // Check if already unlocked (restore full site access on refresh)
         if (sessionStorage.getItem('rsquare_unlocked') === 'true') {{
             isUnlocked = true;
+            document.body.classList.remove('site-locked');
             updateLockIcon();
+            // Switch from pw-gate to home
+            document.getElementById('pw-gate').classList.remove('active');
+            document.getElementById('home').classList.add('active');
         }}
 
         // Load checklists on page load
