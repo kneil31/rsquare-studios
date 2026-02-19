@@ -245,41 +245,42 @@ def build_gallery_cards(galleries):
 
 
 def build_pricing_section():
-    """Build pricing cards with actual Rsquare Studios rates."""
+    """Build pricing cards with professional photographer language."""
     html = """
-            <!-- 1 Person -->
+            <!-- Solo Coverage -->
             <div class="pricing-card" style="--accent: #8b5cf6;">
                 <div class="pricing-header">
                     <span class="pricing-icon">📷</span>
-                    <span class="pricing-name">1 Person</span>
+                    <span class="pricing-name">Solo Coverage</span>
                 </div>
                 <div class="price-tier">
                     <div class="tier-header">
-                        <span class="tier-name">Photography Only</span>
+                        <span class="tier-name">Photography</span>
                         <span class="tier-price">$150<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
                     </div>
+                    <div class="tier-details">One dedicated photographer capturing every key moment of your event</div>
                 </div>
                 <div class="price-tier">
                     <div class="tier-header">
-                        <span class="tier-name">Photography &amp; Videography</span>
+                        <span class="tier-name">Photography &amp; Cinematography</span>
                         <span class="tier-price">$235<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
                     </div>
-                    <div class="tier-details">One person covering both photo &amp; video</div>
+                    <div class="tier-details">A single creative professional handling both photo and video &mdash; ideal for intimate events and smaller gatherings</div>
                 </div>
             </div>
 
-            <!-- 2 Persons -->
+            <!-- Dual Coverage -->
             <div class="pricing-card" style="--accent: #3b82f6;">
                 <div class="pricing-header">
-                    <span class="pricing-icon">📷📹</span>
-                    <span class="pricing-name">2 Persons</span>
+                    <span class="pricing-icon">📷&thinsp;📹</span>
+                    <span class="pricing-name">Dual Coverage</span>
                 </div>
                 <div class="price-tier">
                     <div class="tier-header">
-                        <span class="tier-name">Photography &amp; Videography</span>
+                        <span class="tier-name">Photography &amp; Cinematography</span>
                         <span class="tier-price">$325<span style="font-size:13px;font-weight:400;color:#6b7280;">/hr</span></span>
                     </div>
-                    <div class="tier-details">Dedicated photographer + dedicated videographer</div>
+                    <div class="tier-details">A dedicated photographer and a dedicated videographer working in tandem &mdash; recommended for weddings, large celebrations, and multi-location events</div>
                 </div>
             </div>"""
 
@@ -1374,6 +1375,9 @@ def generate_html():
             {posing_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link wf-link"')}
 
 
+            <div class="sidebar-divider"></div>
+            <a href="#" class="sidebar-link" onclick="sharePage(event)">📤 Share This Page</a>
+
             <div class="sidebar-footer">
                 Updated {now}<br>
                 {total_galleries} galleries
@@ -1388,7 +1392,7 @@ def generate_html():
                 <div class="hero">
                     <div class="hero-logo">📷</div>
                     <h1>Rsquare Studios</h1>
-                    <p>Wedding, Maternity, Newborn, Birthday &amp; Cradle Ceremony Photography in the Dallas-Fort Worth area.</p>
+                    <p>Capturing life's most meaningful moments &mdash; weddings, maternity, newborn, birthday, and cradle ceremonies across the Dallas&ndash;Fort Worth area.</p>
                     <div class="hero-stats">
                         <div class="hero-stat">
                             <div class="number">{total_galleries}+</div>
@@ -1416,7 +1420,7 @@ def generate_html():
             <div class="page" id="portfolio-home">
                 <div class="page-breadcrumb">Portfolio</div>
                 <h1 class="page-title">Portfolio</h1>
-                <div class="page-meta">{total_galleries} galleries across 5 categories &middot; Photos hosted on SmugMug</div>
+                <div class="page-meta">{total_galleries} curated galleries &middot; Tap any category to browse our recent work</div>
                 <div class="cat-grid">
                     {"".join(f'''
                     <div class="cat-tile" onclick="showSection('portfolio-{cat}')">
@@ -1432,62 +1436,69 @@ def generate_html():
 
             <!-- PRICING -->
             <div class="page" id="pricing">
-                <div class="page-breadcrumb">Packages</div>
-                <h1 class="page-title">Packages &amp; Pricing</h1>
-                <div class="page-meta">Professional photography for life's most important moments</div>
+                <div class="page-breadcrumb">Investment</div>
+                <h1 class="page-title">Investment</h1>
+                <div class="page-meta">Transparent pricing for every milestone worth remembering</div>
                 <div class="pricing-grid">
                     {pricing_html}
                 </div>
+
                 <div class="includes-box">
-                    <h3>Deliverables</h3>
+                    <h3>What You Receive</h3>
                     <div class="includes-list">
-                        <span>&#10003; All edited pictures (varies by event)</span>
-                        <span>&#10003; Cinematic teaser (4-6 mins)</span>
-                    </div>
-                </div>
-                <div class="includes-box" style="margin-top:12px; border-color:#4a3520;">
-                    <h3 style="color:#f59e0b;">Payment</h3>
-                    <div style="font-size:14px; color:#fef3c7;">
-                        Full payment must be in <strong>CASH</strong>
+                        <span>&#10003; Professionally edited high-resolution images</span>
+                        <span>&#10003; Cinematic highlight teaser (4&ndash;6 min)</span>
+                        <span>&#10003; Private online gallery with downloads</span>
+                        <span>&#10003; Full print release</span>
                     </div>
                 </div>
 
-                <!-- 1 vs 2 person comparison -->
+                <div class="includes-box" style="margin-top:12px; border-color:#4a3520;">
+                    <h3 style="color:#f59e0b;">Payment</h3>
+                    <div style="font-size:14px; color:#fef3c7; line-height:1.7;">
+                        We accept <strong>cash</strong> payments to keep our pricing accessible and pass savings directly to you. A signed receipt is provided for every transaction.
+                    </div>
+                </div>
+
+                <!-- Solo vs Dual comparison -->
                 <div style="margin-top:28px;">
-                    <h3 style="font-size:16px; font-weight:700; color:#fff; margin-bottom:4px;">1 Person vs 2 Persons — What to Expect</h3>
+                    <h3 style="font-size:16px; font-weight:700; color:#fff; margin-bottom:4px;">Solo vs. Dual Coverage &mdash; Which Is Right for You?</h3>
                     <div class="proscons">
                         <div class="proscons-col" style="border:1px solid #2d4a2d;">
-                            <h4 style="color:#10b981;">1 Person — Pros</h4>
+                            <h4 style="color:#10b981;">Solo Coverage</h4>
                             <ul>
-                                <li>&#10003; Lower price point</li>
-                                <li>&#10003; All major moments captured (photos &amp; video)</li>
+                                <li>&#10003; More accessible investment</li>
+                                <li>&#10003; Every key moment &mdash; ceremony, portraits, reception &mdash; captured in both photo and video</li>
+                                <li style="color:#6b7280; font-style:italic; margin-top:6px;">Best for: intimate events, elopements, smaller gatherings</li>
                             </ul>
                         </div>
-                        <div class="proscons-col" style="border:1px solid #4a2d2d;">
-                            <h4 style="color:#ef4444;">1 Person — Trade-offs</h4>
+                        <div class="proscons-col" style="border:1px solid #2d3a5e;">
+                            <h4 style="color:#3b82f6;">Dual Coverage</h4>
                             <ul>
-                                <li>Fewer candid moments (one person doing both jobs)</li>
-                                <li>Footage may be less &mdash; teaser a little shorter, fewer photos compared to 2 persons</li>
+                                <li>&#10003; Simultaneous angles &mdash; nothing missed</li>
+                                <li>&#10003; More candid moments and guest coverage</li>
+                                <li>&#10003; Richer highlight reel with dedicated video footage</li>
+                                <li style="color:#6b7280; font-style:italic; margin-top:6px;">Recommended for: weddings, 100+ guests, multi-location events</li>
                             </ul>
                         </div>
                     </div>
                 </div>
 
                 <div style="margin-top:24px; text-align:center;">
-                    <button class="copy-btn" onclick="showSection('booking')" style="background:#8b5cf6;">📋 Get a Quote</button>
+                    <button class="copy-btn" onclick="showSection('booking')" style="background:#8b5cf6;">Request a Quote</button>
                 </div>
             </div>
 
             <!-- BOOKING -->
             <div class="page" id="booking">
                 <div class="page-breadcrumb">Book</div>
-                <h1 class="page-title">Get a Quote</h1>
-                <div class="page-meta">Fill in the details and share via WhatsApp or copy to clipboard</div>
+                <h1 class="page-title">Request a Quote</h1>
+                <div class="page-meta">Fill in the details below. Preview your quote, then share it via WhatsApp or copy to clipboard.</div>
 
                 <div class="book-form" id="book-form">
                     <div class="form-row">
                         <label class="form-label">CLIENT NAME</label>
-                        <input class="form-input" id="q-name" placeholder="Client name" oninput="updateQuote()">
+                        <input class="form-input" id="q-name" placeholder="Full name" oninput="updateQuote()">
                     </div>
                     <div class="form-row">
                         <label class="form-label">EVENT</label>
@@ -1495,7 +1506,7 @@ def generate_html():
                     </div>
                     <div class="form-row">
                         <label class="form-label">LOCATION</label>
-                        <input class="form-input" id="q-location" placeholder="Venue / City" oninput="updateQuote()">
+                        <input class="form-input" id="q-location" placeholder="Venue name or city" oninput="updateQuote()">
                     </div>
                     <div class="form-row-inline">
                         <div class="form-row">
@@ -1503,13 +1514,13 @@ def generate_html():
                             <input class="form-input" id="q-date" type="date" oninput="updateQuote()">
                         </div>
                         <div class="form-row">
-                            <label class="form-label">TOTAL HOURS</label>
+                            <label class="form-label">HOURS OF COVERAGE</label>
                             <input class="form-input" id="q-hours" type="number" min="1" placeholder="Hours" oninput="updateQuote()">
                         </div>
                     </div>
                     <div class="form-row-inline">
                         <div class="form-row">
-                            <label class="form-label">SHOOT TYPE</label>
+                            <label class="form-label">SETTING</label>
                             <select class="form-select" id="q-shoottype" onchange="updateQuote()">
                                 <option value="Outdoor">Outdoor</option>
                                 <option value="Indoor">Indoor</option>
@@ -1517,21 +1528,21 @@ def generate_html():
                             </select>
                         </div>
                         <div class="form-row">
-                            <label class="form-label">SERVICES</label>
+                            <label class="form-label">COVERAGE TYPE</label>
                             <select class="form-select" id="q-services" onchange="updateQuote()">
-                                <option value="Photography — 1 Person ($150/hr)">Photography — 1 Person ($150/hr)</option>
-                                <option value="Photo &amp; Video — 1 Person ($235/hr)">Photo &amp; Video — 1 Person ($235/hr)</option>
-                                <option value="Photo &amp; Video — 2 Persons ($325/hr)">Photo &amp; Video — 2 Persons ($325/hr)</option>
+                                <option value="Photography &mdash; Solo ($150/hr)">Photography &mdash; Solo ($150/hr)</option>
+                                <option value="Photo &amp; Video &mdash; Solo ($235/hr)">Photo &amp; Video &mdash; Solo ($235/hr)</option>
+                                <option value="Photo &amp; Video &mdash; Dual ($325/hr)">Photo &amp; Video &mdash; Dual ($325/hr)</option>
                             </select>
                         </div>
                     </div>
                     <div class="form-row-inline">
                         <div class="form-row">
-                            <label class="form-label">QUOTE (auto-calculated)</label>
+                            <label class="form-label">ESTIMATED INVESTMENT</label>
                             <input class="form-input" id="q-quote" readonly style="color:#8b5cf6; font-weight:700;">
                         </div>
                         <div class="form-row">
-                            <label class="form-label">DEPOSIT</label>
+                            <label class="form-label">RETAINER</label>
                             <input class="form-input" id="q-deposit" placeholder="e.g. $100" oninput="updateQuote()">
                         </div>
                     </div>
@@ -1540,15 +1551,15 @@ def generate_html():
                 <div class="quote-preview" id="quote-preview" style="margin-top:20px;"></div>
 
                 <div class="btn-row">
-                    <button class="copy-btn" onclick="copyQuote()">📋 Copy Quote</button>
-                    <a class="share-wa-btn" id="wa-share-btn" href="#" target="_blank" rel="noopener" onclick="shareQuoteWA(event)">💬 Send via WhatsApp</a>
+                    <button class="copy-btn" onclick="copyQuote()">📋 Copy to Clipboard</button>
+                    <a class="share-wa-btn" id="wa-share-btn" href="#" target="_blank" rel="noopener" onclick="shareQuoteWA(event)">💬 Share via WhatsApp</a>
                 </div>
 
                 <a href="https://www.rsquarestudios.com/2025-Fam/Bakedbysarvanii/n-SJjjvn" target="_blank" rel="noopener" class="crosssell-card">
                     <div class="crosssell-icon">🎂</div>
                     <div class="crosssell-info">
-                        <div class="crosssell-title">We also bake cakes for events &amp; parties!</div>
-                        <div class="crosssell-desc">Check out @bakedbysarvani — custom cakes, desserts &amp; more</div>
+                        <div class="crosssell-title">Need a custom cake for your event?</div>
+                        <div class="crosssell-desc">We craft bespoke cakes and desserts for weddings, birthdays, and celebrations &mdash; @bakedbysarvani</div>
                     </div>
                     <div class="gallery-arrow">&#8599;</div>
                 </a>
@@ -1645,8 +1656,8 @@ def generate_html():
             <!-- CONTACT -->
             <div class="page" id="contact">
                 <div class="page-breadcrumb">Contact</div>
-                <h1 class="page-title">Get In Touch</h1>
-                <div class="page-meta">Ready to capture your special moments? Reach out anytime!</div>
+                <h1 class="page-title">Let's Connect</h1>
+                <div class="page-meta">We'd love to hear about your event. Reach out and let's start planning.</div>
 
                 <div class="gallery-grid" style="max-width:400px;">
                     <a href="https://wa.me/15307278598?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." target="_blank" rel="noopener" class="gallery-card" style="border-color:#25D366;">
@@ -1684,10 +1695,10 @@ def generate_html():
                 </div>
 
                 <div class="includes-box" style="max-width:400px; margin-top:28px;">
-                    <h3>Based in Dallas-Fort Worth, TX</h3>
+                    <h3>Based in Dallas&ndash;Fort Worth, TX</h3>
                     <div style="font-size:14px; color:#c4b5fd; line-height:1.7;">
-                        Available for weddings, maternity, newborn, birthday, and cradle ceremony photography.<br><br>
-                        We typically book 4-6 weeks in advance. Secure your date with a deposit!
+                        We photograph weddings, maternity sessions, newborns, birthdays, and cradle ceremonies across the DFW metroplex.<br><br>
+                        We take a limited number of sessions each month to ensure every client receives our full attention. Dates are reserved on a first-come, first-served basis &mdash; we recommend booking 4&ndash;6 weeks in advance.
                     </div>
                 </div>
             </div>
@@ -1845,21 +1856,20 @@ def generate_html():
 
         // Quote form logic
         const rateMap = {{
-            'Photography — 1 Person ($150/hr)': 150,
-            'Photo & Video — 1 Person ($235/hr)': 235,
-            'Photo & Video — 2 Persons ($325/hr)': 325,
+            'Photography — Solo ($150/hr)': 150,
+            'Photo & Video — Solo ($235/hr)': 235,
+            'Photo & Video — Dual ($325/hr)': 325,
         }};
 
         function updateQuote() {{
             const svc = document.getElementById('q-services').value;
             // Decode HTML entities for matching
-            const svcText = svc.replace(/&amp;/g, '&');
+            const svcText = svc.replace(/&amp;/g, '&').replace(/&mdash;/g, '—');
             const hours = parseInt(document.getElementById('q-hours').value) || 0;
             const rate = rateMap[svcText] || 0;
             const total = rate * hours;
             document.getElementById('q-quote').value = total > 0 ? '$' + total.toLocaleString() : '';
 
-            // Update preview
             const name = document.getElementById('q-name').value || '___';
             const event = document.getElementById('q-event').value || '___';
             const location = document.getElementById('q-location').value || '___';
@@ -1870,29 +1880,53 @@ def generate_html():
             let dateDisplay = '___';
             if (dateVal) {{
                 const d = new Date(dateVal + 'T12:00:00');
-                dateDisplay = d.toLocaleDateString('en-US', {{ weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }});
+                dateDisplay = d.toLocaleDateString('en-US', {{ weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }});
             }}
 
             const quote = total > 0 ? '$' + total.toLocaleString() : '___';
 
-            const text = `Client Name: ${{name}}
+            const text = `Hi ${{name}},
+
+Thank you for your interest in Rsquare Studios! Here are the details for your upcoming session:
+
+━━━━━━━━━━━━━━━━━━━━
+📋  SESSION DETAILS
+━━━━━━━━━━━━━━━━━━━━
+Client: ${{name}}
 Event: ${{event}}
 Location: ${{location}}
 Date: ${{dateDisplay}}
-Shoot Type: ${{shootType}}
-Services: ${{svcText}}
-Quote: ${{quote}}
-Total Hours: ${{hours || '___'}}
-Deposit: ${{deposit}}
+Setting: ${{shootType}}
+Coverage: ${{svcText}}
+Hours: ${{hours || '___'}}
 
-Deliverables:
-• Edited pictures (Delivered in 12-15 Days)
-• Cinematic Teaser (Delivered in 3-4 Weeks)
+━━━━━━━━━━━━━━━━━━━━
+💰  INVESTMENT
+━━━━━━━━━━━━━━━━━━━━
+Total: ${{quote}}
+Retainer: ${{deposit}}
+Balance due on event day (cash)
 
-Download Instructions:
-Pictures can be downloaded in one go from Desktop only. Download link will be sent to the provided email. Usually takes 15-30 mins to prepare. Link expires in 3 months — please download ASAP.
+━━━━━━━━━━━━━━━━━━━━
+📸  DELIVERABLES
+━━━━━━━━━━━━━━━━━━━━
+• Professionally edited high-resolution images — delivered within 12–15 days
+• Cinematic highlight teaser (4–6 min) — delivered within 3–4 weeks
 
-We also bake cakes for events and parties! Check our work: https://www.rsquarestudios.com/2025-Fam/Bakedbysarvanii/n-SJjjvn
+━━━━━━━━━━━━━━━━━━━━
+📥  GALLERY & DOWNLOADS
+━━━━━━━━━━━━━━━━━━━━
+Your images will be hosted in a private online gallery. Once ready, you'll receive an email with a download link. For the best experience, download from a desktop computer. The link typically takes 15–30 minutes to prepare and expires after 3 months — please save your images promptly.
+
+━━━━━━━━━━━━━━━━━━━━
+🎂  BONUS
+━━━━━━━━━━━━━━━━━━━━
+Need a custom cake for your celebration? We also craft bespoke cakes and desserts!
+View our work → https://www.rsquarestudios.com/2025-Fam/Bakedbysarvanii/n-SJjjvn
+
+━━━━━━━━━━━━━━━━━━━━
+We can't wait to capture your special day!
+— Ram, Rsquare Studios
 
 https://dot.cards/rsquarestudios`;
 
@@ -1928,6 +1962,36 @@ https://dot.cards/rsquarestudios`;
 
         // Initialize quote preview
         updateQuote();
+
+        // Share page (like ByteByteGo dashboard)
+        function sharePage(e) {{
+            e.preventDefault();
+            const url = 'https://kneil31.github.io/rsquare-studios/';
+            const shareData = {{
+                title: 'Rsquare Studios — Photography',
+                text: 'Check out Rsquare Studios for wedding, maternity, and event photography in the Dallas–Fort Worth area.',
+                url: url
+            }};
+            if (navigator.share) {{
+                navigator.share(shareData).catch(() => fallbackShare(url));
+            }} else {{
+                fallbackShare(url);
+            }}
+        }}
+
+        function fallbackShare(url) {{
+            navigator.clipboard.writeText(url).then(() => {{
+                showToast('Link copied to clipboard!');
+            }}).catch(() => {{
+                const ta = document.createElement('textarea');
+                ta.value = url;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('Link copied!');
+            }});
+        }}
     </script>
 </body>
 </html>"""
