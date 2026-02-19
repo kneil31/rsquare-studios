@@ -2325,7 +2325,21 @@ def generate_html():
                     </div>
                     <div class="form-row">
                         <label class="form-label">EVENT</label>
-                        <input class="form-input" id="q-event" placeholder="e.g. Wedding, Birthday, Maternity" oninput="updateQuote()">
+                        <select class="form-select" id="q-event" onchange="updateQuote()">
+                            <option value="">Select event type</option>
+                            <option value="Wedding">Wedding</option>
+                            <option value="Engagement">Engagement</option>
+                            <option value="Pre-Wedding">Pre-Wedding</option>
+                            <option value="Half Saree">Half Saree</option>
+                            <option value="Baby Shower">Baby Shower</option>
+                            <option value="Maternity">Maternity</option>
+                            <option value="Birthday">Birthday</option>
+                            <option value="Cradle Ceremony">Cradle Ceremony</option>
+                            <option value="Housewarming">Housewarming</option>
+                            <option value="Anniversary">Anniversary</option>
+                            <option value="Pooja">Pooja</option>
+                            <option value="Other">Other</option>
+                        </select>
                     </div>
                     <div class="form-row">
                         <label class="form-label">LOCATION</label>
