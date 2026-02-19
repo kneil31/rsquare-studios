@@ -1863,75 +1863,12 @@ def generate_html():
                 <h1 class="page-title">Videos</h1>
                 <div class="page-meta">Highlight reels and cinematic teasers from our events</div>
                 <div class="video-grid">
-                    <a href="https://www.youtube.com/watch?v=ATyq7m_gLtY" target="_blank" rel="noopener" class="video-card">
-                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/ATyq7m_gLtY/hqdefault.jpg')">
-                            <div class="video-play">&#9654;</div>
-                            <div class="video-duration">3:25</div>
-                        </div>
-                        <div class="video-title">Rashmi Baby Shower</div>
-                    </a>
-                    <a href="https://www.youtube.com/watch?v=Yvn_19i9S-g" target="_blank" rel="noopener" class="video-card">
-                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/Yvn_19i9S-g/hqdefault.jpg')">
-                            <div class="video-play">&#9654;</div>
-                            <div class="video-duration">7:03</div>
-                        </div>
-                        <div class="video-title">Nithya &amp; Sunil Housewarming</div>
-                    </a>
-                    <a href="https://www.youtube.com/watch?v=tz3Fv7_n5CE" target="_blank" rel="noopener" class="video-card">
-                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/tz3Fv7_n5CE/hqdefault.jpg')">
-                            <div class="video-play">&#9654;</div>
-                            <div class="video-duration">11:20</div>
-                        </div>
-                        <div class="video-title">SRI HouseWarming Ceremony</div>
-                    </a>
-                    <a href="https://www.youtube.com/watch?v=iNz3KN2RQc8" target="_blank" rel="noopener" class="video-card">
-                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/iNz3KN2RQc8/hqdefault.jpg')">
-                            <div class="video-play">&#9654;</div>
-                            <div class="video-duration">5:27</div>
-                        </div>
-                        <div class="video-title">Koluguri's Gruhapravesam</div>
-                    </a>
-                    <a href="https://www.youtube.com/watch?v=rrus2g4RouI" target="_blank" rel="noopener" class="video-card">
-                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/rrus2g4RouI/hqdefault.jpg')">
-                            <div class="video-play">&#9654;</div>
-                            <div class="video-duration">4:59</div>
-                        </div>
-                        <div class="video-title">Santosh &amp; Teju Housewarming</div>
-                    </a>
-                    <a href="https://www.youtube.com/watch?v=keUYBHOwrh0" target="_blank" rel="noopener" class="video-card">
-                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/keUYBHOwrh0/hqdefault.jpg')">
-                            <div class="video-play">&#9654;</div>
-                            <div class="video-duration">7:23</div>
-                        </div>
-                        <div class="video-title">Sandeep &amp; Swetha Housewarming</div>
-                    </a>
                     <a href="https://www.youtube.com/watch?v=B4WH92E3ov4" target="_blank" rel="noopener" class="video-card">
                         <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/B4WH92E3ov4/hqdefault.jpg')">
                             <div class="video-play">&#9654;</div>
                             <div class="video-duration">6:39</div>
                         </div>
                         <div class="video-title">ShravArt's Housewarming</div>
-                    </a>
-                    <a href="https://www.youtube.com/watch?v=tSe9bVIzG64" target="_blank" rel="noopener" class="video-card">
-                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/tSe9bVIzG64/hqdefault.jpg')">
-                            <div class="video-play">&#9654;</div>
-                            <div class="video-duration">5:53</div>
-                        </div>
-                        <div class="video-title">Aravind &amp; Srinidhi Housewarming</div>
-                    </a>
-                    <a href="https://www.youtube.com/watch?v=75X1g6tDQ00" target="_blank" rel="noopener" class="video-card">
-                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/75X1g6tDQ00/hqdefault.jpg')">
-                            <div class="video-play">&#9654;</div>
-                            <div class="video-duration">4:06</div>
-                        </div>
-                        <div class="video-title">Teju House Warming</div>
-                    </a>
-                    <a href="https://www.youtube.com/watch?v=yUGVo7AfTQY" target="_blank" rel="noopener" class="video-card">
-                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/yUGVo7AfTQY/hqdefault.jpg')">
-                            <div class="video-play">&#9654;</div>
-                            <div class="video-duration">6:10</div>
-                        </div>
-                        <div class="video-title">Nandhini &amp; Anand HW Ceremony</div>
                     </a>
                 </div>
                 <div style="margin-top:20px; text-align:center;">
