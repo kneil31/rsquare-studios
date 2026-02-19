@@ -609,7 +609,7 @@ def generate_html():
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.7) 100%);
+            background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.65) 100%);
             z-index: 0;
         }}
         .hero > * {{
@@ -671,6 +671,18 @@ def generate_html():
             box-shadow: 0 4px 12px rgba(139,92,246,0.4);
         }}
         .hero-cta:hover {{ background: #7c3aed; }}
+        .hero-scroll-hint {{
+            margin-top: 24px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            animation: bounce 2s infinite;
+        }}
+        @keyframes bounce {{
+            0%, 100% {{ transform: translateY(0); }}
+            50% {{ transform: translateY(6px); }}
+        }}
 
         /* Category tiles on portfolio home */
         .cat-grid {{
@@ -1410,45 +1422,51 @@ def generate_html():
                 margin-bottom: 20px;
             }}
 
-            /* Hero mobile */
+            /* Hero mobile — full screen */
             .hero {{
-                padding: 48px 16px 36px;
-                margin: 0 8px 16px;
-                border-radius: 12px;
+                min-height: calc(100vh - 70px);
+                margin: 0;
+                border-radius: 0;
+                padding: 0 24px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
                 background-image: url('https://photos.smugmug.com/photos/i-VqnMPLz/0/Kd2nZQ6mNq7gxWCvG9bnXfk4xpp9JSX64npLRHHNV/XL/i-VqnMPLz-XL.jpg');
             }}
-            .hero-logo {{ font-size: 40px; }}
+            .hero-logo {{ font-size: 44px; margin-bottom: 16px; }}
             .hero h1 {{
-                font-size: 26px;
+                font-size: 32px;
                 letter-spacing: -0.5px;
+                margin-bottom: 12px;
             }}
             .hero p {{
-                font-size: 14px;
-                margin-bottom: 24px;
+                font-size: 15px;
+                margin-bottom: 28px;
+                line-height: 1.7;
             }}
             .hero-stats {{
-                gap: 20px;
-                margin-bottom: 24px;
+                gap: 28px;
+                margin-bottom: 28px;
             }}
-            .hero-stat .number {{ font-size: 24px; }}
+            .hero-stat .number {{ font-size: 26px; }}
             .hero-cta {{
-                padding: 14px 32px;
+                padding: 16px 40px;
                 font-size: 16px;
-                width: 100%;
-                max-width: 300px;
+                border-radius: 10px;
             }}
             .contact-bar {{
                 gap: 12px;
                 flex-direction: column;
             }}
 
-            /* Category tiles mobile */
+            /* Category tiles mobile — single column */
             .cat-grid {{
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
+                grid-template-columns: 1fr;
+                gap: 12px;
             }}
             .cat-tile {{
-                aspect-ratio: 3/4;
+                aspect-ratio: 16/9;
             }}
             .cat-tile-content {{
                 padding: 10px 12px;
@@ -1659,11 +1677,7 @@ def generate_html():
                         </div>
                     </div>
                     <a href="#" class="hero-cta" onclick="showSection('portfolio-home'); return false;">View Portfolio</a>
-                    <div class="contact-bar" style="margin-top: 32px;">
-                        <span class="contact-item"><a href="https://www.rsquarestudios.com" target="_blank">rsquarestudios.com</a></span>
-                        <span class="contact-item">Dallas, TX</span>
-                        <span class="contact-item"><a href="tel:+15307278598">(530) 727-8598</a></span>
-                    </div>
+                    <div class="hero-scroll-hint">↓ scroll to explore</div>
                 </div>
             </div>
 
