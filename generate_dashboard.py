@@ -1688,6 +1688,28 @@ def generate_html():
             margin-top: 12px;
             display: none;
         }}
+        .pw-hint {{
+            color: #525252;
+            font-size: 12px;
+            margin-top: 10px;
+        }}
+        .pw-lockout {{
+            color: #f59e0b;
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+        }}
+        .pw-btn:disabled {{
+            opacity: 0.4;
+            cursor: not-allowed;
+        }}
+
+        /* Unlock animation */
+        @keyframes unlockReveal {{
+            from {{ opacity: 0; transform: translateY(12px); }}
+            to {{ opacity: 1; transform: translateY(0); }}
+        }}
+        .page.unlocked {{ animation: unlockReveal 0.4s ease-out; }}
 
         /* Workflow content */
         .wf-content {{
@@ -2558,9 +2580,11 @@ def generate_html():
                     <p>This section is password-protected.</p>
                     <div>
                         <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPassword()">
-                        <button class="pw-btn" onclick="checkPassword()">Enter</button>
+                        <button class="pw-btn" id="pw-btn" onclick="checkPassword()">Enter</button>
                     </div>
+                    <div class="pw-hint">Hint: shared via WhatsApp when you inquired</div>
                     <div class="pw-error" id="pw-error">Wrong password. Try again.</div>
+                    <div class="pw-lockout" id="pw-lockout"></div>
                 </div>
             </div>
 
@@ -2708,22 +2732,68 @@ def generate_html():
             }}
         }}
 
+        let _failCount = 0;
+        let _lockedOut = false;
+
         async function checkPassword() {{
+            if (_lockedOut) return;
             const input = document.getElementById('pw-input').value;
+            if (!input) return;
+            const btn = document.getElementById('pw-btn');
+            btn.disabled = true;
+            btn.textContent = 'Checking...';
             try {{
                 const plaintext = await decryptContent(input);
                 const sections = JSON.parse(plaintext);
                 injectDecryptedContent(sections);
                 isUnlocked = true;
+                _failCount = 0;
                 updateLockIcon();
                 showToast('Unlocked!');
                 const target = window._pendingSection || 'pricing';
+                // Add unlock animation to target page
+                const targetEl = document.getElementById(target);
+                if (targetEl) targetEl.classList.add('unlocked');
                 showSection(target);
             }} catch(e) {{
+                _failCount++;
+                btn.disabled = false;
+                btn.textContent = 'Enter';
                 document.getElementById('pw-error').style.display = 'block';
                 document.getElementById('pw-input').value = '';
                 document.getElementById('pw-input').focus();
+                if (_failCount >= 3) {{
+                    startLockout();
+                }}
             }}
+        }}
+
+        function startLockout() {{
+            _lockedOut = true;
+            const btn = document.getElementById('pw-btn');
+            const input = document.getElementById('pw-input');
+            const lockoutEl = document.getElementById('pw-lockout');
+            const errorEl = document.getElementById('pw-error');
+            btn.disabled = true;
+            input.disabled = true;
+            errorEl.style.display = 'none';
+            lockoutEl.style.display = 'block';
+            let remaining = 15;
+            lockoutEl.textContent = `Too many attempts. Try again in ${{remaining}}s`;
+            const timer = setInterval(() => {{
+                remaining--;
+                if (remaining <= 0) {{
+                    clearInterval(timer);
+                    _lockedOut = false;
+                    _failCount = 0;
+                    btn.disabled = false;
+                    input.disabled = false;
+                    lockoutEl.style.display = 'none';
+                    input.focus();
+                }} else {{
+                    lockoutEl.textContent = `Too many attempts. Try again in ${{remaining}}s`;
+                }}
+            }}, 1000);
         }}
 
         function updateLockIcon() {{
