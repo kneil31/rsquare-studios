@@ -9,7 +9,8 @@ Subproject of rsquare-studios-dashboard. Family memories page hosted on GitHub P
 - **Live URL:** https://kneil31.github.io/krithin-neel/
 - **GitHub Repo:** kneil31/krithin-neel (public)
 - **Generator:** `generate_krithin_page.py` → `output/index.html`
-- **Password:** `Kn!7h$Xw9#mP2@vR4&qZ` (AES-256-GCM encrypted, all content hidden until unlock)
+- **Password:** Read from `KRITHIN_PAGE_PASSWORD` env var or `.secret` file (not hardcoded)
+- **Encryption:** AES-256-GCM, 400k PBKDF2 iterations, data-driven DOM (no innerHTML)
 
 ## Design
 
