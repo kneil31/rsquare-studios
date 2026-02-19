@@ -715,9 +715,9 @@ def generate_html():
                         <div class="form-row">
                             <label class="form-label">COVERAGE TYPE</label>
                             <select class="form-select" id="q-services" onchange="updateQuote()">
-                                <option value="Photo Only ($150/hr)">Photo Only ($150/hr)</option>
-                                <option value="Photo + Video ($235/hr)">Photo + Video ($235/hr)</option>
-                                <option value="Dual Coverage ($325/hr)">Dual Coverage ($325/hr)</option>
+                                <option value="photo_only">Photo Only</option>
+                                <option value="photo_video">Photo + Video</option>
+                                <option value="dual_coverage">Dual Coverage</option>
                             </select>
                         </div>
                     </div>
@@ -838,6 +838,21 @@ def generate_html():
             <div class="page" id="{section_id}">
                 <div class="encrypted-placeholder">This content is encrypted. Enter the password to view posing guides.</div>
             </div>"""
+
+    # Rate config — encrypted alongside content so no dollar amounts in plaintext JS
+    protected_content["__config__"] = {
+        "rateMap": {
+            "photo_only": 150,
+            "photo_video": 235,
+            "dual_coverage": 325,
+        },
+        "labelMap": {
+            "photo_only": "Photo Only ($150/hr)",
+            "photo_video": "Photo + Video ($235/hr)",
+            "dual_coverage": "Dual Coverage ($325/hr)",
+        },
+        "liveStreamingCost": 100,
+    }
 
     # Encrypt all protected content as a single blob
     protected_json = json.dumps(protected_content)
@@ -2627,6 +2642,7 @@ def generate_html():
         const ENCRYPTED_CONTENT = "{encrypted_blob}";
         const PBKDF2_ITERATIONS = {PBKDF2_ITERATIONS};
         let isUnlocked = false;
+        let _appConfig = null;
 
         function showSection(id) {{
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -2643,19 +2659,6 @@ def generate_html():
             if (isUnlocked) {{
                 showSection(sectionId);
                 return;
-            }}
-            // Check sessionStorage for cached decrypted content
-            const cached = sessionStorage.getItem('rsquare_decrypted');
-            if (cached) {{
-                try {{
-                    injectDecryptedContent(JSON.parse(cached));
-                    isUnlocked = true;
-                    updateLockIcon();
-                    showSection(sectionId);
-                    return;
-                }} catch(e) {{
-                    sessionStorage.removeItem('rsquare_decrypted');
-                }}
             }}
             window._pendingSection = sectionId;
             showSection('pw-gate');
@@ -2688,6 +2691,11 @@ def generate_html():
         }}
 
         function injectDecryptedContent(sections) {{
+            // Extract config (rateMap, labelMap, etc.) before injecting HTML
+            if (sections['__config__']) {{
+                _appConfig = sections['__config__'];
+                delete sections['__config__'];
+            }}
             for (const [id, html] of Object.entries(sections)) {{
                 const el = document.getElementById(id);
                 if (el) el.innerHTML = html;
@@ -2707,7 +2715,6 @@ def generate_html():
                 const sections = JSON.parse(plaintext);
                 injectDecryptedContent(sections);
                 isUnlocked = true;
-                sessionStorage.setItem('rsquare_decrypted', plaintext);
                 updateLockIcon();
                 showToast('Unlocked!');
                 const target = window._pendingSection || 'pricing';
@@ -2815,38 +2822,18 @@ def generate_html():
             if (tabId) document.getElementById(tabId)?.classList.add('active');
         }}
 
-        // Check if already unlocked via cached decrypted content
-        (function() {{
-            const cached = sessionStorage.getItem('rsquare_decrypted');
-            if (cached) {{
-                try {{
-                    injectDecryptedContent(JSON.parse(cached));
-                    isUnlocked = true;
-                    updateLockIcon();
-                }} catch(e) {{
-                    sessionStorage.removeItem('rsquare_decrypted');
-                }}
-            }}
-        }})();
-
         // Load checklists on page load
         loadChecklist();
 
-        // Quote form logic
-        const rateMap = {{
-            'Photo Only ($150/hr)': 150,
-            'Photo + Video ($235/hr)': 235,
-            'Dual Coverage ($325/hr)': 325,
-        }};
-
         function updateQuote() {{
             const svcEl = document.getElementById('q-services');
-            if (!svcEl) return;
-            const svc = svcEl.value;
-            const svcText = svc.replace(/&amp;/g, '&').replace(/&mdash;/g, '\u2014');
+            if (!svcEl || !_appConfig) return;
+            const svcKey = svcEl.value;
+            const svcText = (_appConfig.labelMap && _appConfig.labelMap[svcKey]) || svcKey;
             const hours = parseInt(document.getElementById('q-hours').value) || 0;
-            const rate = rateMap[svcText] || 0;
-            const live = document.getElementById('q-live').checked ? 100 : 0;
+            const rate = (_appConfig.rateMap && _appConfig.rateMap[svcKey]) || 0;
+            const liveCost = _appConfig.liveStreamingCost || 0;
+            const live = document.getElementById('q-live').checked ? liveCost : 0;
             const total = (rate * hours) + live;
             document.getElementById('q-quote').value = total > 0 ? '$' + total.toLocaleString() : '';
 
@@ -2911,7 +2898,7 @@ Location: ${{location}}
 Date: ${{dateDisplay}}
 Setting: ${{shootType}}
 Coverage: ${{svcText}}
-Hours: ${{hours || '___'}}${{hasLive ? '\\nLive Streaming: Yes (+$100)' : ''}}
+Hours: ${{hours || '___'}}${{hasLive ? '\\nLive Streaming: Yes (+$' + liveCost + ')' : ''}}
 
 *Pricing*
 Total: ${{quote}}
