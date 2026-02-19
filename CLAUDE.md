@@ -12,13 +12,13 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 - **GitHub Repo:** kneil31/rsquare-studios (public)
 - **Generator:** `generate_dashboard.py` → outputs `index.html`
 - **Client password:** `rsquare2026` (unlocks pricing, booking, quote builder)
-- **Internal password:** `r2workflow` (unlocks workflow, checklists, posing guides)
+- **Internal password:** `r2workflow` (unlocks workflow, checklists, posing guides, editing projects)
 
 ## 3 Sections
 
 1. **Portfolio** (client-facing) — Category tiles with cover photos linking to SmugMug galleries
 2. **Investment / Pricing** (client-facing) — Hourly rate cards with interactive quote builder
-3. **Workflow Dashboard** (password-protected) — Posing guides, workflow checklists, editing reference
+3. **Workflow Dashboard** (password-protected) — Posing guides, workflow checklists, editing reference, editing project tracker
 
 ## Key Design Decisions
 
@@ -28,7 +28,8 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 - **Hero stats:** 300+ Galleries, 5+ Years, 50+ Weddings (real numbers from SmugMug + Ram)
 - **Hero image:** `hero.jpg` — purple silhouette wedding photo (145KB, 1600px wide)
 - **Two-level AES-256-GCM encryption:** Client sections (pricing, booking, `__config__`) and internal sections (workflow, checklists, posing guides) encrypted with separate passwords. No plaintext in HTML source.
-- **Cover images:** Pulled from SmugMug API (highlight images per album). Each category tile has a background photo with gradient overlay
+- **Cover images:** Pulled from SmugMug API (highlight images per album). Each category tile has a background photo
+- **Tile labels below image:** Category name and gallery count are displayed below the tile image (not overlaid on top), to avoid clashing with text in photos
 - **Background position:** Per-category `background-position` values in `category_covers` dict (tuples of URL + position). Adjust position values when photos crop subjects poorly
 - **No external dependencies:** Single self-contained HTML file, no frameworks
 - **Professional copy:** "Investment" not "pricing", "images" not "pictures", "coverage" not "shooting"
@@ -41,6 +42,7 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 | Posing guides | `../../../Upskill/Posing_Upskill/prompts/{couples,families,weddings}.md` |
 | Workflow reference | `../../photo_workflow/PHOTO_WORKFLOW_CHEATSHEET.md` |
 | Cover images | SmugMug API (image keys hardcoded in `category_covers` dict) |
+| Editing projects | `editing_projects.json` (local, not pushed to GitHub) |
 
 ## Cover Images (SmugMug)
 
@@ -63,7 +65,7 @@ Current covers (all 9 categories have tuned `background-position`):
 | Baby Shower | 3MjgbV3 | 37% 18% |
 | Birthday | Xq8BHgp | center 40% |
 | Cradle | R3QTwKk | center 47% |
-| Celebrations | MPN69Q3 | 76% 17% |
+| Celebrations | J8zjNdj | 38% 30% |
 
 Homepage hero: `hero.jpg` — purple silhouette wedding photo (local file, not SmugMug). Option D split layout with CSS mask blend.
 
@@ -102,7 +104,7 @@ git push
 
 - **Two-level AES-256-GCM** encryption at build time (Python `cryptography` package)
   - `ENCRYPTED_CLIENT` blob: pricing, booking, `__config__` (rates) — password `rsquare2026`
-  - `ENCRYPTED_INTERNAL` blob: workflow, checklists, posing guides — password `r2workflow`
+  - `ENCRYPTED_INTERNAL` blob: workflow, checklists, posing guides, editing projects — password `r2workflow`
 - **Web Crypto API** decryption at runtime (PBKDF2, 100k iterations, SHA-256)
 - Random 16-byte salt + 12-byte IV per build (`os.urandom`)
 - No sessionStorage/localStorage — decrypted content is memory-only (`_appConfig`)
@@ -110,6 +112,16 @@ git push
 - Password hint shown below input
 - Git history cleaned with `filter-repo` — no plaintext in old commits
 - Client password cannot decrypt internal sections (verified via cross-test)
+
+## Editing Project Tracker
+
+- **Data:** `editing_projects.json` (local only — delivery links are sensitive)
+- **Dashboard:** "Editing Projects" section behind `r2workflow`, shows table with status badges
+- **Status auto-detection:** SENT (blue), OVERDUE (red, >14 days), COMPLETED (green)
+- **Daily reminder:** `editing_reminder.py` runs at 10 AM via `com.rsquare.editing-reminder.plist`
+- **WhatsApp follow-up:** "Follow Up" button opens wa.me link with pre-filled message to editor
+- **To enable WhatsApp:** Add `editor` name and `editor_phone` (country code + number) in JSON
+- **To update projects:** Edit `editing_projects.json`, then `python3 generate_dashboard.py`
 
 ## Subprojects
 

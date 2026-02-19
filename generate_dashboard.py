@@ -36,6 +36,7 @@ GALLERIES_FILE = SCRIPT_DIR.parent / "rsqr_whatsapp_api" / "smugmug_galleries.js
 WORKFLOW_FILE = SCRIPT_DIR.parent.parent / "photo_workflow" / "PHOTO_WORKFLOW_CHEATSHEET.md"
 POSING_DIR = SCRIPT_DIR.parent.parent.parent / "Upskill" / "Posing_Upskill" / "prompts"
 TWOMANN_DIR = SCRIPT_DIR.parent / "TwoMann_Course" / "chapters"
+EDITING_PROJECTS_FILE = SCRIPT_DIR / "editing_projects.json"
 
 # Password for AES-256-GCM encryption of protected sections
 DASHBOARD_PASSWORD = "rsquare2026"
@@ -791,6 +792,10 @@ def generate_html():
                         <div class="wf-tile-icon">📖</div>
                         <div class="wf-tile-label">Workflow Reference</div>
                     </div>
+                    <div class="wf-tile" onclick="showSection('editing-projects')">
+                        <div class="wf-tile-icon">🎬</div>
+                        <div class="wf-tile-label">Editing Projects</div>
+                    </div>
                     <div class="wf-tile" onclick="showSection('posing-couples')">
                         <div class="wf-tile-icon">💑</div>
                         <div class="wf-tile-label">Couple Poses</div>
@@ -839,6 +844,75 @@ def generate_html():
                 <h1 class="page-title">Photo Workflow Reference</h1>
                 <div class="page-meta">Ingest &rarr; Sort &rarr; Cull &rarr; Edit &rarr; Export &rarr; Deliver</div>
                 <div class="wf-content">{workflow_html}</div>"""
+
+    # Editing projects tracker
+    editing_rows = ""
+    if EDITING_PROJECTS_FILE.exists():
+        with open(EDITING_PROJECTS_FILE, "r", encoding="utf-8") as f:
+            editing_data = json.load(f)
+        today = datetime.now()
+        for p in editing_data.get("projects", []):
+            sent = datetime.strptime(p["date_sent"], "%Y-%m-%d")
+            days_elapsed = (today - sent).days
+            status = p["status"]
+            # Auto-flag overdue
+            if status != "COMPLETED" and days_elapsed > p.get("expected_days", 14):
+                display_status = "OVERDUE"
+                badge_class = "badge-overdue"
+            elif status == "COMPLETED":
+                display_status = "COMPLETED"
+                badge_class = "badge-completed"
+            elif status == "SENT":
+                display_status = "SENT"
+                badge_class = "badge-sent"
+            else:
+                display_status = status
+                badge_class = "badge-progress"
+
+            priority_badge = f'<span class="priority-badge priority-{p["priority"].lower()}">{p["priority"]}</span>'
+            completed_col = p.get("edit_completed", "") or "—"
+            link_html = ""
+            if p.get("delivery_link"):
+                link_html = f'<a href="{escape_html(p["delivery_link"])}" target="_blank" rel="noopener" class="delivery-link">View</a>'
+            else:
+                link_html = '<span style="color:#6b7280;">—</span>'
+
+            sent_display = sent.strftime("%b %d, %Y")
+            editing_rows += f"""
+                <tr>
+                    <td>{escape_html(p['task'])}</td>
+                    <td>{priority_badge}</td>
+                    <td>{sent_display}</td>
+                    <td>{days_elapsed}d</td>
+                    <td><span class="status-badge {badge_class}">{display_status}</span></td>
+                    <td>{completed_col}</td>
+                    <td>{link_html}</td>
+                </tr>"""
+
+    internal_content["editing-projects"] = f"""
+                <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
+                <div class="page-breadcrumb">Workflow</div>
+                <h1 class="page-title">Editing Projects</h1>
+                <div class="page-meta">Track outsourced editing — status, delivery links, and follow-ups</div>
+
+                <div class="editing-table-wrap">
+                    <table class="editing-table">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th>Priority</th>
+                                <th>Sent</th>
+                                <th>Days</th>
+                                <th>Status</th>
+                                <th>Completed</th>
+                                <th>Files</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {editing_rows}
+                        </tbody>
+                    </table>
+                </div>"""
 
     # Posing guide pages — each gets its own key
     posing_shells = ""
@@ -1817,6 +1891,64 @@ def generate_html():
             color: #fff;
         }}
 
+        /* Editing projects table */
+        .editing-table-wrap {{
+            overflow-x: auto;
+            margin-top: 20px;
+        }}
+        .editing-table {{
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }}
+        .editing-table th {{
+            text-align: left;
+            padding: 10px 12px;
+            color: #9ca3af;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #374151;
+        }}
+        .editing-table td {{
+            padding: 12px;
+            border-bottom: 1px solid #1f2937;
+            color: #e5e7eb;
+        }}
+        .editing-table tbody tr:hover {{
+            background: rgba(139,92,246,0.08);
+        }}
+        .status-badge {{
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }}
+        .badge-sent {{ background: rgba(59,130,246,0.2); color: #60a5fa; }}
+        .badge-progress {{ background: rgba(245,158,11,0.2); color: #fbbf24; }}
+        .badge-completed {{ background: rgba(16,185,129,0.2); color: #34d399; }}
+        .badge-overdue {{ background: rgba(239,68,68,0.2); color: #f87171; }}
+        .priority-badge {{
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            font-weight: 700;
+        }}
+        .priority-p0 {{ background: rgba(239,68,68,0.2); color: #f87171; }}
+        .priority-p1 {{ background: rgba(245,158,11,0.2); color: #fbbf24; }}
+        .priority-p2 {{ background: rgba(107,114,128,0.2); color: #9ca3af; }}
+        .delivery-link {{
+            color: #8b5cf6;
+            text-decoration: none;
+            font-weight: 600;
+        }}
+        .delivery-link:hover {{ text-decoration: underline; }}
+
         /* Contact bar */
         .contact-bar {{
             display: flex;
@@ -2085,6 +2217,11 @@ def generate_html():
             .pipeline-row {{ flex-direction: column; gap: 6px; }}
             .pipeline-stage {{ min-width: auto; padding: 10px; font-size: 13px; }}
 
+            /* Editing table mobile */
+            .editing-table {{ font-size: 13px; }}
+            .editing-table th, .editing-table td {{ padding: 8px 6px; }}
+            .editing-table th:nth-child(6), .editing-table td:nth-child(6) {{ display: none; }}
+
             /* Booking form mobile */
             .form-row-inline {{ grid-template-columns: 1fr; }}
             .btn-row {{ flex-direction: column; }}
@@ -2298,6 +2435,7 @@ def generate_html():
                 <a class="sidebar-link internal-link" onclick="accessWorkflow('workflow-home')">📋 Dashboard</a>
                 <a class="sidebar-link internal-link" onclick="accessWorkflow('checklists')">✅ Checklists</a>
                 <a class="sidebar-link internal-link" onclick="accessWorkflow('workflow-ref')">📖 Workflow Reference</a>
+                <a class="sidebar-link internal-link" onclick="accessWorkflow('editing-projects')">🎬 Editing Projects</a>
                 <div class="sidebar-section-label" style="padding-top:8px">POSING GUIDES</div>
                 {posing_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link internal-link"')}
             </div>
@@ -2622,6 +2760,11 @@ def generate_html():
                 <div class="encrypted-placeholder">This content is encrypted. Enter the password to view workflow reference.</div>
             </div>
 
+            <!-- EDITING PROJECTS (encrypted) -->
+            <div class="page" id="editing-projects">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view editing projects.</div>
+            </div>
+
             <!-- POSING GUIDES (encrypted — shells injected dynamically) -->
             {posing_shells}
 
@@ -2702,7 +2845,7 @@ def generate_html():
 
         // Client sections need client password; internal sections need internal password
         const CLIENT_SECTIONS = ['pricing', 'booking'];
-        const INTERNAL_SECTIONS = ['workflow-home', 'checklists', 'workflow-ref', 'posing-couples', 'posing-families', 'posing-weddings'];
+        const INTERNAL_SECTIONS = ['workflow-home', 'checklists', 'workflow-ref', 'editing-projects', 'posing-couples', 'posing-families', 'posing-weddings'];
 
         function showPrivateGate() {{
             // If both unlocked, go to pricing (client) or workflow (internal)
