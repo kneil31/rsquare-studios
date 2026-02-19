@@ -1954,6 +1954,62 @@ def generate_html():
                         </div>
                         <div class="video-title">Anurag &amp; Madhu Gender Reveal</div>
                     </a>
+                    <a href="https://www.youtube.com/watch?v=QMzq-VSBhzQ" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/QMzq-VSBhzQ/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">1:24</div>
+                        </div>
+                        <div class="video-title">Nyshitha Saree Ceremony</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=2GwQNMeU4Hs" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/2GwQNMeU4Hs/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">2:29</div>
+                        </div>
+                        <div class="video-title">Tarun's Birthday</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=j56qe0hx7iA" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/j56qe0hx7iA/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">5:00</div>
+                        </div>
+                        <div class="video-title">Keerthi &amp; Prawin Gender Reveal</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=6f0IUSxVThM" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/6f0IUSxVThM/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">1:23</div>
+                        </div>
+                        <div class="video-title">Ratna &amp; Janu Pre-Wedding Teaser</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=LrS4f_ZqWNE" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/LrS4f_ZqWNE/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:39</div>
+                        </div>
+                        <div class="video-title">Swetha Housewarming</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=-gkBScX8YsY" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/-gkBScX8YsY/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">1:03</div>
+                        </div>
+                        <div class="video-title">Radhika &amp; Praveen Teaser</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=nEPyewr1uA4" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/nEPyewr1uA4/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">1:55</div>
+                        </div>
+                        <div class="video-title">Vinod &amp; Sunitha</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=8Q7MyyYxf3k" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/8Q7MyyYxf3k/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:17</div>
+                        </div>
+                        <div class="video-title">Avyukh's 1st Birthday</div>
+                    </a>
                 </div>
                 <div style="margin-top:20px; text-align:center;">
                     <a href="https://www.youtube.com/@rsquarestudios" target="_blank" rel="noopener" style="color:#8b5cf6; text-decoration:none; font-size:14px;">View all on YouTube &rarr;</a>
