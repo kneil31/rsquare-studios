@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Krithin Neel — Family Memories</title>
+  <meta name="description" content="One stop for Krithin Neel's family memories — photo galleries and videos">
+  <meta name="theme-color" content="#FFF8F0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg: #FFF8F0;
+      --bg-card: #FFFFFF;
+      --text: #3D2C2E;
+      --text-secondary: #8B7355;
+      --accent: #E8A87C;
+      --accent-soft: #FBE8D3;
+      --pink: #F4978E;
+      --pink-soft: #FDDEDE;
+      --lavender: #C3AED6;
+      --lavender-soft: #EDE7F6;
+      --mint: #9DC5BB;
+      --mint-soft: #E0F2EE;
+      --shadow: 0 2px 12px rgba(61, 44, 46, 0.08);
+      --shadow-hover: 0 4px 20px rgba(61, 44, 46, 0.14);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    body {
+      font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Header ────────────────────────────────────── */
+    .header {
+      text-align: center;
+      padding: 40px 20px 24px;
+      background: linear-gradient(180deg, #FFF0E5 0%, var(--bg) 100%);
+    }
+
+    .header-icon {
+      font-size: 64px;
+      margin-bottom: 8px;
+      line-height: 1;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+      letter-spacing: -0.5px;
+    }
+
+    .header .subtitle {
+      font-size: 15px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    /* ── Tabs ──────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 20px 20px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--bg);
+      padding-top: 12px;
+    }
+
+    .tab-btn {
+      padding: 10px 24px;
+      border: none;
+      border-radius: 50px;
+      font-family: 'Nunito', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      background: var(--bg-card);
+      color: var(--text-secondary);
+      box-shadow: var(--shadow);
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(232, 168, 124, 0.4);
+    }
+
+    .tab-btn:not(.active):hover {
+      background: var(--accent-soft);
+      color: var(--text);
+    }
+
+    /* ── Tab Content ──────────────────────────────── */
+    .tab-content {
+      display: none;
+      padding: 0 16px 100px;
+      max-width: 600px;
+      margin: 0 auto;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-label {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-secondary);
+      padding: 16px 4px 8px;
+    }
+
+    /* ── Tile Grid ─────────────────────────────────── */
+    .cards-list {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .tile {
+      position: relative;
+      border-radius: var(--radius);
+      overflow: hidden;
+      aspect-ratio: 3/4;
+      display: flex;
+      align-items: flex-end;
+      background-size: cover;
+      background-position: center;
+      text-decoration: none;
+      color: #fff;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+
+    .tile::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.7) 100%);
+      z-index: 0;
+    }
+
+    .tile:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    .tile-content {
+      position: relative;
+      z-index: 1;
+      padding: 14px 16px;
+      width: 100%;
+    }
+
+    .tile-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+      line-height: 1.3;
+      margin-bottom: 2px;
+    }
+
+    .tile-meta {
+      font-size: 12px;
+      color: #d1d5db;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    }
+
+    .tile-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 50px;
+      background: rgba(255,255,255,0.2);
+      color: #fff;
+      margin-top: 4px;
+      backdrop-filter: blur(4px);
+    }
+
+    .tile-icon {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 40px;
+      z-index: 1;
+    }
+
+    .tile-no-image {
+      background: linear-gradient(135deg, var(--accent-soft) 0%, var(--lavender-soft) 100%);
+    }
+
+    .tile-no-image::before {
+      background: none;
+    }
+
+    .tile-no-image .tile-title {
+      color: var(--text);
+      text-shadow: none;
+    }
+
+    .tile-no-image .tile-meta {
+      color: var(--text-secondary);
+      text-shadow: none;
+    }
+
+    .tile-no-image .tile-badge {
+      background: var(--lavender-soft);
+      color: #7C6B9E;
+    }
+
+    /* ── Video Cards ──────────────────────────────── */
+    .video-card {
+      position: relative;
+      text-decoration: none;
+      border-radius: var(--radius);
+      overflow: hidden;
+      aspect-ratio: 16/9;
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      align-items: flex-end;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+
+    .video-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.8) 100%);
+    }
+
+    .video-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    .video-card-content {
+      position: relative;
+      z-index: 1;
+      padding: 14px 16px;
+      width: 100%;
+    }
+
+    .video-grid {
+      grid-template-columns: repeat(2, 1fr) !important;
+    }
+
+
+    /* ── Reels Grid (vertical 9:16) ─────────────────── */
+    .reels-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .reel-tile {
+      position: relative;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      aspect-ratio: 9/16;
+      display: flex;
+      align-items: flex-end;
+      text-decoration: none;
+      color: #fff;
+      transition: transform 0.15s, box-shadow 0.2s;
+    }
+
+    .reel-tile img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .reel-tile::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.6) 100%);
+      z-index: 1;
+    }
+
+    .reel-tile:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    }
+
+    .reel-content {
+      position: relative;
+      z-index: 2;
+      padding: 8px 10px;
+      width: 100%;
+    }
+
+    .reel-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+      line-height: 1.3;
+    }
+
+    @media (max-width: 374px) {
+      .reels-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* ── Footer ────────────────────────────────────── */
+    .footer {
+      text-align: center;
+      padding: 32px 20px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    .footer .whatsapp-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+      padding: 8px 20px;
+      background: #25D366;
+      color: #fff;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 14px;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+
+    .footer .whatsapp-link:hover {
+      opacity: 0.85;
+      text-decoration: none;
+    }
+
+    /* ── Small mobile (single column tiles) ────────── */
+    @media (max-width: 374px) {
+      .cards-list {
+        grid-template-columns: 1fr;
+      }
+      .tile {
+        aspect-ratio: 16/9;
+      }
+    }
+
+    /* ── Desktop ───────────────────────────────────── */
+    @media (min-width: 768px) {
+      .header {
+        padding: 60px 20px 32px;
+      }
+      .header h1 {
+        font-size: 36px;
+      }
+      .tab-btn {
+        padding: 12px 32px;
+        font-size: 16px;
+      }
+      .cards-list {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+      .tile-title {
+        font-size: 18px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-icon">👶</div>
+    <h1>Krithin Neel</h1>
+    <p class="subtitle">One stop for family memories</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('krithin')">Krithin</button>
+    <button class="tab-btn" onclick="switchTab('monika')">Monika</button>
+    <button class="tab-btn" onclick="switchTab('family')">Family</button>
+    <button class="tab-btn" onclick="switchTab('reels')">Reels</button>
+  </div>
+
+  
+    <div id="tab-krithin" class="tab-content">
+      <div class="section-label">Photo Galleries</div>
+<div class="cards-list">
+
+      <a href="https://www.rsquarestudios.com/2024/Krithin-Neel/n-LD72KK" target="_blank" rel="noopener" class="tile" style="background-image:url('https://photos.smugmug.com/photos/i-FmnMtpJ/0/L9pkjpG683rXk5LfdzDkrstpVwt7wgfc4hPSqL5vn/L/i-FmnMtpJ-L.jpg')">
+        <div class="tile-content">
+          <div class="tile-title">Fresh 48</div>
+          <div class="tile-meta">April 10, 2024 &middot; Medical City</div>
+          <span class="tile-badge">120 images</span>
+        </div>
+      </a>
+      <a href="https://www.rsquarestudios.com/2024/Krithin-Cradle-Ceremony/n-nKgrKN" target="_blank" rel="noopener" class="tile" style="background-image:url('https://photos.smugmug.com/photos/i-hHx2M78/0/LjM7qDTCf85Tc9gmSt6HrtphKkS2Lr88DgRfc6Btw/L/i-hHx2M78-L.jpg')">
+        <div class="tile-content">
+          <div class="tile-title">Cradle Ceremony</div>
+          <div class="tile-meta">April 30, 2024 &middot; Irving</div>
+          <span class="tile-badge">338 images</span>
+        </div>
+      </a>
+      <a href="https://www.rsquarestudios.com/2025/KAYU-Sankranthi-2025/n-83VJzP" target="_blank" rel="noopener" class="tile" style="background-image:url('https://photos.smugmug.com/photos/i-WbZc4M9/0/MRrZxzP3CMCScBkxzDvzr3JBn67G6vK3QMBLH5H3k/L/i-WbZc4M9-L.jpg')">
+        <div class="tile-content">
+          <div class="tile-title">Sankranthi 2025</div>
+          <div class="tile-meta">January 13, 2025 &middot; Corinth</div>
+          <span class="tile-badge">159 images</span>
+        </div>
+      </a>
+      <a href="https://www.rsquarestudios.com/2025/2025-02-12---Krithin-Temple---Pittsburgh/n-Sstqs8" target="_blank" rel="noopener" class="tile" style="background-image:url('https://photos.smugmug.com/photos/i-FkkzZQx/0/NHRgbcrTsZZXjvNGLzCp6rmJvQZ3vWd6Tngbtkr8M/L/i-FkkzZQx-L.jpg')">
+        <div class="tile-content">
+          <div class="tile-title">Temple Visit</div>
+          <div class="tile-meta">February 12, 2025 &middot; Pittsburgh</div>
+          <span class="tile-badge">358 images</span>
+        </div>
+      </a>
+      <a href="https://www.rsquarestudios.com/2025/2025-04-08-Krithin-Cake-Smash-Home/n-GfWtSm" target="_blank" rel="noopener" class="tile" style="background-image:url('https://photos.smugmug.com/photos/i-8prNQ75/0/KSDMX73H4jdxxM7HC8xxkR9h3sb6HttMHdJQsppWT/L/i-8prNQ75-L.jpg')">
+        <div class="tile-content">
+          <div class="tile-title">Cake Smash</div>
+          <div class="tile-meta">April 8, 2025 &middot; Home</div>
+          <span class="tile-badge">173 images</span>
+        </div>
+      </a>
+      <a href="https://www.rsquarestudios.com/2025/Krithiin-Adugulu-Home/n-fZQgS5" target="_blank" rel="noopener" class="tile" style="background-image:url('https://photos.smugmug.com/photos/i-ZBcPMKN/0/LBXPb4ZxSWjhD7rH9Ng8MHcFqwLKFkxLn27XzpZwK/L/i-ZBcPMKN-L.jpg')">
+        <div class="tile-content">
+          <div class="tile-title">Adugulu</div>
+          <div class="tile-meta">June 1, 2025 &middot; Home</div>
+          <span class="tile-badge">16 images</span>
+        </div>
+      </a>
+      <a href="https://www.rsquarestudios.com/2025/KAYU-Halloween/n-K9g7f3" target="_blank" rel="noopener" class="tile" style="background-image:url('https://photos.smugmug.com/photos/i-Gkhvcfm/0/KxkpjrmFMt9cGXfjTTmXvcgB388VNggqBLpfPkgnk/L/i-Gkhvcfm-L.jpg')">
+        <div class="tile-content">
+          <div class="tile-title">Halloween</div>
+          <div class="tile-meta">November 2, 2025 &middot; Dallas</div>
+          <span class="tile-badge">165 images</span>
+        </div>
+      </a>
+      <a href="https://www.rsquarestudios.com/2026/Krithin-New-year-2026/n-rj9Mvw" target="_blank" rel="noopener" class="tile" style="background-image:url('https://photos.smugmug.com/photos/i-KLPGwqN/0/NSDZHbGLBcJttfnHNSPXxX3BSHDk9rPcCR8z9Rvks/L/i-KLPGwqN-L.jpg')">
+        <div class="tile-content">
+          <div class="tile-title">New Year 2026</div>
+          <div class="tile-meta">January 2026</div>
+          <span class="tile-badge">14 images</span>
+        </div>
+      </a>
+</div>
+<div class="section-label">Videos</div>
+<div class="cards-list video-grid">
+
+      <a href="https://www.youtube.com/watch?v=8awZJqW4boQ" target="_blank" rel="noopener" class="video-card" style="background-image:url('https://img.youtube.com/vi/8awZJqW4boQ/hqdefault.jpg')">
+        <div class="video-card-content">
+          <div class="tile-title">Krithin Meets Small World</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=GJCwUlpokXU" target="_blank" rel="noopener" class="video-card" style="background-image:url('https://img.youtube.com/vi/GJCwUlpokXU/hqdefault.jpg')">
+        <div class="video-card-content">
+          <div class="tile-title">Krithin Neel Unfiltered</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=FATM1815Jnk" target="_blank" rel="noopener" class="video-card" style="background-image:url('https://img.youtube.com/vi/FATM1815Jnk/hqdefault.jpg')">
+        <div class="video-card-content">
+          <div class="tile-title">Krithin 11 Days Ceremony</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=6jWjQbBwAuM" target="_blank" rel="noopener" class="video-card" style="background-image:url('https://img.youtube.com/vi/6jWjQbBwAuM/hqdefault.jpg')">
+        <div class="video-card-content">
+          <div class="tile-title">Krithin Cradle Ceremony</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=rQOVRxyDUCc" target="_blank" rel="noopener" class="video-card" style="background-image:url('https://img.youtube.com/vi/rQOVRxyDUCc/hqdefault.jpg')">
+        <div class="video-card-content">
+          <div class="tile-title">Parents Meet</div>
+        </div>
+      </a>
+</div>
+
+    </div>
+  
+    <div id="tab-monika" class="tab-content">
+      <div class="section-label">Photo Galleries</div>
+<div class="cards-list">
+
+      <a href="https://www.rsquarestudios.com/2024/Monika-Babyshower/n-r78HKK" target="_blank" rel="noopener" class="tile" style="background-image:url('https://photos.smugmug.com/photos/i-DdC5cKk/0/KmjqvT72XhJWKDdwSFsrqkBxpWrDqj2NsXGHrGV9F/L/i-DdC5cKk-L.jpg')">
+        <div class="tile-content">
+          <div class="tile-title">Baby Shower</div>
+          <div class="tile-meta">March 17, 2024 &middot; Irving</div>
+          <span class="tile-badge">308 images</span>
+        </div>
+      </a>
+      <a href="https://www.rsquarestudios.com/2024/Monika-Maternity/n-txJ8H6" target="_blank" rel="noopener" class="tile" style="background-image:url('https://photos.smugmug.com/photos/i-7mKktK7/0/LDC68zVscKXKdwqKCqddmsxtqLHP5KChv9HmLXBFd/L/i-7mKktK7-L.jpg')">
+        <div class="tile-content">
+          <div class="tile-title">Maternity 2024</div>
+          <div class="tile-meta">April 2, 2024 &middot; Texas</div>
+          <span class="tile-badge">154 images</span>
+        </div>
+      </a>
+      <a href="https://www.rsquarestudios.com/2023/MONIKA-Birthday-23-Dallas" target="_blank" rel="noopener" class="tile tile-no-image">
+        <div class="tile-icon">🎈</div>
+        <div class="tile-content">
+          <div class="tile-title">Birthday 2023</div>
+          <div class="tile-meta">June 30, 2023 &middot; Dallas</div>
+          
+        </div>
+      </a>
+      <a href="https://www.rsquarestudios.com/2023/Monika-and-girls-shoot-Mandlay" target="_blank" rel="noopener" class="tile tile-no-image">
+        <div class="tile-icon">👯</div>
+        <div class="tile-content">
+          <div class="tile-title">Girls Shoot 2023</div>
+          <div class="tile-meta">November 26, 2023 &middot; Mandalay</div>
+          
+        </div>
+      </a>
+      <a href="https://www.rsquarestudios.com/2023/Monika---Maternity---Mandlay" target="_blank" rel="noopener" class="tile tile-no-image">
+        <div class="tile-icon">🌸</div>
+        <div class="tile-content">
+          <div class="tile-title">Maternity 2023</div>
+          <div class="tile-meta">December 10, 2023 &middot; Mandalay</div>
+          
+        </div>
+      </a>
+</div>
+<div class="section-label">Videos</div>
+<div class="cards-list video-grid">
+
+      <a href="https://www.youtube.com/watch?v=Y3ZxYrE0Tmk" target="_blank" rel="noopener" class="video-card" style="background-image:url('https://img.youtube.com/vi/Y3ZxYrE0Tmk/hqdefault.jpg')">
+        <div class="video-card-content">
+          <div class="tile-title">Monika Baby Shower</div>
+        </div>
+      </a>
+</div>
+
+    </div>
+  
+    <div id="tab-family" class="tab-content">
+      <div class="section-label">Photo Galleries</div>
+<div class="cards-list">
+
+      <a href="https://www.rsquarestudios.com/2024/2024-12-29---Monika-Neel-HW---Corinth/n-cDsRTB" target="_blank" rel="noopener" class="tile" style="background-image:url('https://photos.smugmug.com/photos/i-X9JmpJZ/0/LNxbT8SXj6DKKDbRPsdpb9RDn2MXMDsSm6zfkQTJR/L/i-X9JmpJZ-L.jpg')">
+        <div class="tile-content">
+          <div class="tile-title">Moniel Housewarming</div>
+          <div class="tile-meta">December 29, 2024 &middot; Corinth</div>
+          <span class="tile-badge">412 images</span>
+        </div>
+      </a>
+      <a href="https://www.rsquarestudios.com/2025/KAYU-Sankranthi-2025/n-83VJzP" target="_blank" rel="noopener" class="tile" style="background-image:url('https://photos.smugmug.com/photos/i-WbZc4M9/0/MRrZxzP3CMCScBkxzDvzr3JBn67G6vK3QMBLH5H3k/L/i-WbZc4M9-L.jpg')">
+        <div class="tile-content">
+          <div class="tile-title">Sankranthi 2025</div>
+          <div class="tile-meta">January 13, 2025 &middot; Corinth</div>
+          <span class="tile-badge">159 images</span>
+        </div>
+      </a>
+</div>
+
+    </div>
+  
+    <div id="tab-reels" class="tab-content">
+      <div class="reels-grid">
+
+      <a href="https://www.youtube.com/watch?v=uFXAysFTwxs" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/uFXAysFTwxs/hqdefault.jpg" alt="Krithins Sounds" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Krithins Sounds</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=hTQqfABqDqc" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/hTQqfABqDqc/hqdefault.jpg" alt="Nanaaaa" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Nanaaaa</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=Wv32slqYjtw" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/Wv32slqYjtw/hqdefault.jpg" alt="Alavari Intiki" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Alavari Intiki</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=AIV-ScsxWcU" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/AIV-ScsxWcU/hqdefault.jpg" alt="Raja Saab Gilli Gilli go" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Raja Saab Gilli Gilli go</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=SGj7XQao77M" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/SGj7XQao77M/hqdefault.jpg" alt="Krithin Yuku Ice Cream Ride" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Krithin Yuku Ice Cream Ride</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=Hl8RlKhZUA0" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/Hl8RlKhZUA0/hqdefault.jpg" alt="Kannepetta Rooooo" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Kannepetta Rooooo</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=W3yxm6FqWuo" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/W3yxm6FqWuo/hqdefault.jpg" alt="Krithin Neel Back with Overloaded Cuteness" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Krithin Neel Back with Overloaded Cuteness</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=cnpZXtlNjIM" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/cnpZXtlNjIM/hqdefault.jpg" alt="Advi Entry Cherishment" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Advi Entry Cherishment</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=cx36zgbJRIc" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/cx36zgbJRIc/hqdefault.jpg" alt="Kannu Bommaluuu" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Kannu Bommaluuu</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=dEx0wmr2zCY" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/dEx0wmr2zCY/hqdefault.jpg" alt="Kannepetta roo V2" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Kannepetta roo V2</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=55YmZmdXFY4" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/55YmZmdXFY4/hqdefault.jpg" alt="KAYU Fly High" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">KAYU Fly High</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=bt8VzO7AAGM" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/bt8VzO7AAGM/hqdefault.jpg" alt="Kids Meet Teaser" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Kids Meet Teaser</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=M3UdzuLS9e8" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/M3UdzuLS9e8/hqdefault.jpg" alt="Ivandi Nana Garu" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Ivandi Nana Garu</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=gg7rgX4Yd_4" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/gg7rgX4Yd_4/hqdefault.jpg" alt="Yuku Dance" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Yuku Dance</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=V8-NBGBIovI" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/V8-NBGBIovI/hqdefault.jpg" alt="Advi &amp; Yuku Bond" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Advi &amp; Yuku Bond</div>
+        </div>
+      </a>
+      <a href="https://www.youtube.com/watch?v=-o0lslWCvhw" target="_blank" rel="noopener" class="reel-tile">
+        <img src="https://img.youtube.com/vi/-o0lslWCvhw/hqdefault.jpg" alt="Yuku Dance Performance" loading="lazy">
+        <div class="reel-content">
+          <div class="reel-title">Yuku Dance Performance</div>
+        </div>
+      </a>
+</div>
+
+    </div>
+
+  <div class="footer">
+    <p>Captured with love by <a href="https://kneil31.github.io/rsquare-studios/" target="_blank">Rsquare Studios</a></p>
+    <a href="https://wa.me/14697095978" class="whatsapp-link" target="_blank">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.948 11.948 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.35 0-4.514-.81-6.228-2.164l-.435-.347-3.012 1.01 1.01-3.012-.348-.436A9.948 9.948 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+      WhatsApp
+    </a>
+    <p style="margin-top: 12px; font-size: 11px; opacity: 0.5;">Generated 2026-02-19 11:22</p>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+      document.getElementById('tab-' + tabId).classList.add('active');
+      event.currentTarget.classList.add('active');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+    document.getElementById('tab-krithin').classList.add('active');
+  </script>
+</body>
+</html>
