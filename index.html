@@ -1,0 +1,2619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rsquare Studios — Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #191919;
+            color: #e0e0e0;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .layout { display: flex; height: 100vh; }
+
+        /* Sidebar */
+        .sidebar {
+            width: 270px;
+            min-width: 270px;
+            background: #202020;
+            border-right: 1px solid #2d2d2d;
+            padding: 20px 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .sidebar-brand {
+            padding: 8px 12px 16px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #9ca3af;
+            letter-spacing: -0.3px;
+        }
+        .sidebar-brand span { color: #ffffff; }
+        .sidebar-link {
+            display: block;
+            padding: 6px 12px;
+            margin: 1px 0;
+            color: #9ca3af;
+            text-decoration: none;
+            font-size: 14px;
+            border-radius: 6px;
+            transition: all 0.15s;
+            line-height: 1.5;
+            cursor: pointer;
+        }
+        .sidebar-link:hover { background: #2d2d2d; color: #e0e0e0; }
+        .sidebar-link.active { background: #2d2d2d; color: #ffffff; }
+        .sidebar-link.sub-link { padding-left: 28px; font-size: 13px; }
+        .sidebar-section-label {
+            padding: 14px 12px 4px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #525252;
+            letter-spacing: 1px;
+        }
+        .sidebar-divider {
+            height: 1px;
+            background: #2d2d2d;
+            margin: 8px 12px;
+        }
+        .sidebar-footer {
+            margin-top: auto;
+            padding: 16px 12px 8px;
+            font-size: 11px;
+            color: #525252;
+        }
+        .sidebar-collapse {
+            display: none;
+        }
+
+        /* Lock icon for protected sections */
+        .lock-icon { opacity: 0.5; }
+        .lock-icon.unlocked { opacity: 1; }
+
+        /* Encrypted content placeholder */
+        .encrypted-placeholder {
+            text-align: center;
+            color: #525252;
+            padding: 60px 20px;
+            font-size: 14px;
+        }
+
+        /* Content */
+        .content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 40px 60px;
+        }
+
+        /* Pages */
+        .page {
+            display: none;
+            max-width: 800px;
+            animation: fadeIn 0.2s;
+        }
+        .page.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #9ca3af;
+            text-decoration: none;
+            margin-bottom: 20px;
+            padding: 6px 12px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: color 0.2s, background 0.2s;
+        }
+        .back-link:hover { color: #fff; background: rgba(255,255,255,0.08); }
+
+        .page-breadcrumb {
+            font-size: 12px;
+            color: #525252;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 6px;
+            letter-spacing: -0.5px;
+        }
+        .page-meta {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 32px;
+        }
+
+        /* Hero */
+        .hero {
+            position: relative;
+            text-align: center;
+            padding: 80px 20px 60px;
+            background: url('https://photos.smugmug.com/photos/i-VqnMPLz/0/KG7kc3wMPKBWdFkVhTsWfp4LJQCNzQkxK4ww4DZJv/X3/i-VqnMPLz-X3.jpg') center center / cover no-repeat;
+            border-radius: 16px;
+            margin: 0 16px 24px;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.65) 100%);
+            z-index: 0;
+        }
+        .hero > * {
+            position: relative;
+            z-index: 1;
+        }
+        .hero-logo {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+        .hero h1 {
+            font-size: 36px;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.4);
+        }
+        .hero p {
+            font-size: 16px;
+            color: #d1d5db;
+            max-width: 500px;
+            margin: 0 auto 32px;
+            line-height: 1.6;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+        }
+        .hero-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 32px;
+        }
+        .hero-stat {
+            text-align: center;
+        }
+        .hero-stat .number {
+            font-size: 28px;
+            font-weight: 700;
+            color: #c4b5fd;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+        }
+        .hero-stat .label {
+            font-size: 12px;
+            color: #d1d5db;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+        }
+        .hero-cta {
+            display: inline-block;
+            padding: 12px 28px;
+            background: #8b5cf6;
+            color: #fff;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            transition: background 0.2s;
+            box-shadow: 0 4px 12px rgba(139,92,246,0.4);
+        }
+        .hero-cta:hover { background: #7c3aed; }
+        .hero-scroll-hint {
+            margin-top: 24px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.4);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(6px); }
+        }
+
+        /* Category tiles on portfolio home */
+        .cat-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+        .cat-tile {
+            position: relative;
+            border-radius: 12px;
+            padding: 0;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.2s;
+            text-decoration: none;
+            color: inherit;
+            overflow: hidden;
+            aspect-ratio: 3/4;
+            display: flex;
+            align-items: flex-end;
+            background-size: cover;
+            background-position: center;
+        }
+        .cat-tile::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,0.75) 100%);
+            z-index: 0;
+        }
+        .cat-tile:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(139,92,246,0.25);
+        }
+        .cat-tile-content {
+            position: relative;
+            z-index: 1;
+            padding: 16px 20px;
+            width: 100%;
+            text-align: left;
+        }
+        .cat-icon { display: none; }
+        .cat-name { font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 2px; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
+        .cat-count { font-size: 13px; color: #d1d5db; text-shadow: 0 1px 2px rgba(0,0,0,0.5); }
+
+        /* Category hero banner */
+        .cat-hero {
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            height: 200px;
+            background-size: cover;
+            background-position: center;
+            margin-bottom: 28px;
+            display: flex;
+            align-items: flex-end;
+        }
+        .cat-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, transparent 20%, rgba(0,0,0,0.7) 100%);
+        }
+        .cat-hero-content {
+            position: relative;
+            z-index: 1;
+            padding: 24px;
+        }
+        .cat-hero-title {
+            font-size: 28px;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+        .cat-hero-sub {
+            font-size: 14px;
+            color: #d1d5db;
+            margin-top: 4px;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+        }
+
+        /* Gallery page with blurred backdrop */
+        .gallery-page-wrap {
+            position: relative;
+        }
+        .gallery-backdrop {
+            position: fixed;
+            inset: 0;
+            background-size: cover;
+            background-position: center;
+            filter: blur(30px) brightness(0.15);
+            z-index: -1;
+            transform: scale(1.2);
+            display: none;
+        }
+        .page.active .gallery-backdrop {
+            display: block;
+        }
+
+        /* Video grid */
+        .video-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+        .video-card {
+            text-decoration: none;
+            color: inherit;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #252525;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .video-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(139,92,246,0.2);
+        }
+        .video-thumb {
+            position: relative;
+            aspect-ratio: 16/9;
+            background-size: cover;
+            background-position: center;
+        }
+        .video-play {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 48px;
+            height: 48px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: #fff;
+        }
+        .video-duration {
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            background: rgba(0,0,0,0.8);
+            color: #fff;
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .video-title {
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #e0e0e0;
+            line-height: 1.3;
+        }
+
+        /* Gallery cards */
+        .gallery-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .gallery-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            background: rgba(255,255,255,0.04);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            text-decoration: none;
+            color: inherit;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .gallery-card:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateY(-1px);
+        }
+
+        /* Style A: Monogram — elegant serif initial in thin circle */
+        .gallery-monogram {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: 300;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            color: #d1d5db;
+            flex-shrink: 0;
+            letter-spacing: 1px;
+        }
+
+        /* Style B: Date card — mini calendar */
+        .gallery-date-card {
+            width: 42px;
+            height: 46px;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            overflow: hidden;
+        }
+        .gallery-date-card .date-month {
+            font-size: 9px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #8b5cf6;
+            line-height: 1;
+            margin-bottom: 2px;
+        }
+        .gallery-date-card .date-day {
+            font-size: 16px;
+            font-weight: 300;
+            color: #e0e0e0;
+            line-height: 1;
+        }
+
+        /* Style C: Accent line — vertical bar, no icon */
+        .gallery-card.style-line {
+            padding-left: 0;
+            gap: 0;
+            border-left: 3px solid #8b5cf6;
+            border-radius: 0 12px 12px 0;
+        }
+        .gallery-card.style-line .gallery-info {
+            padding-left: 18px;
+        }
+
+        .gallery-info { flex: 1; }
+        .gallery-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #f0f0f0;
+            letter-spacing: -0.2px;
+        }
+        .gallery-meta {
+            font-size: 12px;
+            color: rgba(255,255,255,0.35);
+            margin-top: 3px;
+            letter-spacing: 0.2px;
+        }
+        .gallery-arrow {
+            font-size: 14px;
+            color: rgba(255,255,255,0.2);
+            transition: color 0.2s, transform 0.2s;
+        }
+        .gallery-card:hover .gallery-arrow {
+            color: #8b5cf6;
+            transform: translateX(2px);
+        }
+
+        /* Pricing cards */
+        .pricing-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .pricing-card {
+            background: #202020;
+            border: 1px solid #2d2d2d;
+            border-radius: 12px;
+            padding: 24px;
+            border-left: 3px solid var(--accent, #8b5cf6);
+        }
+        .pricing-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .pricing-icon { font-size: 24px; }
+        .pricing-name { font-size: 20px; font-weight: 700; color: #fff; }
+        .price-tier {
+            padding: 12px 0;
+            border-bottom: 1px solid #2d2d2d;
+        }
+        .price-tier:last-of-type { border-bottom: none; }
+        .tier-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+        .tier-name { font-size: 15px; font-weight: 600; color: #e0e0e0; }
+        .tier-price { font-size: 18px; font-weight: 700; color: var(--accent, #8b5cf6); }
+        .tier-details { font-size: 13px; color: #6b7280; line-height: 1.5; }
+        .addons-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #525252;
+            letter-spacing: 0.5px;
+            margin-top: 14px;
+            margin-bottom: 8px;
+        }
+        .addons-list {
+            list-style: none;
+            padding: 0;
+        }
+        .addons-list li {
+            font-size: 13px;
+            color: #9ca3af;
+            padding: 3px 0;
+        }
+        .addons-list li::before {
+            content: "+ ";
+            color: var(--accent, #8b5cf6);
+            font-weight: 600;
+        }
+        .includes-box {
+            background: #1a1a2e;
+            border: 1px solid #2d2d4e;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+        .includes-box h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #a78bfa;
+            margin-bottom: 12px;
+        }
+        .includes-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        .includes-list span {
+            font-size: 13px;
+            color: #c4b5fd;
+        }
+
+        /* Checklists */
+        .checklist-group {
+            margin-bottom: 28px;
+        }
+        .checklist-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #8b5cf6;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #2d2d2d;
+        }
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.15s;
+            font-size: 14px;
+            color: #9ca3af;
+        }
+        .check-item:hover { background: #2d2d2d; }
+        .check-item input[type="checkbox"] {
+            accent-color: #8b5cf6;
+            width: 16px;
+            height: 16px;
+        }
+        .check-item input:checked + span {
+            text-decoration: line-through;
+            color: #525252;
+        }
+
+        /* Booking form */
+        .book-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            max-width: 500px;
+        }
+        .form-row {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .form-label {
+            font-size: 12px;
+            font-weight: 700;
+            color: #525252;
+            letter-spacing: 0.5px;
+        }
+        .form-input, .form-select {
+            padding: 10px 14px;
+            background: #202020;
+            border: 1px solid #2d2d2d;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 15px;
+            outline: none;
+            font-family: inherit;
+            -webkit-appearance: none;
+        }
+        .form-input:focus, .form-select:focus { border-color: #8b5cf6; }
+        .form-input::placeholder { color: #3d3d3d; }
+        .form-select { cursor: pointer; }
+        .form-select option { background: #202020; }
+        .form-row-inline {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .quote-preview {
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 16px;
+            font-size: 13px;
+            line-height: 1.6;
+            color: #9ca3af;
+        }
+        .quote-section {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .quote-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .quote-section-title {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #8b5cf6;
+            margin-bottom: 8px;
+        }
+        .quote-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 3px 0;
+        }
+        .quote-row .qlabel { color: #6b7280; }
+        .quote-row .qvalue { color: #e0e0e0; font-weight: 500; text-align: right; }
+        .quote-total {
+            font-size: 18px;
+            font-weight: 700;
+            color: #fff;
+        }
+        .quote-note {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.5;
+            margin-top: 4px;
+        }
+        .quote-greeting {
+            font-size: 14px;
+            color: #d1d5db;
+            line-height: 1.6;
+        }
+        .quote-signoff {
+            font-size: 13px;
+            color: #9ca3af;
+            font-style: italic;
+        }
+        .copy-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 24px;
+            background: #8b5cf6;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .copy-btn:hover { background: #7c3aed; }
+        .copy-btn:active { transform: scale(0.97); }
+        .share-wa-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 12px 24px;
+            background: #25D366;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .share-wa-btn:hover { background: #1da851; }
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .crosssell-card {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px 18px;
+            background: #1c1917;
+            border: 1px solid #4a3520;
+            border-radius: 12px;
+            margin-top: 28px;
+            text-decoration: none;
+            color: inherit;
+            transition: border-color 0.2s;
+        }
+        .crosssell-card:hover { border-color: #f59e0b; }
+        .crosssell-icon { font-size: 36px; }
+        .crosssell-info { flex: 1; }
+        .crosssell-title { font-size: 15px; font-weight: 600; color: #fef3c7; }
+        .crosssell-desc { font-size: 13px; color: #a8956e; margin-top: 2px; }
+        .proscons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 16px;
+        }
+        .proscons-col {
+            background: #202020;
+            border-radius: 10px;
+            padding: 16px;
+        }
+        .proscons-col h4 {
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }
+        .proscons-col ul {
+            list-style: none;
+            padding: 0;
+        }
+        .proscons-col li {
+            font-size: 13px;
+            color: #9ca3af;
+            padding: 4px 0;
+            line-height: 1.5;
+        }
+
+        /* Site lock — hide everything until password entered */
+
+        /* Password gate */
+        .pw-gate {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .pw-gate h2 {
+            font-size: 24px;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+        .pw-gate p {
+            font-size: 14px;
+            color: #6b7280;
+            margin-bottom: 24px;
+        }
+        .pw-input {
+            padding: 10px 16px;
+            background: #202020;
+            border: 1px solid #2d2d2d;
+            border-radius: 8px;
+            color: #e0e0e0;
+            font-size: 15px;
+            outline: none;
+            width: 260px;
+            text-align: center;
+        }
+        .pw-input:focus { border-color: #8b5cf6; }
+        .pw-btn {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 10px 20px;
+            background: #8b5cf6;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .pw-btn:hover { background: #7c3aed; }
+        .pw-error {
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 12px;
+            display: none;
+        }
+
+        /* Workflow content */
+        .wf-content {
+            font-size: 14px;
+            line-height: 1.7;
+            color: #9ca3af;
+        }
+        .wf-content h2 { font-size: 22px; font-weight: 700; color: #fff; margin: 28px 0 12px; }
+        .wf-content h3 { font-size: 18px; font-weight: 700; color: #e0e0e0; margin: 24px 0 10px; }
+        .wf-content h4 { font-size: 15px; font-weight: 600; color: #a78bfa; margin: 20px 0 8px; }
+        .wf-content p { margin-bottom: 10px; }
+        .wf-content ul { padding-left: 20px; margin-bottom: 12px; }
+        .wf-content li { margin-bottom: 4px; }
+        .wf-content hr { border: none; border-top: 1px solid #2d2d2d; margin: 20px 0; }
+        .wf-content strong { color: #e0e0e0; }
+        .wf-content code {
+            background: #2d2d2d;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #a78bfa;
+        }
+        .wf-code {
+            background: #0f0f1a;
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+            overflow-x: auto;
+        }
+        .wf-code pre {
+            font-family: 'SF Mono', 'Fira Code', Menlo, Consolas, monospace;
+            font-size: 13px;
+            color: #a78bfa;
+            line-height: 1.5;
+        }
+        .wf-content .wf-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+        }
+        .wf-content .wf-table th,
+        .wf-content .wf-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid #2d2d2d;
+            font-size: 13px;
+        }
+        .wf-content .wf-table th {
+            color: #525252;
+            font-weight: 600;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+        .wf-step {
+            padding-left: 20px;
+            position: relative;
+            margin-bottom: 8px;
+        }
+        .wf-step::before {
+            content: "\25B8";
+            position: absolute;
+            left: 4px;
+            color: #8b5cf6;
+        }
+
+        /* Workflow home tiles */
+        .wf-tile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .wf-tile {
+            background: #202020;
+            border: 1px solid #2d2d2d;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, transform 0.15s;
+        }
+        .wf-tile:hover { border-color: #8b5cf6; transform: translateY(-2px); }
+        .wf-tile-icon { font-size: 28px; margin-bottom: 8px; }
+        .wf-tile-label { font-size: 14px; font-weight: 600; color: #e0e0e0; }
+
+        /* Pipeline stages */
+        .pipeline-row {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+        .pipeline-stage {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 8px;
+            text-align: center;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        /* Contact bar */
+        .contact-bar {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+        .contact-item {
+            font-size: 13px;
+            color: #6b7280;
+        }
+        .contact-item a {
+            color: #8b5cf6;
+            text-decoration: none;
+        }
+        .contact-item a:hover { text-decoration: underline; }
+
+        /* Mobile hamburger */
+        .mobile-toggle {
+            display: none;
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 1000;
+            background: #202020;
+            border: 1px solid #2d2d2d;
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #e0e0e0;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        /* Sidebar overlay */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 998;
+        }
+        .sidebar-overlay.show { display: block; }
+
+        /* Bottom nav (mobile) */
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #202020;
+            border-top: 1px solid #2d2d2d;
+            z-index: 900;
+            padding: 6px 0;
+            padding-bottom: max(6px, env(safe-area-inset-bottom));
+        }
+        .bottom-nav-inner {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .bnav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 6px 12px;
+            color: #6b7280;
+            text-decoration: none;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: color 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .bnav-item.active { color: #8b5cf6; }
+        .bnav-item:active { color: #a78bfa; }
+        .bnav-icon { font-size: 22px; }
+
+        /* WhatsApp floating button */
+        .wa-float {
+            position: fixed;
+            bottom: 24px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            background: #25D366;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(37,211,102,0.4);
+            z-index: 800;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .wa-float:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(37,211,102,0.5); }
+        .wa-float:active { transform: scale(0.95); }
+        .wa-float svg { width: 28px; height: 28px; fill: #fff; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: -280px;
+                height: 100vh;
+                z-index: 999;
+                transition: left 0.3s;
+            }
+            .sidebar.open { left: 0; }
+            .mobile-toggle { display: block; }
+            .bottom-nav { display: block; }
+            .wa-float { bottom: 80px; right: 16px; width: 52px; height: 52px; }
+            .wa-float svg { width: 26px; height: 26px; }
+
+            .content {
+                padding: 56px 16px 80px;
+            }
+            .page {
+                max-width: 100%;
+            }
+            .page-title {
+                font-size: 24px;
+                line-height: 1.2;
+            }
+            .page-meta {
+                font-size: 13px;
+                margin-bottom: 20px;
+            }
+
+            /* Hero mobile — full screen */
+            .hero {
+                min-height: calc(100vh - 70px);
+                margin: 0;
+                border-radius: 0;
+                padding: 0 24px;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                background-image: url('https://photos.smugmug.com/photos/i-VqnMPLz/0/Kd2nZQ6mNq7gxWCvG9bnXfk4xpp9JSX64npLRHHNV/XL/i-VqnMPLz-XL.jpg');
+            }
+            .hero-logo { font-size: 44px; margin-bottom: 16px; }
+            .hero h1 {
+                font-size: 32px;
+                letter-spacing: -0.5px;
+                margin-bottom: 12px;
+            }
+            .hero p {
+                font-size: 15px;
+                margin-bottom: 28px;
+                line-height: 1.7;
+            }
+            .hero-stats {
+                gap: 28px;
+                margin-bottom: 28px;
+            }
+            .hero-stat .number { font-size: 26px; }
+            .hero-cta {
+                padding: 16px 40px;
+                font-size: 16px;
+                border-radius: 10px;
+            }
+            .contact-bar {
+                gap: 12px;
+                flex-direction: column;
+            }
+
+            /* Category tiles mobile — single column */
+            .cat-grid {
+                grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            .cat-tile {
+                aspect-ratio: 16/9;
+            }
+            .cat-tile-content {
+                padding: 10px 12px;
+            }
+            .cat-name { font-size: 15px; }
+
+            /* Category hero mobile */
+            .cat-hero {
+                height: 160px;
+                border-radius: 12px;
+                margin-bottom: 20px;
+            }
+            .cat-hero-content { padding: 16px; }
+            .cat-hero-title { font-size: 22px; }
+
+            /* Video grid mobile */
+            .video-grid { grid-template-columns: 1fr; gap: 12px; }
+            .video-play { width: 40px; height: 40px; font-size: 16px; }
+            .video-title { font-size: 14px; padding: 8px 10px; }
+
+            /* Gallery cards mobile */
+            .gallery-grid { gap: 8px; }
+            .gallery-card {
+                padding: 14px 16px;
+                gap: 12px;
+                border-radius: 10px;
+            }
+            .gallery-monogram {
+                width: 38px;
+                height: 38px;
+                font-size: 16px;
+            }
+            .gallery-date-card {
+                width: 38px;
+                height: 42px;
+            }
+            .gallery-date-card .date-day { font-size: 14px; }
+            .gallery-date-card .date-month { font-size: 8px; }
+            .gallery-name { font-size: 14px; }
+            .gallery-meta { font-size: 11px; }
+
+            /* Pricing mobile */
+            .pricing-card { padding: 18px; }
+            .pricing-name { font-size: 18px; }
+            .tier-header { flex-direction: column; align-items: flex-start; gap: 2px; }
+            .tier-price { font-size: 20px; }
+            .tier-details { font-size: 14px; }
+            .addons-list li { font-size: 14px; padding: 5px 0; }
+            .includes-list { grid-template-columns: 1fr; gap: 8px; }
+            .includes-list span { font-size: 14px; }
+
+            /* Checklists mobile — bigger touch targets */
+            .check-item {
+                padding: 12px;
+                font-size: 15px;
+                min-height: 48px;
+            }
+            .check-item input[type="checkbox"] {
+                width: 20px;
+                height: 20px;
+            }
+
+            /* Workflow tiles */
+            .wf-tile-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .wf-tile { padding: 16px; }
+            .wf-tile-icon { font-size: 24px; }
+            .wf-tile-label { font-size: 13px; }
+
+            /* Pipeline */
+            .pipeline-row { flex-direction: column; gap: 6px; }
+            .pipeline-stage { min-width: auto; padding: 10px; font-size: 13px; }
+
+            /* Booking form mobile */
+            .form-row-inline { grid-template-columns: 1fr; }
+            .btn-row { flex-direction: column; }
+            .copy-btn, .share-wa-btn { width: 100%; justify-content: center; padding: 14px; }
+            .proscons { grid-template-columns: 1fr; }
+
+            /* Password gate */
+            .pw-gate { padding: 40px 16px; }
+            .pw-input { width: 100%; max-width: 260px; font-size: 16px; padding: 12px 16px; }
+            .pw-btn { margin-left: 0; margin-top: 12px; display: block; width: 100%; max-width: 260px; padding: 14px; font-size: 16px; }
+            .pw-gate > div { display: flex; flex-direction: column; align-items: center; }
+
+            /* Workflow content */
+            .wf-content { font-size: 15px; }
+            .wf-content .wf-table { font-size: 12px; display: block; overflow-x: auto; }
+            .wf-code { font-size: 12px; }
+            .back-link { font-size: 14px; padding: 8px 0; }
+
+            /* Testimonials mobile */
+            .testimonials-grid { grid-template-columns: 1fr; }
+            .testimonial-card { padding: 16px; }
+            .testimonial-quote { font-size: 13px; }
+
+            /* How It Works mobile */
+            .how-steps { grid-template-columns: 1fr 1fr; gap: 10px; }
+            .how-step { padding: 16px 10px; }
+            .how-step-icon { font-size: 24px; }
+            .how-step-label { font-size: 13px; }
+        }
+
+        /* Small phones */
+        @media (max-width: 380px) {
+            .cat-grid { grid-template-columns: 1fr; }
+            .hero-stats { flex-wrap: wrap; gap: 16px; }
+            .wf-tile-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Testimonials */
+        .testimonials-section {
+            padding: 20px 16px 0;
+        }
+        .testimonials-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #525252;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .testimonials-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+        }
+        .testimonial-card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+        }
+        .testimonial-quote {
+            font-size: 14px;
+            color: #d1d5db;
+            line-height: 1.6;
+            font-style: italic;
+            margin-bottom: 12px;
+        }
+        .testimonial-quote::before {
+            content: '\201C';
+            font-size: 28px;
+            color: #8b5cf6;
+            font-style: normal;
+            line-height: 0;
+            position: relative;
+            top: 8px;
+            margin-right: 4px;
+        }
+        .testimonial-name {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 600;
+        }
+        .testimonial-event {
+            font-size: 11px;
+            color: #525252;
+        }
+
+        /* How It Works */
+        .how-section {
+            padding: 0 16px;
+            margin-top: 8px;
+        }
+        .how-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #525252;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .how-steps {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+        }
+        .how-step {
+            text-align: center;
+            padding: 20px 12px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+        }
+        .how-step-num {
+            font-size: 11px;
+            font-weight: 700;
+            color: #8b5cf6;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .how-step-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+        .how-step-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 4px;
+        }
+        .how-step-desc {
+            font-size: 12px;
+            color: #6b7280;
+            line-height: 1.4;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: #7c3aed;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+            z-index: 1000;
+            pointer-events: none;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+    </style>
+</head>
+<body>
+    <button class="mobile-toggle" onclick="toggleSidebar()">&#9776;</button>
+    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+
+    <!-- WhatsApp floating button -->
+    <a href="https://wa.me/15307278598?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." class="wa-float" target="_blank" rel="noopener" aria-label="Chat on WhatsApp">
+        <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+    </a>
+
+    <!-- Bottom nav (mobile) -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-inner">
+            <div class="bnav-item active" onclick="mobileNav('home')" id="bnav-home">
+                <span class="bnav-icon">🏠</span>
+                Home
+            </div>
+            <div class="bnav-item" onclick="mobileNav('portfolio-home')" id="bnav-portfolio">
+                <span class="bnav-icon">📸</span>
+                Portfolio
+            </div>
+            <div class="bnav-item" onclick="mobileNavProtected('pricing')" id="bnav-pricing">
+                <span class="bnav-icon">💰</span>
+                Pricing
+            </div>
+            <div class="bnav-item" onclick="mobileNavProtected('booking')" id="bnav-booking">
+                <span class="bnav-icon">📋</span>
+                Book
+            </div>
+            <div class="bnav-item" onclick="mobileNav('contact')" id="bnav-contact">
+                <span class="bnav-icon">📞</span>
+                Contact
+            </div>
+        </div>
+    </nav>
+
+    <div class="layout">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-brand">📷 <span>Rsquare Studios</span></div>
+
+            <a class="sidebar-link" onclick="showSection('home')">🏠 Home</a>
+
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-section-label">PORTFOLIO</div>
+            <a class="sidebar-link" onclick="showSection('portfolio-home')">📸 All Categories</a>
+            <a class="sidebar-link" onclick="showSection('videos')">🎬 Videos</a>
+            <a href="#portfolio-wedding" class="sidebar-link" onclick="showSection('portfolio-wedding')">💍 Wedding (5)</a>
+<a href="#portfolio-engagement" class="sidebar-link" onclick="showSection('portfolio-engagement')">💎 Engagement (1)</a>
+<a href="#portfolio-pre_wedding" class="sidebar-link" onclick="showSection('portfolio-pre_wedding')">💐 Pre-Wedding (2)</a>
+<a href="#portfolio-half_saree" class="sidebar-link" onclick="showSection('portfolio-half_saree')">🪷 Half Saree (4)</a>
+<a href="#portfolio-maternity" class="sidebar-link" onclick="showSection('portfolio-maternity')">🤰 Maternity (5)</a>
+<a href="#portfolio-baby_shower" class="sidebar-link" onclick="showSection('portfolio-baby_shower')">👶 Baby Shower (5)</a>
+<a href="#portfolio-birthday" class="sidebar-link" onclick="showSection('portfolio-birthday')">🎂 Birthday (5)</a>
+<a href="#portfolio-cradle" class="sidebar-link" onclick="showSection('portfolio-cradle')">🍼 Cradle Ceremony (5)</a>
+<a href="#portfolio-celebrations" class="sidebar-link" onclick="showSection('portfolio-celebrations')">🎊 Celebrations (13)</a>
+
+
+            <div class="sidebar-divider"></div>
+            <a class="sidebar-link wf-link" onclick="accessWorkflow('pricing')" style="display:none;">💰 Pricing</a>
+            <a class="sidebar-link wf-link" onclick="accessWorkflow('booking')" style="display:none;">📋 Book / Get Quote</a>
+            <div id="wf-sidebar-block" style="display:none;">
+                <div class="sidebar-section-label" id="wf-section-label">WORKFLOW</div>
+                <a class="sidebar-link wf-link" onclick="accessWorkflow('workflow-home')">📋 Dashboard</a>
+                <a class="sidebar-link wf-link" onclick="accessWorkflow('checklists')">✅ Checklists</a>
+                <a class="sidebar-link wf-link" onclick="accessWorkflow('workflow-ref')">📖 Workflow Reference</a>
+                <div class="sidebar-section-label" style="padding-top:8px">POSING GUIDES</div>
+                <a href="#posing-couples" class="sidebar-link sub-link wf-link" onclick="showSection('posing-couples')">Couples</a>
+<a href="#posing-families" class="sidebar-link sub-link wf-link" onclick="showSection('posing-families')">Families</a>
+<a href="#posing-weddings" class="sidebar-link sub-link wf-link" onclick="showSection('posing-weddings')">Weddings</a>
+
+            </div>
+            <a class="sidebar-link" onclick="accessWorkflow('pricing')" style="margin-top:4px;">
+                <span class="lock-icon" id="lock-icon">🔒</span> Private
+            </a>
+
+
+
+            <div class="sidebar-footer">
+                Updated Feb 19, 2026<br>
+                45 galleries
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content" id="main-content">
+
+            <!-- HOME -->
+            <div class="page active" id="home">
+                <div class="hero">
+                    <div class="hero-logo">📷</div>
+                    <h1>Rsquare Studios</h1>
+                    <p>Baby showers, maternity, birthdays, weddings &amp; family celebrations. Photography &amp; video across DFW.</p>
+                    <div class="hero-stats">
+                        <div class="hero-stat">
+                            <div class="number">45+</div>
+                            <div class="label">GALLERIES</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="number">5+</div>
+                            <div class="label">YEARS</div>
+                        </div>
+                        <div class="hero-stat">
+                            <div class="number">100+</div>
+                            <div class="label">WEDDINGS</div>
+                        </div>
+                    </div>
+                    <a href="#" class="hero-cta" onclick="showSection('portfolio-home'); return false;">View Portfolio</a>
+                </div>
+
+                <!-- Testimonials -->
+                <div class="testimonials-section">
+                    <div class="testimonials-title">What Clients Say</div>
+                    <div class="testimonials-grid">
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">Pictures came out so well. We feel that we made the right choice. We definitely recommend too.</div>
+                            <div class="testimonial-name">Client</div>
+                            <div class="testimonial-event">Event Photography</div>
+                        </div>
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">Your relaxed, personable approach made us feel very welcome. Your work is flawless. Thank you so much for capturing the strong emotions of the day.</div>
+                            <div class="testimonial-name">Client</div>
+                            <div class="testimonial-event">Wedding Photography</div>
+                        </div>
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">Editing and videography looks so amazing and thanks for being so flexible to add changes that we asked for. It was so good working with you.</div>
+                            <div class="testimonial-name">Client</div>
+                            <div class="testimonial-event">Photo &amp; Video</div>
+                        </div>
+                        <div class="testimonial-card">
+                            <div class="testimonial-quote">All the photos look stunning! Everyone in the house loved the pictures a lot.</div>
+                            <div class="testimonial-name">Client</div>
+                            <div class="testimonial-event">Event Photography</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- How It Works -->
+                <div class="how-section">
+                    <div class="how-title">How It Works</div>
+                    <div class="how-steps">
+                        <div class="how-step">
+                            <div class="how-step-num">01</div>
+                            <div class="how-step-icon">💬</div>
+                            <div class="how-step-label">Reach Out</div>
+                            <div class="how-step-desc">Tell me about your event via WhatsApp or call</div>
+                        </div>
+                        <div class="how-step">
+                            <div class="how-step-num">02</div>
+                            <div class="how-step-icon">📋</div>
+                            <div class="how-step-label">Plan</div>
+                            <div class="how-step-desc">We lock in date, location, and coverage details</div>
+                        </div>
+                        <div class="how-step">
+                            <div class="how-step-num">03</div>
+                            <div class="how-step-icon">📸</div>
+                            <div class="how-step-label">Shoot</div>
+                            <div class="how-step-desc">I capture every moment &mdash; candids, portraits, all of it</div>
+                        </div>
+                        <div class="how-step">
+                            <div class="how-step-num">04</div>
+                            <div class="how-step-icon">🎨</div>
+                            <div class="how-step-label">Deliver</div>
+                            <div class="how-step-desc">Edited photos in 12&ndash;15 days, video in 3&ndash;4 weeks</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PORTFOLIO HOME -->
+            <div class="page" id="portfolio-home">
+                <div class="page-breadcrumb">Portfolio</div>
+                <h1 class="page-title">Portfolio</h1>
+                <div class="page-meta">45 galleries &middot; Tap any category to browse</div>
+                <div class="cat-grid">
+                    
+                    <div class="cat-tile" onclick="showSection('portfolio-wedding')" style="background-image:url('https://photos.smugmug.com/photos/i-BvTChsc/0/LwhGTh2B2pCPDgNpjPJp8J3nCSfRNdKwd3j5CVTKN/X3/i-BvTChsc-X3.jpg');background-position:center center">
+                        <div class="cat-tile-content">
+                            <div class="cat-name">Wedding</div>
+                            <div class="cat-count">5 galleries</div>
+                        </div>
+                    </div>
+                    <div class="cat-tile" onclick="showSection('portfolio-engagement')" style="background-image:url('https://photos.smugmug.com/photos/i-8NfsLKT/0/LVnhsbXXV3JPcX2r2PhvcKfCj9gK9czpWsZ2VXrSH/X3/i-8NfsLKT-X3.jpg');background-position:center center">
+                        <div class="cat-tile-content">
+                            <div class="cat-name">Engagement</div>
+                            <div class="cat-count">1 galleries</div>
+                        </div>
+                    </div>
+                    <div class="cat-tile" onclick="showSection('portfolio-pre_wedding')" style="background-image:url('https://photos.smugmug.com/photos/i-GfR24FT/0/MHQbxRCTTvn8x7WXCkzHRjCWR96TC6TnBsTfQRFQ7/X3/i-GfR24FT-X3.jpg');background-position:center center">
+                        <div class="cat-tile-content">
+                            <div class="cat-name">Pre-Wedding</div>
+                            <div class="cat-count">2 galleries</div>
+                        </div>
+                    </div>
+                    <div class="cat-tile" onclick="showSection('portfolio-half_saree')" style="background-image:url('https://photos.smugmug.com/photos/i-MCmGphP/0/NZvk2KBMQzVZvJJTQh23xdmRRsvzNzGRdBgx2HX66/X3/i-MCmGphP-X3.jpg');background-position:center center">
+                        <div class="cat-tile-content">
+                            <div class="cat-name">Half Saree</div>
+                            <div class="cat-count">4 galleries</div>
+                        </div>
+                    </div>
+                    <div class="cat-tile" onclick="showSection('portfolio-maternity')" style="background-image:url('https://photos.smugmug.com/photos/i-ZqWs3n5/0/NcPVRqqFJXR3MJfcVn45gshTHXpxkZFvfv655D3mB/X3/i-ZqWs3n5-X3.jpg');background-position:center 15%">
+                        <div class="cat-tile-content">
+                            <div class="cat-name">Maternity</div>
+                            <div class="cat-count">5 galleries</div>
+                        </div>
+                    </div>
+                    <div class="cat-tile" onclick="showSection('portfolio-baby_shower')" style="background-image:url('https://photos.smugmug.com/photos/i-3MjgbV3/0/NWkJRQPLmfwjxBJ2qLpKLS2RHVpb39NtfssFhZJxp/X3/i-3MjgbV3-X3.jpg');background-position:center 25%">
+                        <div class="cat-tile-content">
+                            <div class="cat-name">Baby Shower</div>
+                            <div class="cat-count">5 galleries</div>
+                        </div>
+                    </div>
+                    <div class="cat-tile" onclick="showSection('portfolio-birthday')" style="background-image:url('https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg');background-position:center center">
+                        <div class="cat-tile-content">
+                            <div class="cat-name">Birthday</div>
+                            <div class="cat-count">5 galleries</div>
+                        </div>
+                    </div>
+                    <div class="cat-tile" onclick="showSection('portfolio-cradle')" style="background-image:url('https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg');background-position:center center">
+                        <div class="cat-tile-content">
+                            <div class="cat-name">Cradle Ceremony</div>
+                            <div class="cat-count">5 galleries</div>
+                        </div>
+                    </div>
+                    <div class="cat-tile" onclick="showSection('portfolio-celebrations')" style="background-image:url('https://photos.smugmug.com/photos/i-MPN69Q3/0/LGSxZbpLfpcb7j3kqQkkTdfwDHcJbV6XdxnGNq6Hb/X3/i-MPN69Q3-X3.jpg');background-position:center center">
+                        <div class="cat-tile-content">
+                            <div class="cat-name">Celebrations</div>
+                            <div class="cat-count">13 galleries</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PORTFOLIO CATEGORIES -->
+            
+            <div class="page gallery-page-wrap" id="portfolio-wedding">
+                <div class="gallery-backdrop" style="background-image:url('https://photos.smugmug.com/photos/i-BvTChsc/0/LwhGTh2B2pCPDgNpjPJp8J3nCSfRNdKwd3j5CVTKN/X3/i-BvTChsc-X3.jpg')"></div>
+                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <div class="cat-hero" style="background-image:url('https://photos.smugmug.com/photos/i-BvTChsc/0/LwhGTh2B2pCPDgNpjPJp8J3nCSfRNdKwd3j5CVTKN/X3/i-BvTChsc-X3.jpg');background-position:center center">
+                    <div class="cat-hero-content">
+                        <div class="cat-hero-title">Wedding</div>
+                        <div class="cat-hero-sub">5 galleries</div>
+                    </div>
+                </div>
+                <div class="gallery-grid">
+                <a href="https://www.rsquarestudios.com/2025/Vishnu-Varsha-Wedding/n-PJgsmh" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">V</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Vishnu-Varsha Wedding</div>
+                        <div class="gallery-meta">Dallas &middot; May 10, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Sid-Rash-Wedding/n-9C8F5V" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">S</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Sid-Rash Wedding</div>
+                        <div class="gallery-meta">TX &middot; Aug 09, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/Sachiin-Wedding/n-5tBrst" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">S</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Sachin Wedding Highlights</div>
+                        <div class="gallery-meta">India &middot; Aug 15, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/2024-12-5-Anvesh-Wedding/n-gmSvPR" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">A</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Anvesh Wedding</div>
+                        <div class="gallery-meta">Mckiney &middot; Dec 05, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Praveen-Anitha-Pre-wedding/n-FZJ7JR" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">P</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">praveen-Anitha Pre-wedding</div>
+                        <div class="gallery-meta">Irving &middot; Oct 20, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a></div>
+            </div>
+            <div class="page gallery-page-wrap" id="portfolio-engagement">
+                <div class="gallery-backdrop" style="background-image:url('https://photos.smugmug.com/photos/i-8NfsLKT/0/LVnhsbXXV3JPcX2r2PhvcKfCj9gK9czpWsZ2VXrSH/X3/i-8NfsLKT-X3.jpg')"></div>
+                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <div class="cat-hero" style="background-image:url('https://photos.smugmug.com/photos/i-8NfsLKT/0/LVnhsbXXV3JPcX2r2PhvcKfCj9gK9czpWsZ2VXrSH/X3/i-8NfsLKT-X3.jpg');background-position:center center">
+                    <div class="cat-hero-content">
+                        <div class="cat-hero-title">Engagement</div>
+                        <div class="cat-hero-sub">1 galleries</div>
+                    </div>
+                </div>
+                <div class="gallery-grid">
+                <a href="https://www.rsquarestudios.com/2025/Sachin-Deepika-Engagement/n-SJfXr2" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">S</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Sachin-Deepika Engagement</div>
+                        <div class="gallery-meta">Repalle &middot; Jul 27, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a></div>
+            </div>
+            <div class="page gallery-page-wrap" id="portfolio-pre_wedding">
+                <div class="gallery-backdrop" style="background-image:url('https://photos.smugmug.com/photos/i-GfR24FT/0/MHQbxRCTTvn8x7WXCkzHRjCWR96TC6TnBsTfQRFQ7/X3/i-GfR24FT-X3.jpg')"></div>
+                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <div class="cat-hero" style="background-image:url('https://photos.smugmug.com/photos/i-GfR24FT/0/MHQbxRCTTvn8x7WXCkzHRjCWR96TC6TnBsTfQRFQ7/X3/i-GfR24FT-X3.jpg');background-position:center center">
+                    <div class="cat-hero-content">
+                        <div class="cat-hero-title">Pre-Wedding</div>
+                        <div class="cat-hero-sub">2 galleries</div>
+                    </div>
+                </div>
+                <div class="gallery-grid">
+                <a href="https://www.rsquarestudios.com/2025/Vishnu-Varsha-Haldii/n-P4qz2J" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">V</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Vishnu-Varsha Haldi</div>
+                        <div class="gallery-meta">Dallas &middot; May 09, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/Vishnu-Varsha-Mehendi/n-wTKHdd" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">V</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Vishnu-Varsha Mehendi</div>
+                        <div class="gallery-meta">Dallas &middot; May 09, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a></div>
+            </div>
+            <div class="page gallery-page-wrap" id="portfolio-half_saree">
+                <div class="gallery-backdrop" style="background-image:url('https://photos.smugmug.com/photos/i-MCmGphP/0/NZvk2KBMQzVZvJJTQh23xdmRRsvzNzGRdBgx2HX66/X3/i-MCmGphP-X3.jpg')"></div>
+                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <div class="cat-hero" style="background-image:url('https://photos.smugmug.com/photos/i-MCmGphP/0/NZvk2KBMQzVZvJJTQh23xdmRRsvzNzGRdBgx2HX66/X3/i-MCmGphP-X3.jpg');background-position:center center">
+                    <div class="cat-hero-content">
+                        <div class="cat-hero-title">Half Saree</div>
+                        <div class="cat-hero-sub">4 galleries</div>
+                    </div>
+                </div>
+                <div class="gallery-grid">
+                <a href="https://www.rsquarestudios.com/2025/Thansi-Half-Saree/n-HtT4x8" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">T</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Thana Half Saree</div>
+                        <div class="gallery-meta">Prosper &middot; Aug 25, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2026/Harinya-Half-saree/n-dqwhp4" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">H</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Harinya Half-saree</div>
+                        <div class="gallery-meta">Dallas &middot; Jan 19, 2026</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/Krithi-Half-Saree/n-tmw9zk" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">K</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Krithi Half Saree</div>
+                        <div class="gallery-meta">Dallas &middot; Aug 23, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Ananya-Half-Saree/n-Bvf998" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">A</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Ananya Half Saree</div>
+                        <div class="gallery-meta">TX &middot; Aug 10, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a></div>
+            </div>
+            <div class="page gallery-page-wrap" id="portfolio-maternity">
+                <div class="gallery-backdrop" style="background-image:url('https://photos.smugmug.com/photos/i-ZqWs3n5/0/NcPVRqqFJXR3MJfcVn45gshTHXpxkZFvfv655D3mB/X3/i-ZqWs3n5-X3.jpg')"></div>
+                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <div class="cat-hero" style="background-image:url('https://photos.smugmug.com/photos/i-ZqWs3n5/0/NcPVRqqFJXR3MJfcVn45gshTHXpxkZFvfv655D3mB/X3/i-ZqWs3n5-X3.jpg');background-position:center 15%">
+                    <div class="cat-hero-content">
+                        <div class="cat-hero-title">Maternity</div>
+                        <div class="cat-hero-sub">5 galleries</div>
+                    </div>
+                </div>
+                <div class="gallery-grid">
+                <a href="https://www.rsquarestudios.com/2026/Krishna-Maternity-Dallas/n-FVqHM7" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">K</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Krishna Maternity</div>
+                        <div class="gallery-meta">Dallas &middot; Feb 08, 2026</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Monika-Maternity/n-txJ8H6" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">M</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Monika Maternity</div>
+                        <div class="gallery-meta">TX &middot; 2024 -04-02</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Sneha-Maternity/n-25PFCg" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">S</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Sneha Maternity</div>
+                        <div class="gallery-meta">TX &middot; Aug 04, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Sujata-Maternity/n-k3HS97" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">S</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Sujata Maternity</div>
+                        <div class="gallery-meta">TX &middot; Sep 09, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Varsha-Maternity/n-B3CdSj" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">V</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Varsha Maternity</div>
+                        <div class="gallery-meta">Tx &middot; Jul 21, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a></div>
+            </div>
+            <div class="page gallery-page-wrap" id="portfolio-baby_shower">
+                <div class="gallery-backdrop" style="background-image:url('https://photos.smugmug.com/photos/i-3MjgbV3/0/NWkJRQPLmfwjxBJ2qLpKLS2RHVpb39NtfssFhZJxp/X3/i-3MjgbV3-X3.jpg')"></div>
+                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <div class="cat-hero" style="background-image:url('https://photos.smugmug.com/photos/i-3MjgbV3/0/NWkJRQPLmfwjxBJ2qLpKLS2RHVpb39NtfssFhZJxp/X3/i-3MjgbV3-X3.jpg');background-position:center 25%">
+                    <div class="cat-hero-content">
+                        <div class="cat-hero-title">Baby Shower</div>
+                        <div class="cat-hero-sub">5 galleries</div>
+                    </div>
+                </div>
+                <div class="gallery-grid">
+                <a href="https://www.rsquarestudios.com/2025/2025-02-23---Mounika-Baby-shower---Dallas/n-9ZxQr4" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">M</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Mounika Baby shower</div>
+                        <div class="gallery-meta">Dallas &middot; Feb 23, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Sravya-Baby-shower/n-Xp66tv" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">S</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Sravya Baby shower</div>
+                        <div class="gallery-meta">Prosper &middot; Apr 14, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Monika-Babyshower/n-r78HKK" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">M</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Monika Babyshower</div>
+                        <div class="gallery-meta">Irving &middot; Mar 17, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Varsha-Baby-Shower/n-PhV3WM" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">V</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Varsha Baby Shower</div>
+                        <div class="gallery-meta">TX &middot; Jul 07, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/SUNMA-Baby-Shower/n-T579ts" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">S</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">SUNMA Baby Shower</div>
+                        <div class="gallery-meta">Irving &middot; Mar 06, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a></div>
+            </div>
+            <div class="page gallery-page-wrap" id="portfolio-birthday">
+                <div class="gallery-backdrop" style="background-image:url('https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg')"></div>
+                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <div class="cat-hero" style="background-image:url('https://photos.smugmug.com/photos/i-Xq8BHgp/0/NGnrqRVd9gkP3r8gdC8BdwN2WrLPJT4MpQ594MTwF/X3/i-Xq8BHgp-X3.jpg');background-position:center center">
+                    <div class="cat-hero-content">
+                        <div class="cat-hero-title">Birthday</div>
+                        <div class="cat-hero-sub">5 galleries</div>
+                    </div>
+                </div>
+                <div class="gallery-grid">
+                <a href="https://www.rsquarestudios.com/2024/Ishika-Birthday/n-4VRJ5s" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">I</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Ishika Birthday</div>
+                        <div class="gallery-meta">Frisco &middot; Feb 09, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Divit-Bday/n-5rLwtN" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">D</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Divit Bday</div>
+                        <div class="gallery-meta">Bliss Ranch &middot; Nov 08, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/Advithi-2nd-Birthday/n-GhxTw3" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">A</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Advithi Birthday</div>
+                        <div class="gallery-meta">India &middot; Sep 06, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/VISHNU-50th-BDay/n-SF4tDf" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">V</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">VISHNU 50th BDay</div>
+                        <div class="gallery-meta">India 101 &middot; Nov 29, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/Sravani-40th-Birthday/n-Cdm8PS" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">S</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Sravani 40th Birthday</div>
+                        <div class="gallery-meta">Dallas &middot; Dec 30, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a></div>
+            </div>
+            <div class="page gallery-page-wrap" id="portfolio-cradle">
+                <div class="gallery-backdrop" style="background-image:url('https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg')"></div>
+                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <div class="cat-hero" style="background-image:url('https://photos.smugmug.com/photos/i-R3QTwKk/0/KzsCGkHgZ6HKmVjVtFvwkWF9s9sRzMSTQWKPJfxQb/X3/i-R3QTwKk-X3.jpg');background-position:center center">
+                    <div class="cat-hero-content">
+                        <div class="cat-hero-title">Cradle Ceremony</div>
+                        <div class="cat-hero-sub">5 galleries</div>
+                    </div>
+                </div>
+                <div class="gallery-grid">
+                <a href="https://www.rsquarestudios.com/2024/Krithin-Cradle-Ceremony/n-nKgrKN" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">K</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">krithin Cradle Ceremony</div>
+                        <div class="gallery-meta">irving &middot; Apr 30, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/Kata-Cradle-Ceremony/n-PdcWFC" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">K</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Kata Cradle Ceremony</div>
+                        <div class="gallery-meta">Dallas &middot; Dec 27, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/Yuvaan-Cradle/n-bQcWq8" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">Y</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Yuvaan Cradle</div>
+                        <div class="gallery-meta">Dallas &middot; May 18, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/Vamika-Cradle/n-9Pp4FL" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">A</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Anush-Varsha Cradle</div>
+                        <div class="gallery-meta">Sppicerack &middot; May 03, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Rudra-Cradle/n-VTkDRW" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">R</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Rudra Cradle</div>
+                        <div class="gallery-meta">Argyle &middot; Dec 08, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a></div>
+            </div>
+            <div class="page gallery-page-wrap" id="portfolio-celebrations">
+                <div class="gallery-backdrop" style="background-image:url('https://photos.smugmug.com/photos/i-MPN69Q3/0/LGSxZbpLfpcb7j3kqQkkTdfwDHcJbV6XdxnGNq6Hb/X3/i-MPN69Q3-X3.jpg')"></div>
+                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <div class="cat-hero" style="background-image:url('https://photos.smugmug.com/photos/i-MPN69Q3/0/LGSxZbpLfpcb7j3kqQkkTdfwDHcJbV6XdxnGNq6Hb/X3/i-MPN69Q3-X3.jpg');background-position:center center">
+                    <div class="cat-hero-content">
+                        <div class="cat-hero-title">Celebrations</div>
+                        <div class="cat-hero-sub">13 galleries</div>
+                    </div>
+                </div>
+                <div class="gallery-grid">
+                <a href="https://www.rsquarestudios.com/2024/Bharath-Vasu-HW/n-25WZqH" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">B</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">bharath-Vasu HW</div>
+                        <div class="gallery-meta">Corinth &middot; Dec 15, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/2024-12-28---Vineel-Manas-HW---CORINTH/n-9CVvtr" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">V</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Vineel-Manas HW</div>
+                        <div class="gallery-meta">CORINTH &middot; Dec 28, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/Sandhya-naresh-HW/n-hbGtrg" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">S</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Sandhya-naresh HW</div>
+                        <div class="gallery-meta">Florida &middot; Feb 13, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Chittapragada-Housewarming/n-B2QLXM" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">C</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Chittapragada Housewarming</div>
+                        <div class="gallery-meta">Texas &middot; Apr 22, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Lakshmi-HW/n-N4rK9K" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">L</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Lakshmi HW</div>
+                        <div class="gallery-meta">Dallas &middot; Mar 16, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Nisha-Vishnu-25th-Anniversary/n-pq9T5h" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">N</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Nisha-Vishnu 25th Anniversary</div>
+                        <div class="gallery-meta">Irving &middot; Dec 14, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Bhupesh-Anniversary/n-WhQR74" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">B</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Bhupesh Anniversary</div>
+                        <div class="gallery-meta">Irving &middot; May 17, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/VIN-SUN-3rd-Anniversary/n-cZmk7T" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">V</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">VIN-SUN 3rd Anniversary</div>
+                        <div class="gallery-meta">Irving &middot; Dec 09, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/Vinsun-Anniversary/n-KhbS7h" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">V</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Vinsun Anniversary</div>
+                        <div class="gallery-meta">Dallas &middot; Dec 09, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/Gopesh-bhai-Pooja/n-rN6rsT" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">G</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Gopesh Pooja</div>
+                        <div class="gallery-meta">Dallas &middot; Oct 09, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/Gaurav-Pooja-tx/n-HmNpT2" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">G</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Gaurav Pooja</div>
+                        <div class="gallery-meta">Frisco &middot; Sep 07, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2024/Randy-Pinky-Pooja/n-zS9whM" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">R</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Randy Pinky Pooja</div>
+                        <div class="gallery-meta">Irving &middot; Dec 26, 2024</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a>
+                <a href="https://www.rsquarestudios.com/2025/2025-01-12---Aarvins-weaning-ceremony---Irving/n-nJ5rPk" target="_blank" rel="noopener" class="gallery-card">
+                    <div class="gallery-monogram">A</div>
+                    <div class="gallery-info">
+                        <div class="gallery-name">Aarvins weaning ceremony</div>
+                        <div class="gallery-meta">Irving &middot; Jan 12, 2025</div>
+                    </div>
+                    <div class="gallery-arrow">→</div>
+                </a></div>
+            </div>
+
+            <!-- VIDEOS -->
+            <div class="page" id="videos">
+                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <div class="page-breadcrumb">Portfolio</div>
+                <h1 class="page-title">Videos</h1>
+                <div class="page-meta">Highlight reels and cinematic teasers from our events</div>
+                <div class="video-grid">
+                    <a href="https://www.youtube.com/watch?v=ATyq7m_gLtY" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/ATyq7m_gLtY/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:25</div>
+                        </div>
+                        <div class="video-title">Rashmi Baby Shower</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=B4WH92E3ov4" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/B4WH92E3ov4/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">6:39</div>
+                        </div>
+                        <div class="video-title">ShravArt's Housewarming</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=oZSifwJn6MI" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/oZSifwJn6MI/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:42</div>
+                        </div>
+                        <div class="video-title">Mounika Baby Shower</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=7IqxKNLrtaI" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/7IqxKNLrtaI/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">4:59</div>
+                        </div>
+                        <div class="video-title">Andrilla Sweet 16 Birthday</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=XksmtJX71Ao" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/XksmtJX71Ao/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">6:08</div>
+                        </div>
+                        <div class="video-title">Krithi Half Saree Ceremony</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=iNklzAP3JNo" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/iNklzAP3JNo/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">1:36</div>
+                        </div>
+                        <div class="video-title">Ranjith Pinky Gender Reveal</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=lS1BdiEk3Pg" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/lS1BdiEk3Pg/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">4:43</div>
+                        </div>
+                        <div class="video-title">Vasundhra Baby Shower</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=vuSREP1Srgc" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/vuSREP1Srgc/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">6:34</div>
+                        </div>
+                        <div class="video-title">Sarayu Mihira's Sweet 16</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=1g4y62tnHqQ" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/1g4y62tnHqQ/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">4:07</div>
+                        </div>
+                        <div class="video-title">Our Little Miracle Is On The Way</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=7OuNc5YJh48" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/7OuNc5YJh48/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:12</div>
+                        </div>
+                        <div class="video-title">Keerthi's Half Saree Ceremony</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=AbwBEGaop8k" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/AbwBEGaop8k/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:21</div>
+                        </div>
+                        <div class="video-title">Laya Half Saree</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=Nk5upRtUf9M" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/Nk5upRtUf9M/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">5:06</div>
+                        </div>
+                        <div class="video-title">Ratna &amp; Janu Wedding</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=NIFPgrPOYCo" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/NIFPgrPOYCo/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:34</div>
+                        </div>
+                        <div class="video-title">Anurag &amp; Madhu Gender Reveal</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=QMzq-VSBhzQ" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/QMzq-VSBhzQ/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">1:24</div>
+                        </div>
+                        <div class="video-title">Nyshitha Saree Ceremony</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=2GwQNMeU4Hs" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/2GwQNMeU4Hs/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">2:29</div>
+                        </div>
+                        <div class="video-title">Tarun's Birthday</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=j56qe0hx7iA" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/j56qe0hx7iA/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">5:00</div>
+                        </div>
+                        <div class="video-title">Keerthi &amp; Prawin Gender Reveal</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=6f0IUSxVThM" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/6f0IUSxVThM/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">1:23</div>
+                        </div>
+                        <div class="video-title">Ratna &amp; Janu Pre-Wedding Teaser</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=LrS4f_ZqWNE" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/LrS4f_ZqWNE/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:39</div>
+                        </div>
+                        <div class="video-title">Swetha Housewarming</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=-gkBScX8YsY" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/-gkBScX8YsY/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">1:03</div>
+                        </div>
+                        <div class="video-title">Radhika &amp; Praveen Teaser</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=nEPyewr1uA4" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/nEPyewr1uA4/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">1:55</div>
+                        </div>
+                        <div class="video-title">Vinod &amp; Sunitha</div>
+                    </a>
+                    <a href="https://www.youtube.com/watch?v=8Q7MyyYxf3k" target="_blank" rel="noopener" class="video-card">
+                        <div class="video-thumb" style="background-image:url('https://img.youtube.com/vi/8Q7MyyYxf3k/hqdefault.jpg')">
+                            <div class="video-play">&#9654;</div>
+                            <div class="video-duration">3:17</div>
+                        </div>
+                        <div class="video-title">Avyukh's 1st Birthday</div>
+                    </a>
+                </div>
+                <div style="margin-top:20px; text-align:center;">
+                    <a href="https://www.youtube.com/@rsquarestudios" target="_blank" rel="noopener" style="color:#8b5cf6; text-decoration:none; font-size:14px;">View all on YouTube &rarr;</a>
+                </div>
+            </div>
+
+            <!-- PRICING (encrypted) -->
+            <div class="page" id="pricing">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view pricing.</div>
+            </div>
+
+            <!-- BOOKING (encrypted) -->
+            <div class="page" id="booking">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view booking.</div>
+            </div>
+
+            <!-- PASSWORD GATE -->
+            <div class="page" id="pw-gate">
+                <div class="pw-gate">
+                    <h2>📷 Rsquare Studios</h2>
+                    <p>This section is password-protected.</p>
+                    <div>
+                        <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPassword()">
+                        <button class="pw-btn" onclick="checkPassword()">Enter</button>
+                    </div>
+                    <div class="pw-error" id="pw-error">Wrong password. Try again.</div>
+                </div>
+            </div>
+
+            <!-- WORKFLOW HOME (encrypted) -->
+            <div class="page" id="workflow-home">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view workflow.</div>
+            </div>
+
+            <!-- CHECKLISTS (encrypted) -->
+            <div class="page" id="checklists">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view checklists.</div>
+            </div>
+
+            <!-- WORKFLOW REFERENCE (encrypted) -->
+            <div class="page" id="workflow-ref">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view workflow reference.</div>
+            </div>
+
+            <!-- POSING GUIDES (encrypted — shells injected dynamically) -->
+            
+            <div class="page" id="posing-couples">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view posing guides.</div>
+            </div>
+            <div class="page" id="posing-families">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view posing guides.</div>
+            </div>
+            <div class="page" id="posing-weddings">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view posing guides.</div>
+            </div>
+
+
+            <!-- CONTACT -->
+            <div class="page" id="contact">
+                <div class="page-breadcrumb">Contact</div>
+                <h1 class="page-title">Get in Touch</h1>
+                <div class="page-meta">WhatsApp is the easiest way to reach me. Just say hi!</div>
+
+                <div class="gallery-grid" style="max-width:400px;">
+                    <a href="https://wa.me/15307278598?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." target="_blank" rel="noopener" class="gallery-card" style="border-color:#25D366;">
+                        <div class="gallery-icon" style="font-size:28px;">💬</div>
+                        <div class="gallery-info">
+                            <div class="gallery-name">WhatsApp</div>
+                            <div class="gallery-meta">Quickest way to reach me</div>
+                        </div>
+                        <div class="gallery-arrow">&#8599;</div>
+                    </a>
+                    <a href="tel:+15307278598" class="gallery-card">
+                        <div class="gallery-icon" style="font-size:28px;">📞</div>
+                        <div class="gallery-info">
+                            <div class="gallery-name">(530) 727-8598</div>
+                            <div class="gallery-meta">Call or text</div>
+                        </div>
+                        <div class="gallery-arrow">&#8599;</div>
+                    </a>
+                    <a href="https://www.rsquarestudios.com" target="_blank" rel="noopener" class="gallery-card">
+                        <div class="gallery-icon" style="font-size:28px;">🌐</div>
+                        <div class="gallery-info">
+                            <div class="gallery-name">rsquarestudios.com</div>
+                            <div class="gallery-meta">Full portfolio on SmugMug</div>
+                        </div>
+                        <div class="gallery-arrow">&#8599;</div>
+                    </a>
+                    <a href="https://www.instagram.com/rsquare_studios/" target="_blank" rel="noopener" class="gallery-card">
+                        <div class="gallery-icon" style="font-size:28px;">📷</div>
+                        <div class="gallery-info">
+                            <div class="gallery-name">@rsquare_studios</div>
+                            <div class="gallery-meta">Follow on Instagram</div>
+                        </div>
+                        <div class="gallery-arrow">&#8599;</div>
+                    </a>
+                </div>
+
+                <div class="includes-box" style="max-width:400px; margin-top:28px;">
+                    <h3>Based in Dallas&ndash;Fort Worth, TX</h3>
+                    <div style="font-size:14px; color:#c4b5fd; line-height:1.7;">
+                        We photograph weddings, maternity sessions, newborns, birthdays, and cradle ceremonies across the DFW metroplex.<br><br>
+                        We take a limited number of sessions each month to ensure every client receives our full attention. Dates are reserved on a first-come, first-served basis &mdash; we recommend booking 4&ndash;6 weeks in advance.
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const ENCRYPTED_CONTENT = "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";
+        const PBKDF2_ITERATIONS = 100000;
+        let isUnlocked = false;
+        let _appConfig = null;
+
+        function showSection(id) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            const target = document.getElementById(id);
+            if (target) target.classList.add('active');
+            document.querySelectorAll('.sidebar-link').forEach(a => a.classList.remove('active'));
+            const mc = document.getElementById('main-content');
+            if (mc) mc.scrollTop = 0;
+            window.scrollTo(0, 0);
+            closeSidebar();
+        }
+
+        function accessWorkflow(sectionId) {
+            if (isUnlocked) {
+                showSection(sectionId);
+                return;
+            }
+            window._pendingSection = sectionId;
+            showSection('pw-gate');
+        }
+
+        async function deriveKey(password, salt) {
+            const enc = new TextEncoder();
+            const keyMaterial = await crypto.subtle.importKey(
+                'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+            );
+            return crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt: salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+                keyMaterial,
+                { name: 'AES-GCM', length: 256 },
+                false,
+                ['decrypt']
+            );
+        }
+
+        async function decryptContent(password) {
+            const raw = Uint8Array.from(atob(ENCRYPTED_CONTENT), c => c.charCodeAt(0));
+            const salt = raw.slice(0, 16);
+            const iv = raw.slice(16, 28);
+            const ciphertext = raw.slice(28);
+            const key = await deriveKey(password, salt);
+            const decrypted = await crypto.subtle.decrypt(
+                { name: 'AES-GCM', iv: iv }, key, ciphertext
+            );
+            return new TextDecoder().decode(decrypted);
+        }
+
+        function injectDecryptedContent(sections) {
+            // Extract config (rateMap, labelMap, etc.) before injecting HTML
+            if (sections['__config__']) {
+                _appConfig = sections['__config__'];
+                delete sections['__config__'];
+            }
+            for (const [id, html] of Object.entries(sections)) {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = html;
+            }
+            // Re-init checklists after injection
+            loadChecklist();
+            // Re-init quote builder if booking was injected
+            if (sections['booking'] && typeof updateQuote === 'function') {
+                updateQuote();
+            }
+        }
+
+        async function checkPassword() {
+            const input = document.getElementById('pw-input').value;
+            try {
+                const plaintext = await decryptContent(input);
+                const sections = JSON.parse(plaintext);
+                injectDecryptedContent(sections);
+                isUnlocked = true;
+                updateLockIcon();
+                showToast('Unlocked!');
+                const target = window._pendingSection || 'pricing';
+                showSection(target);
+            } catch(e) {
+                document.getElementById('pw-error').style.display = 'block';
+                document.getElementById('pw-input').value = '';
+                document.getElementById('pw-input').focus();
+            }
+        }
+
+        function updateLockIcon() {
+            const icon = document.getElementById('lock-icon');
+            if (icon) {
+                icon.textContent = '🔓';
+                icon.classList.add('unlocked');
+            }
+            const wfBlock = document.getElementById('wf-sidebar-block');
+            if (wfBlock) wfBlock.style.display = 'block';
+            document.querySelectorAll('.sidebar-link.wf-link').forEach(link => {
+                link.style.display = 'block';
+            });
+        }
+
+        // Make all wf-links go through accessWorkflow
+        document.querySelectorAll('.sidebar-link.wf-link, .sidebar-link.sub-link').forEach(link => {
+            const originalOnclick = link.getAttribute('onclick');
+            if (originalOnclick && originalOnclick.includes('showSection')) {
+                const match = originalOnclick.match(/showSection\('([^']+)'\)/);
+                if (match) {
+                    const sectionId = match[1];
+                    link.setAttribute('onclick', `accessWorkflow('${sectionId}')`);
+                }
+            }
+        });
+
+        // Checklists - save/load from localStorage
+        function saveChecklist() {
+            const checks = {};
+            document.querySelectorAll('#checklists input[type="checkbox"]').forEach(cb => {
+                checks[cb.id] = cb.checked;
+            });
+            localStorage.setItem('rsquare_checklists', JSON.stringify(checks));
+        }
+
+        function loadChecklist() {
+            const saved = localStorage.getItem('rsquare_checklists');
+            if (saved) {
+                const checks = JSON.parse(saved);
+                Object.entries(checks).forEach(([id, val]) => {
+                    const cb = document.getElementById(id);
+                    if (cb) cb.checked = val;
+                });
+            }
+        }
+
+        function resetChecklists() {
+            document.querySelectorAll('#checklists input[type="checkbox"]').forEach(cb => cb.checked = false);
+            localStorage.removeItem('rsquare_checklists');
+            showToast('Checklists reset!');
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 2500);
+        }
+
+        function toggleSidebar() {
+            const sb = document.getElementById('sidebar');
+            const ov = document.getElementById('sidebar-overlay');
+            sb.classList.toggle('open');
+            ov.classList.toggle('show');
+        }
+
+        function closeSidebar() {
+            document.getElementById('sidebar').classList.remove('open');
+            document.getElementById('sidebar-overlay').classList.remove('show');
+        }
+
+        // Bottom nav handler
+        function mobileNav(sectionId) {
+            showSection(sectionId);
+            updateBottomNav(sectionId);
+        }
+
+        function mobileNavProtected(sectionId) {
+            accessWorkflow(sectionId);
+            if (isUnlocked) {
+                updateBottomNav(sectionId);
+            }
+        }
+
+        function updateBottomNav(sectionId) {
+            document.querySelectorAll('.bnav-item').forEach(b => b.classList.remove('active'));
+            const tabMap = {
+                'home': 'bnav-home',
+                'portfolio-home': 'bnav-portfolio',
+                'pricing': 'bnav-pricing',
+                'booking': 'bnav-booking',
+                'contact': 'bnav-contact',
+            };
+            const tabId = tabMap[sectionId];
+            if (tabId) document.getElementById(tabId)?.classList.add('active');
+        }
+
+        // Load checklists on page load
+        loadChecklist();
+
+        function updateQuote() {
+            const svcEl = document.getElementById('q-services');
+            if (!svcEl || !_appConfig) return;
+            const svcKey = svcEl.value;
+            const svcText = (_appConfig.labelMap && _appConfig.labelMap[svcKey]) || svcKey;
+            const hours = parseInt(document.getElementById('q-hours').value) || 0;
+            const rate = (_appConfig.rateMap && _appConfig.rateMap[svcKey]) || 0;
+            const liveCost = _appConfig.liveStreamingCost || 0;
+            const live = document.getElementById('q-live').checked ? liveCost : 0;
+            const total = (rate * hours) + live;
+            document.getElementById('q-quote').value = total > 0 ? '$' + total.toLocaleString() : '';
+
+            const name = document.getElementById('q-name').value || '___';
+            const event = document.getElementById('q-event').value || '___';
+            const location = document.getElementById('q-location').value || '___';
+            const dateVal = document.getElementById('q-date').value;
+            const shootType = document.getElementById('q-shoottype').value;
+            const deposit = document.getElementById('q-deposit').value || '___';
+            const hasLive = document.getElementById('q-live').checked;
+
+            let dateDisplay = '___';
+            if (dateVal) {
+                const d = new Date(dateVal + 'T12:00:00');
+                dateDisplay = d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+            }
+
+            const quote = total > 0 ? '$' + total.toLocaleString() : '___';
+
+            const html = `
+                <div class="quote-section">
+                    <div class="quote-greeting">Hey ${name}! 👋<br>Thanks for reaching out — here's the quote for your ${event.toLowerCase()}:</div>
+                </div>
+                <div class="quote-section">
+                    <div class="quote-section-title">Details</div>
+                    <div class="quote-row"><span class="qlabel">Client</span><span class="qvalue">${name}</span></div>
+                    <div class="quote-row"><span class="qlabel">Event</span><span class="qvalue">${event}</span></div>
+                    <div class="quote-row"><span class="qlabel">Location</span><span class="qvalue">${location}</span></div>
+                    <div class="quote-row"><span class="qlabel">Date</span><span class="qvalue">${dateDisplay}</span></div>
+                    <div class="quote-row"><span class="qlabel">Setting</span><span class="qvalue">${shootType}</span></div>
+                    <div class="quote-row"><span class="qlabel">Coverage</span><span class="qvalue">${svcText}</span></div>
+                    <div class="quote-row"><span class="qlabel">Hours</span><span class="qvalue">${hours || '___'}</span></div>
+                    ${hasLive ? '<div class="quote-row"><span class="qlabel">Live Streaming</span><span class="qvalue" style="color:#10b981;">Included</span></div>' : ''}
+                </div>
+                <div class="quote-section">
+                    <div class="quote-section-title">Pricing</div>
+                    <div class="quote-row"><span class="qlabel">Total</span><span class="qvalue quote-total">${quote}</span></div>
+                    <div class="quote-row"><span class="qlabel">Retainer</span><span class="qvalue">${deposit}</span></div>
+                    <div class="quote-note">Rest due on event day</div>
+                </div>
+                <div class="quote-section">
+                    <div class="quote-section-title">What You Get</div>
+                    <div class="quote-note">• All edited pictures — ready in 12–15 days<br>• Cinematic teaser (4–6 min) — ready in 3–4 weeks</div>
+                </div>
+                <div class="quote-section">
+                    <div class="quote-section-title">How You Get Your Photos</div>
+                    <div class="quote-note">You'll get a private gallery link. Download all pics at once from desktop — email with the download link usually takes 15–30 min. Link works for 3 months so grab them soon!</div>
+                </div>
+                <div class="quote-section">
+                    <div class="quote-signoff">Looking forward to it! 🙌<br>— Ram, Rsquare Studios</div>
+                </div>
+            `;
+            document.getElementById('quote-preview').innerHTML = html;
+
+            const text = `Hey ${name}! 👋
+Thanks for reaching out — here's the quote for your ${event.toLowerCase()}:
+
+*Details*
+Client: ${name}
+Event: ${event}
+Location: ${location}
+Date: ${dateDisplay}
+Setting: ${shootType}
+Coverage: ${svcText}
+Hours: ${hours || '___'}${hasLive ? '\nLive Streaming: Yes (+$' + liveCost + ')' : ''}
+
+*Pricing*
+Total: ${quote}
+Retainer: ${deposit}
+Rest due on event day
+
+*What You Get*
+• All edited pictures — ready in 12–15 days
+• Cinematic teaser (4–6 min) — ready in 3–4 weeks
+
+*How You Get Your Photos*
+You'll get a private gallery link. Download all pics at once from desktop — email with the download link usually takes 15–30 min. Link works for 3 months so grab them soon!
+
+Looking forward to it! 🙌
+— Ram, Rsquare Studios`;
+
+            document.getElementById('quote-preview').dataset.plaintext = text;
+        }
+
+        function getQuoteText() {
+            const el = document.getElementById('quote-preview');
+            return el ? (el.dataset.plaintext || el.textContent) : '';
+        }
+
+        function copyQuote() {
+            const text = getQuoteText();
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Quote copied to clipboard!');
+            }).catch(() => {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
+                document.execCommand('copy');
+                document.body.removeChild(ta);
+                showToast('Quote copied!');
+            });
+        }
+
+        function shareQuoteWA(e) {
+            e.preventDefault();
+            const text = getQuoteText();
+            const encoded = encodeURIComponent(text);
+            window.open('https://wa.me/?text=' + encoded, '_blank');
+            const conf = document.getElementById('booking-confirmation');
+            if (conf) conf.style.display = 'block';
+        }
+
+    </script>
+</body>
+</html>
