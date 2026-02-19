@@ -331,6 +331,21 @@ def build_pricing_section():
                     </div>
                     <div class="tier-details">A dedicated photographer and a dedicated videographer working in tandem &mdash; recommended for weddings, large celebrations, and multi-location events</div>
                 </div>
+            </div>
+
+            <!-- Add-on: Live -->
+            <div class="pricing-card" style="--accent: #10b981;">
+                <div class="pricing-header">
+                    <span class="pricing-icon">📡</span>
+                    <span class="pricing-name">Add-on</span>
+                </div>
+                <div class="price-tier">
+                    <div class="tier-header">
+                        <span class="tier-name">Live Streaming</span>
+                        <span class="tier-price">+$100<span style="font-size:13px;font-weight:400;color:#6b7280;"> flat</span></span>
+                    </div>
+                    <div class="tier-details">Live stream your event so family and friends who can't make it can still watch in real time</div>
+                </div>
             </div>"""
 
     return html
@@ -1842,6 +1857,12 @@ def generate_html():
                             </select>
                         </div>
                     </div>
+                    <div class="form-row" style="margin-top:4px;">
+                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:#d1d5db;">
+                            <input type="checkbox" id="q-live" onchange="updateQuote()" style="width:18px; height:18px; accent-color:#10b981;">
+                            Add Live Streaming (+$100)
+                        </label>
+                    </div>
                     <div class="form-row-inline">
                         <div class="form-row">
                             <label class="form-label">ESTIMATED INVESTMENT</label>
@@ -2165,7 +2186,8 @@ def generate_html():
             const svcText = svc.replace(/&amp;/g, '&').replace(/&mdash;/g, '—');
             const hours = parseInt(document.getElementById('q-hours').value) || 0;
             const rate = rateMap[svcText] || 0;
-            const total = rate * hours;
+            const live = document.getElementById('q-live').checked ? 100 : 0;
+            const total = (rate * hours) + live;
             document.getElementById('q-quote').value = total > 0 ? '$' + total.toLocaleString() : '';
 
             const name = document.getElementById('q-name').value || '___';
@@ -2174,6 +2196,8 @@ def generate_html():
             const dateVal = document.getElementById('q-date').value;
             const shootType = document.getElementById('q-shoottype').value;
             const deposit = document.getElementById('q-deposit').value || '___';
+            const hasLive = document.getElementById('q-live').checked;
+            const liveText = hasLive ? 'Yes' : 'No';
 
             let dateDisplay = '___';
             if (dateVal) {{
@@ -2197,6 +2221,7 @@ def generate_html():
                     <div class="quote-row"><span class="qlabel">Setting</span><span class="qvalue">${{shootType}}</span></div>
                     <div class="quote-row"><span class="qlabel">Coverage</span><span class="qvalue">${{svcText}}</span></div>
                     <div class="quote-row"><span class="qlabel">Hours</span><span class="qvalue">${{hours || '___'}}</span></div>
+                    ${{hasLive ? '<div class="quote-row"><span class="qlabel">Live Streaming</span><span class="qvalue" style="color:#10b981;">Included</span></div>' : ''}}
                 </div>
                 <div class="quote-section">
                     <div class="quote-section-title">Investment</div>
@@ -2229,7 +2254,7 @@ Location: ${{location}}
 Date: ${{dateDisplay}}
 Setting: ${{shootType}}
 Coverage: ${{svcText}}
-Hours: ${{hours || '___'}}
+Hours: ${{hours || '___'}}${{hasLive ? '\nLive Streaming: Yes (+$100)' : ''}}
 
 *Investment*
 Total: ${{quote}}
