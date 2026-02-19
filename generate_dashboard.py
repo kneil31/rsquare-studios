@@ -592,11 +592,14 @@ def generate_html():
     dayof_html = checklist_html(day_of_items, "day")
     post_html = checklist_html(post_shoot_items, "post")
 
-    # Build protected content dict — these get AES-encrypted, not embedded as plaintext
-    protected_content = {}
+    # Build protected content dicts — two levels of access
+    # Client content: pricing, booking, rate config (password: rsquare2026)
+    # Internal content: workflow, checklists, posing guides (password: r2workflow)
+    client_content = {}
+    internal_content = {}
 
     # Pricing page inner HTML
-    protected_content["pricing"] = f"""
+    client_content["pricing"] = f"""
                 <div class="page-breadcrumb">Pricing</div>
                 <h1 class="page-title">Investment</h1>
                 <div class="page-meta">Simple packages. Pick your coverage and hours &mdash; everything else is included.</div>
@@ -661,7 +664,7 @@ def generate_html():
                 </div>"""
 
     # Booking page inner HTML
-    protected_content["booking"] = """
+    client_content["booking"] = """
                 <div class="page-breadcrumb">Book</div>
                 <h1 class="page-title">Request a Quote</h1>
                 <div class="page-meta">Fill in your details and I'll send you a quote on WhatsApp.</div>
@@ -753,7 +756,7 @@ def generate_html():
                 </div>"""
 
     # Workflow home inner HTML
-    protected_content["workflow-home"] = """
+    internal_content["workflow-home"] = """
                 <div class="page-breadcrumb">Internal</div>
                 <h1 class="page-title">Workflow Dashboard</h1>
                 <div class="page-meta">Checklists, posing prompts, course notes &amp; workflow reference</div>
@@ -794,7 +797,7 @@ def generate_html():
                 </div>"""
 
     # Checklists inner HTML
-    protected_content["checklists"] = f"""
+    internal_content["checklists"] = f"""
                 <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
                 <div class="page-breadcrumb">Workflow</div>
                 <h1 class="page-title">Shoot Checklists</h1>
@@ -817,7 +820,7 @@ def generate_html():
                 </div>"""
 
     # Workflow reference inner HTML
-    protected_content["workflow-ref"] = f"""
+    internal_content["workflow-ref"] = f"""
                 <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
                 <div class="page-breadcrumb">Workflow</div>
                 <h1 class="page-title">Photo Workflow Reference</h1>
@@ -829,7 +832,7 @@ def generate_html():
     for name, content in posing_guides.items():
         section_id = f"posing-{name.lower().replace(' ', '-')}"
         converted = md_to_html_simple(content)
-        protected_content[section_id] = f"""
+        internal_content[section_id] = f"""
                 <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
                 <div class="page-breadcrumb">Posing Guides</div>
                 <h1 class="page-title">{name} Prompts</h1>
@@ -839,8 +842,8 @@ def generate_html():
                 <div class="encrypted-placeholder">This content is encrypted. Enter the password to view posing guides.</div>
             </div>"""
 
-    # Rate config — encrypted alongside content so no dollar amounts in plaintext JS
-    protected_content["__config__"] = {
+    # Rate config — encrypted alongside client content so no dollar amounts in plaintext JS
+    client_content["__config__"] = {
         "rateMap": {
             "photo_only": 150,
             "photo_video": 235,
@@ -854,10 +857,14 @@ def generate_html():
         "liveStreamingCost": 100,
     }
 
-    # Encrypt all protected content as a single blob
-    protected_json = json.dumps(protected_content)
-    encrypted_blob = encrypt_content(protected_json, DASHBOARD_PASSWORD)
-    print(f"   Encrypted {len(protected_content)} protected sections ({len(encrypted_blob)} chars)")
+    # Encrypt client and internal content with separate passwords
+    INTERNAL_PASSWORD = "r2workflow"
+    client_json = json.dumps(client_content)
+    internal_json = json.dumps(internal_content)
+    encrypted_client_blob = encrypt_content(client_json, DASHBOARD_PASSWORD)
+    encrypted_internal_blob = encrypt_content(internal_json, INTERNAL_PASSWORD)
+    print(f"   Encrypted {len(client_content)} client sections ({len(encrypted_client_blob)} chars)")
+    print(f"   Encrypted {len(internal_content)} internal sections ({len(encrypted_internal_blob)} chars)")
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -2279,17 +2286,17 @@ def generate_html():
             {gallery_sidebar}
 
             <div class="sidebar-divider"></div>
-            <a class="sidebar-link wf-link" onclick="accessWorkflow('pricing')" style="display:none;">💰 Pricing</a>
-            <a class="sidebar-link wf-link" onclick="accessWorkflow('booking')" style="display:none;">📋 Book / Get Quote</a>
+            <a class="sidebar-link client-link" onclick="accessWorkflow('pricing')" style="display:none;">💰 Pricing</a>
+            <a class="sidebar-link client-link" onclick="accessWorkflow('booking')" style="display:none;">📋 Book / Get Quote</a>
             <div id="wf-sidebar-block" style="display:none;">
                 <div class="sidebar-section-label" id="wf-section-label">WORKFLOW</div>
-                <a class="sidebar-link wf-link" onclick="accessWorkflow('workflow-home')">📋 Dashboard</a>
-                <a class="sidebar-link wf-link" onclick="accessWorkflow('checklists')">✅ Checklists</a>
-                <a class="sidebar-link wf-link" onclick="accessWorkflow('workflow-ref')">📖 Workflow Reference</a>
+                <a class="sidebar-link internal-link" onclick="accessWorkflow('workflow-home')">📋 Dashboard</a>
+                <a class="sidebar-link internal-link" onclick="accessWorkflow('checklists')">✅ Checklists</a>
+                <a class="sidebar-link internal-link" onclick="accessWorkflow('workflow-ref')">📖 Workflow Reference</a>
                 <div class="sidebar-section-label" style="padding-top:8px">POSING GUIDES</div>
-                {posing_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link wf-link"')}
+                {posing_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link internal-link"')}
             </div>
-            <a class="sidebar-link" onclick="accessWorkflow('pricing')" style="margin-top:4px;">
+            <a class="sidebar-link" onclick="showPrivateGate()" style="margin-top:4px;">
                 <span class="lock-icon" id="lock-icon">🔒</span> Private
             </a>
 
@@ -2669,9 +2676,11 @@ def generate_html():
     <div class="toast" id="toast"></div>
 
     <script>
-        const ENCRYPTED_CONTENT = "{encrypted_blob}";
+        const ENCRYPTED_CLIENT = "{encrypted_client_blob}";
+        const ENCRYPTED_INTERNAL = "{encrypted_internal_blob}";
         const PBKDF2_ITERATIONS = {PBKDF2_ITERATIONS};
-        let isUnlocked = false;
+        let clientUnlocked = false;
+        let internalUnlocked = false;
         let _appConfig = null;
 
         function showSection(id) {{
@@ -2685,8 +2694,33 @@ def generate_html():
             closeSidebar();
         }}
 
+        // Client sections need client password; internal sections need internal password
+        const CLIENT_SECTIONS = ['pricing', 'booking'];
+        const INTERNAL_SECTIONS = ['workflow-home', 'checklists', 'workflow-ref', 'posing-couples', 'posing-families', 'posing-weddings'];
+
+        function showPrivateGate() {{
+            // If both unlocked, go to pricing (client) or workflow (internal)
+            if (clientUnlocked && internalUnlocked) {{
+                showSection('pricing');
+                return;
+            }}
+            // If only client unlocked, show gate for internal access
+            if (clientUnlocked && !internalUnlocked) {{
+                window._pendingSection = 'workflow-home';
+                showSection('pw-gate');
+                return;
+            }}
+            // If nothing unlocked, show gate targeting pricing
+            window._pendingSection = 'pricing';
+            showSection('pw-gate');
+        }}
+
         function accessWorkflow(sectionId) {{
-            if (isUnlocked) {{
+            if (CLIENT_SECTIONS.includes(sectionId) && clientUnlocked) {{
+                showSection(sectionId);
+                return;
+            }}
+            if (INTERNAL_SECTIONS.includes(sectionId) && internalUnlocked) {{
                 showSection(sectionId);
                 return;
             }}
@@ -2708,8 +2742,8 @@ def generate_html():
             );
         }}
 
-        async function decryptContent(password) {{
-            const raw = Uint8Array.from(atob(ENCRYPTED_CONTENT), c => c.charCodeAt(0));
+        async function decryptContent(password, blob) {{
+            const raw = Uint8Array.from(atob(blob), c => c.charCodeAt(0));
             const salt = raw.slice(0, 16);
             const iv = raw.slice(16, 28);
             const ciphertext = raw.slice(28);
@@ -2748,20 +2782,41 @@ def generate_html():
             const btn = document.getElementById('pw-btn');
             btn.disabled = true;
             btn.textContent = 'Checking...';
-            try {{
-                const plaintext = await decryptContent(input);
-                const sections = JSON.parse(plaintext);
-                injectDecryptedContent(sections);
-                isUnlocked = true;
+            let matched = false;
+
+            // Try client blob first
+            if (!clientUnlocked) {{
+                try {{
+                    const plaintext = await decryptContent(input, ENCRYPTED_CLIENT);
+                    const sections = JSON.parse(plaintext);
+                    injectDecryptedContent(sections);
+                    clientUnlocked = true;
+                    matched = true;
+                    updateClientLinks();
+                }} catch(e) {{ /* not client password */ }}
+            }}
+
+            // Try internal blob
+            if (!internalUnlocked) {{
+                try {{
+                    const plaintext = await decryptContent(input, ENCRYPTED_INTERNAL);
+                    const sections = JSON.parse(plaintext);
+                    injectDecryptedContent(sections);
+                    internalUnlocked = true;
+                    matched = true;
+                    updateInternalLinks();
+                }} catch(e) {{ /* not internal password */ }}
+            }}
+
+            if (matched) {{
                 _failCount = 0;
                 updateLockIcon();
                 showToast('Unlocked!');
-                const target = window._pendingSection || 'pricing';
-                // Add unlock animation to target page
+                const target = window._pendingSection || (clientUnlocked ? 'pricing' : 'workflow-home');
                 const targetEl = document.getElementById(target);
                 if (targetEl) targetEl.classList.add('unlocked');
                 showSection(target);
-            }} catch(e) {{
+            }} else {{
                 _failCount++;
                 btn.disabled = false;
                 btn.textContent = 'Enter';
@@ -2772,6 +2827,8 @@ def generate_html():
                     startLockout();
                 }}
             }}
+            btn.disabled = false;
+            btn.textContent = 'Enter';
         }}
 
         function startLockout() {{
@@ -2802,21 +2859,32 @@ def generate_html():
             }}, 1000);
         }}
 
-        function updateLockIcon() {{
-            const icon = document.getElementById('lock-icon');
-            if (icon) {{
-                icon.textContent = '🔓';
-                icon.classList.add('unlocked');
-            }}
-            const wfBlock = document.getElementById('wf-sidebar-block');
-            if (wfBlock) wfBlock.style.display = 'block';
-            document.querySelectorAll('.sidebar-link.wf-link').forEach(link => {{
+        function updateClientLinks() {{
+            // Show pricing/booking in sidebar
+            document.querySelectorAll('.sidebar-link.client-link').forEach(link => {{
                 link.style.display = 'block';
             }});
         }}
 
-        // Make all wf-links go through accessWorkflow
-        document.querySelectorAll('.sidebar-link.wf-link, .sidebar-link.sub-link').forEach(link => {{
+        function updateInternalLinks() {{
+            // Show workflow block in sidebar
+            const wfBlock = document.getElementById('wf-sidebar-block');
+            if (wfBlock) wfBlock.style.display = 'block';
+            document.querySelectorAll('.sidebar-link.internal-link').forEach(link => {{
+                link.style.display = 'block';
+            }});
+        }}
+
+        function updateLockIcon() {{
+            const icon = document.getElementById('lock-icon');
+            if (icon && (clientUnlocked || internalUnlocked)) {{
+                icon.textContent = '🔓';
+                icon.classList.add('unlocked');
+            }}
+        }}
+
+        // Make all protected links go through accessWorkflow
+        document.querySelectorAll('.sidebar-link.client-link, .sidebar-link.internal-link').forEach(link => {{
             const originalOnclick = link.getAttribute('onclick');
             if (originalOnclick && originalOnclick.includes('showSection')) {{
                 const match = originalOnclick.match(/showSection\\('([^']+)'\\)/);
@@ -2880,7 +2948,7 @@ def generate_html():
 
         function mobileNavProtected(sectionId) {{
             accessWorkflow(sectionId);
-            if (isUnlocked) {{
+            if (clientUnlocked || internalUnlocked) {{
                 updateBottomNav(sectionId);
             }}
         }}

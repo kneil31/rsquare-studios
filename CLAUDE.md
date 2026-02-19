@@ -11,7 +11,8 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 - **Live URL:** https://kneil31.github.io/rsquare-studios/
 - **GitHub Repo:** kneil31/rsquare-studios (public)
 - **Generator:** `generate_dashboard.py` → outputs `index.html`
-- **Password (internal sections):** `rsquare2026`
+- **Client password:** `rsquare2026` (unlocks pricing, booking, quote builder)
+- **Internal password:** `r2workflow` (unlocks workflow, checklists, posing guides)
 
 ## 3 Sections
 
@@ -26,7 +27,7 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 - **Hero layout:** Option D split (image left, text right) with CSS `mask-image` blend — photo dissolves into a purple-to-black gradient (`#2d1854` → `#0e0518` → `#050208`). On mobile, stacks vertically with bottom-fade blend.
 - **Hero stats:** 300+ Galleries, 5+ Years, 50+ Weddings (real numbers from SmugMug + Ram)
 - **Hero image:** `hero.jpg` — purple silhouette wedding photo (145KB, 1600px wide)
-- **AES-256-GCM encryption:** Protected sections (pricing, booking, workflow, posing guides) are encrypted at build time. No plaintext in HTML source. Rate amounts stored in encrypted `__config__` key.
+- **Two-level AES-256-GCM encryption:** Client sections (pricing, booking, `__config__`) and internal sections (workflow, checklists, posing guides) encrypted with separate passwords. No plaintext in HTML source.
 - **Cover images:** Pulled from SmugMug API (highlight images per album). Each category tile has a background photo with gradient overlay
 - **Background position:** Per-category `background-position` values in `category_covers` dict (tuples of URL + position). Adjust position values when photos crop subjects poorly
 - **No external dependencies:** Single self-contained HTML file, no frameworks
@@ -95,13 +96,16 @@ git push
 
 ## Security
 
-- **AES-256-GCM** encryption at build time (Python `cryptography` package)
+- **Two-level AES-256-GCM** encryption at build time (Python `cryptography` package)
+  - `ENCRYPTED_CLIENT` blob: pricing, booking, `__config__` (rates) — password `rsquare2026`
+  - `ENCRYPTED_INTERNAL` blob: workflow, checklists, posing guides — password `r2workflow`
 - **Web Crypto API** decryption at runtime (PBKDF2, 100k iterations, SHA-256)
 - Random 16-byte salt + 12-byte IV per build (`os.urandom`)
-- No sessionStorage/localStorage — decrypted content is memory-only (`_decryptedPages`, `_appConfig`)
+- No sessionStorage/localStorage — decrypted content is memory-only (`_appConfig`)
 - 3-strike lockout with 15s cooldown on wrong password
 - Password hint shown below input
 - Git history cleaned with `filter-repo` — no plaintext in old commits
+- Client password cannot decrypt internal sections (verified via cross-test)
 
 ## Mobile-Specific Notes
 
