@@ -2,7 +2,7 @@
 
 Subproject of rsquare-studios-dashboard. Family memories page hosted on GitHub Pages.
 
-**Last Updated:** 2026-02-19
+**Last Updated:** 2026-02-20
 
 ## Overview
 
@@ -15,9 +15,10 @@ Subproject of rsquare-studios-dashboard. Family memories page hosted on GitHub P
 ## Design
 
 - Warm pastel baby/family theme (cream #FFF8F0 bg, peach #E8A87C accent)
-- Nunito font, photo tiles with gradient overlay (same style as rsquare-studios dashboard)
-- 3 tabs: Krithin | Monika | Family
+- System font stack (no Google Fonts — zero 3rd-party calls)
+- 4 tabs: Krithin | Reels | Monika | Family
 - Mobile-first (shared via WhatsApp)
+- WhatsApp: +1 530-727-8598
 - Gallery tiles: 3/4 aspect ratio, 2-column mobile, 3-column desktop
 - Video tiles: 16/9 aspect ratio, always 2-column grid. Supports optional `"cover"` field for SmugMug photos
 - Reel tiles: 9/16 portrait aspect ratio, 3-column grid, `<img>` tags. Supports optional `"cover"` field for SmugMug photos (much better quality than YouTube thumbs)
@@ -39,14 +40,30 @@ Subproject of rsquare-studios-dashboard. Family memories page hosted on GitHub P
 | Family | Moniel Housewarming |
 
 **Videos:** 6 in Krithin tab (incl. KAYU Fly High), 3 in Monika tab (all with YouTube URLs and custom SmugMug covers)
-**Reels:** 13 in Krithin tab (all with SmugMug cover photos from Krithin-2026-dump album)
+**Reels:** 13 in dedicated Reels tab (all with SmugMug cover photos from Krithin-2026-dump album)
+
+## Security
+
+- **AES-256-GCM** encryption at build time (Python `cryptography` package)
+- **PBKDF2** key derivation (400k iterations, SHA-256)
+- **Password:** From `KRITHIN_PAGE_PASSWORD` env var or `.secret` file (never hardcoded)
+- **Data-driven DOM:** Encrypted payload contains JSON data objects, JS builds DOM with `createElement`/`textContent` (no `innerHTML`)
+- **URL allowlist:** JS validates all URLs against known hosts before setting `href`/`src`
+- **Referrer protection:** `<meta name="referrer" content="no-referrer">` + `rel="noreferrer noopener"` on all links
+- **No 3rd-party calls:** System fonts (no Google Fonts), no external JS/CSS
+- **Privacy:** `<meta name="robots" content="noindex, nofollow, noarchive">`
+- **Permissions-Policy:** Camera, mic, geolocation disabled
+- **3-strike lockout** with 15s cooldown on wrong password
+- **Schema versioned** encrypted payload (`"v": 1`)
+- **UX:** Show/hide password toggle, logout button, "don't share" reminder
 
 ## Workflow
 
 ```bash
-# Regenerate
+# Regenerate (password from .secret file or env var)
 cd krithin-neel
 python3 generate_krithin_page.py
+# Or: KRITHIN_PAGE_PASSWORD="..." python3 generate_krithin_page.py
 
 # Deploy to GitHub Pages
 cp output/index.html /tmp/krithin-neel/
