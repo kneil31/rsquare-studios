@@ -1429,7 +1429,7 @@ def generate_html(image_counts, cover_images, password, otp):
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('krithin')">Krithin</button>
       <button class="tab-btn" onclick="switchTab('reels')">Reels</button>
-      <button class="tab-btn" onclick="switchTab('monika')">Monika</button>
+      <button class="tab-btn" onclick="switchTab('monika')">Moniel</button>
     </div>
 
     <div id="tab-krithin" class="tab-content active"></div>
