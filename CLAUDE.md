@@ -34,6 +34,14 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 - **No external dependencies:** Single self-contained HTML file, no frameworks
 - **Professional copy:** "Investment" not "pricing", "images" not "pictures", "coverage" not "shooting"
 
+## My Gear Section
+
+- **Inline expandable section** on the home page — replaces the old kit.co external link
+- **Data:** `GEAR_LIST` dict in `generate_dashboard.py` — 7 categories rendered at build time
+- **Layout:** Collapsed by default, click to expand. 2-col grid (mobile) / 3-col (desktop)
+- **Categories:** Camera Bodies, Lenses, Lighting, Light Modifiers, Stabilization & Drone, Monitors, Accessories
+- **To update gear:** Edit the `GEAR_LIST` dict, then regenerate
+
 ## Data Sources
 
 | Data | Source Path |
@@ -43,6 +51,7 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 | Workflow reference | `../../photo_workflow/PHOTO_WORKFLOW_CHEATSHEET.md` |
 | Cover images | SmugMug API (image keys hardcoded in `category_covers` dict) |
 | Editing projects | `editing_projects.json` (local, not pushed to GitHub) |
+| Gear list | `GEAR_LIST` dict in `generate_dashboard.py` |
 
 ## Cover Images (SmugMug)
 
