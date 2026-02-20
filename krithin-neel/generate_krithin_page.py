@@ -732,12 +732,16 @@ def generate_html(image_counts, cover_images, password, otp):
         document.getElementById('logout-btn').style.display = 'inline-block';
         _failCount = 0;
 
-        // Save session (30 min timeout)
+        // Save session (30 min timeout) — localStorage + cookie fallback for WhatsApp in-app browser
         try {
           localStorage.setItem('_kn_pw', input);
           localStorage.setItem('_kn_ts', Date.now().toString());
           localStorage.setItem('_kn_blob', usedBlob);
-        } catch(e) { /* private browsing */ }
+        } catch(e) {}
+        try {
+          const val = btoa(usedBlob + ':' + input);
+          document.cookie = '_kn_s=' + val + ';max-age=1800;path=/;SameSite=Strict;Secure';
+        } catch(e) {}
       } catch(e) {
         _failCount++;
         document.getElementById('pw-error').style.display = 'block';
@@ -752,11 +756,7 @@ def generate_html(image_counts, cover_images, password, otp):
 
     // ─── Logout ──────────────────────────────────────────────────────
     function logout() {
-      try {
-        localStorage.removeItem('_kn_pw');
-        localStorage.removeItem('_kn_ts');
-        localStorage.removeItem('_kn_blob');
-      } catch(e) {}
+      clearSession();
       ['krithin', 'monika', 'reels'].forEach(id => {
         const el = document.getElementById('tab-' + id);
         if (el) el.replaceChildren();
@@ -764,28 +764,58 @@ def generate_html(image_counts, cover_images, password, otp):
       location.reload();
     }
 
+    // ─── Cookie helper ──────────────────────────────────────────────
+    function getCookie(name) {
+      const m = document.cookie.match('(^|;)\\\\s*' + name + '=([^;]*)');
+      return m ? m[2] : null;
+    }
+
+    function clearSession() {
+      try {
+        localStorage.removeItem('_kn_pw');
+        localStorage.removeItem('_kn_ts');
+        localStorage.removeItem('_kn_blob');
+      } catch(e) {}
+      try { document.cookie = '_kn_s=;max-age=0;path=/;SameSite=Strict;Secure'; } catch(e) {}
+    }
+
     // ─── Auto-unlock from session (30 min timeout) ──────────────────
     const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
     (async function autoUnlock() {
       try {
-        const savedPw = localStorage.getItem('_kn_pw');
-        const savedTs = localStorage.getItem('_kn_ts');
-        const savedBlob = localStorage.getItem('_kn_blob') || 'master';
-        if (!savedPw || !savedTs) return;
-        if (Date.now() - parseInt(savedTs) > SESSION_TIMEOUT_MS) {
-          localStorage.removeItem('_kn_pw');
-          localStorage.removeItem('_kn_ts');
-          localStorage.removeItem('_kn_blob');
-          return;
+        let savedPw = null, savedBlob = 'master';
+
+        // Try localStorage first
+        const lsPw = localStorage.getItem('_kn_pw');
+        const lsTs = localStorage.getItem('_kn_ts');
+        const lsBlob = localStorage.getItem('_kn_blob') || 'master';
+        if (lsPw && lsTs && (Date.now() - parseInt(lsTs) <= SESSION_TIMEOUT_MS)) {
+          savedPw = lsPw;
+          savedBlob = lsBlob;
         }
+
+        // Fall back to cookie (browser enforces 30-min max-age)
+        if (!savedPw) {
+          const ck = getCookie('_kn_s');
+          if (ck) {
+            try {
+              const decoded = atob(ck);
+              const idx = decoded.indexOf(':');
+              if (idx > 0) {
+                savedBlob = decoded.substring(0, idx);
+                savedPw = decoded.substring(idx + 1);
+              }
+            } catch(e) {}
+          }
+        }
+
+        if (!savedPw) return;
+
         const blob = savedBlob === 'otp' ? ENCRYPTED_OTP : ENCRYPTED_MASTER;
         const plaintext = await decryptContent(savedPw, blob);
         const parsed = JSON.parse(plaintext);
-        // Check OTP expiry on auto-unlock too
         if (parsed._expiry && Date.now() > parsed._expiry) {
-          localStorage.removeItem('_kn_pw');
-          localStorage.removeItem('_kn_ts');
-          localStorage.removeItem('_kn_blob');
+          clearSession();
           return;
         }
         delete parsed._expiry;
@@ -796,11 +826,14 @@ def generate_html(image_counts, cover_images, password, otp):
         document.getElementById('app-content').classList.add('unlocked');
         document.getElementById('app-footer').style.display = 'block';
         document.getElementById('logout-btn').style.display = 'inline-block';
-        localStorage.setItem('_kn_ts', Date.now().toString());
+        // Refresh localStorage timestamp
+        try {
+          localStorage.setItem('_kn_pw', savedPw);
+          localStorage.setItem('_kn_ts', Date.now().toString());
+          localStorage.setItem('_kn_blob', savedBlob);
+        } catch(e) {}
       } catch(e) {
-        localStorage.removeItem('_kn_pw');
-        localStorage.removeItem('_kn_ts');
-        localStorage.removeItem('_kn_blob');
+        clearSession();
       }
     })();
 
