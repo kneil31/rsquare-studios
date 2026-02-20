@@ -734,9 +734,9 @@ def generate_html(image_counts, cover_images, password, otp):
 
         // Save session (30 min timeout)
         try {
-          sessionStorage.setItem('_kn_pw', input);
-          sessionStorage.setItem('_kn_ts', Date.now().toString());
-          sessionStorage.setItem('_kn_blob', usedBlob);
+          localStorage.setItem('_kn_pw', input);
+          localStorage.setItem('_kn_ts', Date.now().toString());
+          localStorage.setItem('_kn_blob', usedBlob);
         } catch(e) { /* private browsing */ }
       } catch(e) {
         _failCount++;
@@ -753,9 +753,9 @@ def generate_html(image_counts, cover_images, password, otp):
     // ─── Logout ──────────────────────────────────────────────────────
     function logout() {
       try {
-        sessionStorage.removeItem('_kn_pw');
-        sessionStorage.removeItem('_kn_ts');
-        sessionStorage.removeItem('_kn_blob');
+        localStorage.removeItem('_kn_pw');
+        localStorage.removeItem('_kn_ts');
+        localStorage.removeItem('_kn_blob');
       } catch(e) {}
       ['krithin', 'monika', 'reels'].forEach(id => {
         const el = document.getElementById('tab-' + id);
@@ -768,14 +768,14 @@ def generate_html(image_counts, cover_images, password, otp):
     const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
     (async function autoUnlock() {
       try {
-        const savedPw = sessionStorage.getItem('_kn_pw');
-        const savedTs = sessionStorage.getItem('_kn_ts');
-        const savedBlob = sessionStorage.getItem('_kn_blob') || 'master';
+        const savedPw = localStorage.getItem('_kn_pw');
+        const savedTs = localStorage.getItem('_kn_ts');
+        const savedBlob = localStorage.getItem('_kn_blob') || 'master';
         if (!savedPw || !savedTs) return;
         if (Date.now() - parseInt(savedTs) > SESSION_TIMEOUT_MS) {
-          sessionStorage.removeItem('_kn_pw');
-          sessionStorage.removeItem('_kn_ts');
-          sessionStorage.removeItem('_kn_blob');
+          localStorage.removeItem('_kn_pw');
+          localStorage.removeItem('_kn_ts');
+          localStorage.removeItem('_kn_blob');
           return;
         }
         const blob = savedBlob === 'otp' ? ENCRYPTED_OTP : ENCRYPTED_MASTER;
@@ -783,9 +783,9 @@ def generate_html(image_counts, cover_images, password, otp):
         const parsed = JSON.parse(plaintext);
         // Check OTP expiry on auto-unlock too
         if (parsed._expiry && Date.now() > parsed._expiry) {
-          sessionStorage.removeItem('_kn_pw');
-          sessionStorage.removeItem('_kn_ts');
-          sessionStorage.removeItem('_kn_blob');
+          localStorage.removeItem('_kn_pw');
+          localStorage.removeItem('_kn_ts');
+          localStorage.removeItem('_kn_blob');
           return;
         }
         delete parsed._expiry;
@@ -796,11 +796,11 @@ def generate_html(image_counts, cover_images, password, otp):
         document.getElementById('app-content').classList.add('unlocked');
         document.getElementById('app-footer').style.display = 'block';
         document.getElementById('logout-btn').style.display = 'inline-block';
-        sessionStorage.setItem('_kn_ts', Date.now().toString());
+        localStorage.setItem('_kn_ts', Date.now().toString());
       } catch(e) {
-        sessionStorage.removeItem('_kn_pw');
-        sessionStorage.removeItem('_kn_ts');
-        sessionStorage.removeItem('_kn_blob');
+        localStorage.removeItem('_kn_pw');
+        localStorage.removeItem('_kn_ts');
+        localStorage.removeItem('_kn_blob');
       }
     })();
 
