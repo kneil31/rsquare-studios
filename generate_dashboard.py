@@ -636,8 +636,8 @@ def generate_html():
     # Build protected content dicts — two levels of access
     # Client content: pricing, booking, rate config (password from .secret)
     # Internal content: workflow, checklists, posing guides, editing projects (password from .secret)
-    client_content = {}
-    internal_content = {}
+    client_content = {"v": 1}
+    internal_content = {"v": 1}
 
     # Pricing page inner HTML
     client_content["pricing"] = f"""
@@ -2307,7 +2307,8 @@ def generate_html():
 
             /* Password gate */
             .pw-gate {{ padding: 40px 16px; }}
-            .pw-input {{ width: 100%; max-width: 260px; font-size: 16px; padding: 12px 16px; }}
+            .pw-input-wrap {{ width: 100%; max-width: 260px; }}
+            .pw-input {{ font-size: 16px; padding: 12px 16px; }}
             .pw-btn {{ margin-left: 0; margin-top: 12px; display: block; width: 100%; max-width: 260px; padding: 14px; font-size: 16px; }}
             .pw-gate > div {{ display: flex; flex-direction: column; align-items: center; }}
 
@@ -2435,6 +2436,52 @@ def generate_html():
             font-size: 12px;
             color: #6b7280;
             line-height: 1.4;
+        }}
+
+        /* Gear Section */
+        .gear-section {{
+            padding: 0 16px;
+            margin-top: 32px;
+        }}
+        .gear-card {{
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 24px;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }}
+        .gear-card:hover {{
+            background: rgba(139,92,246,0.08);
+            border-color: rgba(139,92,246,0.2);
+        }}
+        .gear-icon {{
+            font-size: 36px;
+            flex-shrink: 0;
+        }}
+        .gear-info {{
+            flex: 1;
+        }}
+        .gear-title {{
+            font-size: 16px;
+            font-weight: 600;
+            color: #e0e0e0;
+            margin-bottom: 4px;
+        }}
+        .gear-desc {{
+            font-size: 13px;
+            color: #6b7280;
+            line-height: 1.4;
+        }}
+        .gear-arrow {{
+            font-size: 18px;
+            color: #525252;
+            flex-shrink: 0;
         }}
 
         /* Toast */
@@ -2614,6 +2661,18 @@ def generate_html():
                             <div class="how-step-desc">Edited photos in 12&ndash;15 days, video in 3&ndash;4 weeks</div>
                         </div>
                     </div>
+                </div>
+
+                <!-- My Gear -->
+                <div class="gear-section">
+                    <a class="gear-card" href="https://kit.co/kotara8/neal-films-kit" target="_blank" rel="noreferrer noopener">
+                        <div class="gear-icon">🎥</div>
+                        <div class="gear-info">
+                            <div class="gear-title">My Gear</div>
+                            <div class="gear-desc">Curious what cameras, lenses, and lighting I use? Check out my full gear kit.</div>
+                        </div>
+                        <div class="gear-arrow">&rarr;</div>
+                    </a>
                 </div>
             </div>
 
@@ -2807,18 +2866,27 @@ def generate_html():
                 <div class="encrypted-placeholder">This content is encrypted. Enter the password to view booking.</div>
             </div>
 
+            <!-- LOGOUT BUTTON (visible when unlocked) -->
+            <button id="logout-btn" class="logout-btn" onclick="logout()">Log out</button>
+
             <!-- PASSWORD GATE -->
             <div class="page" id="pw-gate">
                 <div class="pw-gate">
                     <h2>📷 Rsquare Studios</h2>
                     <p>This section is password-protected.</p>
                     <div>
-                        <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" onkeydown="if(event.key==='Enter')checkPassword()">
+                        <div class="pw-input-wrap">
+                            <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" autocomplete="off" inputmode="text" onkeydown="if(event.key==='Enter')checkPassword()">
+                            <button type="button" class="pw-eye-btn" onclick="togglePasswordVisibility()" aria-label="Toggle password visibility">
+                                <span id="eye-icon">👁</span>
+                            </button>
+                        </div>
                         <button class="pw-btn" id="pw-btn" onclick="checkPassword()">Enter</button>
                     </div>
                     <div class="pw-hint">Hint: shared via WhatsApp when you inquired</div>
                     <div class="pw-error" id="pw-error">Wrong password. Try again.</div>
                     <div class="pw-lockout" id="pw-lockout"></div>
+                    <p class="pw-reminder">Please don't share passwords outside authorized contacts</p>
                 </div>
             </div>
 
@@ -2919,6 +2987,7 @@ def generate_html():
             'www.instagram.com', 'instagram.com',
             'we.tl', 'mega.nz',
             'cal.com', 'app.cal.com',
+            'kit.co',
             'literate-basketball-b5e.notion.site',
         ];
         function isAllowedUrl(url) {{
@@ -3001,7 +3070,8 @@ def generate_html():
         }}
 
         function injectDecryptedContent(sections) {{
-            // Extract config (rateMap, labelMap, etc.) before injecting HTML
+            // Extract schema version and config before injecting HTML
+            delete sections['v'];
             if (sections['__config__']) {{
                 _appConfig = sections['__config__'];
                 delete sections['__config__'];
@@ -3063,6 +3133,7 @@ def generate_html():
                 _failCount = 0;
                 updateLockIcon();
                 showToast('Unlocked!');
+                document.getElementById('logout-btn').style.display = 'block';
                 const target = window._pendingSection || (clientUnlocked ? 'pricing' : 'workflow-home');
                 const targetEl = document.getElementById(target);
                 if (targetEl) targetEl.classList.add('unlocked');
@@ -3108,6 +3179,27 @@ def generate_html():
                     lockoutEl.textContent = `Too many attempts. Try again in ${{remaining}}s`;
                 }}
             }}, 1000);
+        }}
+
+        function togglePasswordVisibility() {{
+            const input = document.getElementById('pw-input');
+            const icon = document.getElementById('eye-icon');
+            if (input.type === 'password') {{
+                input.type = 'text';
+                icon.textContent = '🙈';
+            }} else {{
+                input.type = 'password';
+                icon.textContent = '👁';
+            }}
+        }}
+
+        function logout() {{
+            // Clear all decrypted content from DOM
+            [...CLIENT_SECTIONS, ...INTERNAL_SECTIONS].forEach(id => {{
+                const el = document.getElementById(id);
+                if (el) el.replaceChildren();
+            }});
+            location.reload();
         }}
 
         function updateClientLinks() {{
@@ -3248,40 +3340,82 @@ def generate_html():
 
             const quote = total > 0 ? '$' + total.toLocaleString() : '___';
 
-            const html = `
-                <div class="quote-section">
-                    <div class="quote-greeting">Hey ${{name}}! 👋<br>Thanks for reaching out — here's the quote for your ${{event.toLowerCase()}}:</div>
-                </div>
-                <div class="quote-section">
-                    <div class="quote-section-title">Details</div>
-                    <div class="quote-row"><span class="qlabel">Client</span><span class="qvalue">${{name}}</span></div>
-                    <div class="quote-row"><span class="qlabel">Event</span><span class="qvalue">${{event}}</span></div>
-                    <div class="quote-row"><span class="qlabel">Location</span><span class="qvalue">${{location}}</span></div>
-                    <div class="quote-row"><span class="qlabel">Date</span><span class="qvalue">${{dateDisplay}}</span></div>
-                    <div class="quote-row"><span class="qlabel">Setting</span><span class="qvalue">${{shootType}}</span></div>
-                    <div class="quote-row"><span class="qlabel">Coverage</span><span class="qvalue">${{svcText}}</span></div>
-                    <div class="quote-row"><span class="qlabel">Hours</span><span class="qvalue">${{hours || '___'}}</span></div>
-                    ${{hasLive ? '<div class="quote-row"><span class="qlabel">Live Streaming</span><span class="qvalue" style="color:#10b981;">Included</span></div>' : ''}}
-                </div>
-                <div class="quote-section">
-                    <div class="quote-section-title">Pricing</div>
-                    <div class="quote-row"><span class="qlabel">Total</span><span class="qvalue quote-total">${{quote}}</span></div>
-                    <div class="quote-row"><span class="qlabel">Retainer</span><span class="qvalue">${{deposit}}</span></div>
-                    <div class="quote-note">Rest due on event day</div>
-                </div>
-                <div class="quote-section">
-                    <div class="quote-section-title">What You Get</div>
-                    <div class="quote-note">• All edited pictures — ready in 12–15 days<br>• Cinematic teaser (4–6 min) — ready in 3–4 weeks</div>
-                </div>
-                <div class="quote-section">
-                    <div class="quote-section-title">How You Get Your Photos</div>
-                    <div class="quote-note">You'll get a private gallery link. Download all pics at once from desktop — email with the download link usually takes 15–30 min. Link works for 3 months so grab them soon!</div>
-                </div>
-                <div class="quote-section">
-                    <div class="quote-signoff">Looking forward to it! 🙌<br>— Ram, Rsquare Studios</div>
-                </div>
-            `;
-            document.getElementById('quote-preview').innerHTML = html;
+            // DOM-based quote builder (no innerHTML — safe from XSS)
+            function qEl(tag, cls, text) {{
+                const el = document.createElement(tag);
+                if (cls) el.className = cls;
+                if (text) el.textContent = text;
+                return el;
+            }}
+            function qRow(label, value, style) {{
+                const row = qEl('div', 'quote-row');
+                row.appendChild(qEl('span', 'qlabel', label));
+                const val = qEl('span', 'qvalue', value);
+                if (style) val.style.color = style;
+                row.appendChild(val);
+                return row;
+            }}
+            function qSection(children) {{
+                const sec = qEl('div', 'quote-section');
+                children.forEach(c => sec.appendChild(c));
+                return sec;
+            }}
+
+            const preview = document.getElementById('quote-preview');
+            preview.replaceChildren();
+
+            // Greeting
+            const greetLine1 = document.createTextNode('Hey ' + name + '! 👋');
+            const greetLine2 = document.createTextNode('Thanks for reaching out \u2014 here\'s the quote for your ' + event.toLowerCase() + ':');
+            const greetDiv = qEl('div', 'quote-greeting');
+            greetDiv.appendChild(greetLine1);
+            greetDiv.appendChild(document.createElement('br'));
+            greetDiv.appendChild(greetLine2);
+            preview.appendChild(qSection([greetDiv]));
+
+            // Details
+            const detailRows = [
+                qEl('div', 'quote-section-title', 'Details'),
+                qRow('Client', name),
+                qRow('Event', event),
+                qRow('Location', location),
+                qRow('Date', dateDisplay),
+                qRow('Setting', shootType),
+                qRow('Coverage', svcText),
+                qRow('Hours', String(hours || '___')),
+            ];
+            if (hasLive) detailRows.push(qRow('Live Streaming', 'Included', '#10b981'));
+            preview.appendChild(qSection(detailRows));
+
+            // Pricing
+            const totalRow = qRow('Total', quote);
+            totalRow.querySelector('.qvalue').classList.add('quote-total');
+            preview.appendChild(qSection([
+                qEl('div', 'quote-section-title', 'Pricing'),
+                totalRow,
+                qRow('Retainer', deposit),
+                qEl('div', 'quote-note', 'Rest due on event day'),
+            ]));
+
+            // What You Get
+            const whatNote = qEl('div', 'quote-note');
+            whatNote.appendChild(document.createTextNode('\u2022 All edited pictures \u2014 ready in 12\u201315 days'));
+            whatNote.appendChild(document.createElement('br'));
+            whatNote.appendChild(document.createTextNode('\u2022 Cinematic teaser (4\u20136 min) \u2014 ready in 3\u20134 weeks'));
+            preview.appendChild(qSection([qEl('div', 'quote-section-title', 'What You Get'), whatNote]));
+
+            // How You Get Your Photos
+            preview.appendChild(qSection([
+                qEl('div', 'quote-section-title', 'How You Get Your Photos'),
+                qEl('div', 'quote-note', 'You\'ll get a private gallery link. Download all pics at once from desktop \u2014 email with the download link usually takes 15\u201330 min. Link works for 3 months so grab them soon!'),
+            ]));
+
+            // Signoff
+            const signoff = qEl('div', 'quote-signoff');
+            signoff.appendChild(document.createTextNode('Looking forward to it! 🙌'));
+            signoff.appendChild(document.createElement('br'));
+            signoff.appendChild(document.createTextNode('\u2014 Ram, Rsquare Studios'));
+            preview.appendChild(qSection([signoff]));
 
             const text = `Hey ${{name}}! 👋
 Thanks for reaching out — here's the quote for your ${{event.toLowerCase()}}:
