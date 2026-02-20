@@ -16,7 +16,7 @@ Subproject of rsquare-studios-dashboard. Family memories page hosted on GitHub P
 
 - Warm pastel baby/family theme (cream #FFF8F0 bg, peach #E8A87C accent)
 - System font stack (no Google Fonts — zero 3rd-party calls)
-- 4 tabs: Krithin | Reels | Monika | Family
+- 3 tabs: Krithin | Reels | Monika (Family merged into Monika tab)
 - Mobile-first (shared via WhatsApp)
 - WhatsApp: +1 530-727-8598
 - Gallery tiles: 3/4 aspect ratio, 2-column mobile, 3-column desktop
@@ -36,8 +36,7 @@ Subproject of rsquare-studios-dashboard. Family memories page hosted on GitHub P
 | Tab | Galleries |
 |-----|-----------|
 | Krithin | Fresh 48, Cradle Ceremony, Sankranthi 2025, Temple Visit, Cake Smash, Adugulu, Halloween, New Year 2026 |
-| Monika | Baby Shower, Maternity 2024, Girls Shoot 2023 |
-| Family | Moniel Housewarming |
+| Monika | Baby Shower, Maternity 2024, Girls Shoot 2023 + Family: Moniel Housewarming |
 
 **Videos:** 6 in Krithin tab (incl. KAYU Fly High), 3 in Monika tab (all with YouTube URLs and custom SmugMug covers)
 **Reels:** 13 in dedicated Reels tab (all with SmugMug cover photos from Krithin-2026-dump album)
@@ -54,6 +53,8 @@ Subproject of rsquare-studios-dashboard. Family memories page hosted on GitHub P
 - **Privacy:** `<meta name="robots" content="noindex, nofollow, noarchive">`
 - **Permissions-Policy:** Camera, mic, geolocation disabled
 - **3-strike lockout** with 15s cooldown on wrong password
+- **48h OTP:** Dual-blob encryption — master password always works + 4-word OTP expires after 48h
+- **Session persistence:** 30-min sessionStorage auto-unlock (survives SmugMug visits)
 - **Schema versioned** encrypted payload (`"v": 1`)
 - **UX:** Show/hide password toggle, logout button, "don't share" reminder
 

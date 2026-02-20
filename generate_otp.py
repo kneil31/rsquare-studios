@@ -58,7 +58,7 @@ def update_secret(new_client_pw):
         print("ERROR: .secret file not found. Cannot update.")
         sys.exit(1)
 
-    data["client"] = new_client_pw
+    data["otp"] = new_client_pw
     SECRET_FILE.write_text(json.dumps(data), encoding="utf-8")
     return data["internal"]
 
