@@ -56,6 +56,17 @@ def _load_passwords():
     print("ERROR: No passwords found. Create .secret file:")
     print('  {"client": "your-client-pw", "internal": "your-internal-pw"}')
     sys.exit(1)
+
+
+def _load_otp_password():
+    """Load current OTP password from .secret if it exists."""
+    if SECRET_FILE.exists():
+        try:
+            secrets = json.loads(SECRET_FILE.read_text(encoding="utf-8"))
+            return secrets.get("otp", "")
+        except (json.JSONDecodeError, KeyError):
+            pass
+    return ""
 PBKDF2_ITERATIONS = 400_000
 
 
@@ -964,10 +975,18 @@ def generate_html():
     client_pw, internal_pw = _load_passwords()
     client_json = json.dumps(client_content)
     internal_json = json.dumps(internal_content)
+    # Primary client blob (permanent or OTP password)
     encrypted_client_blob = encrypt_content(client_json, client_pw)
     encrypted_internal_blob = encrypt_content(internal_json, internal_pw)
-    print(f"   Encrypted {len(client_content)} client sections ({len(encrypted_client_blob)} chars)")
-    print(f"   Encrypted {len(internal_content)} internal sections ({len(encrypted_internal_blob)} chars)")
+    # Secondary client blob (OTP if different from primary)
+    otp_pw = _load_otp_password()
+    encrypted_client_otp_blob = ""
+    if otp_pw and otp_pw != client_pw:
+        encrypted_client_otp_blob = encrypt_content(client_json, otp_pw)
+        print(f"   Encrypted client with 2 passwords (permanent + OTP)")
+    else:
+        print(f"   Encrypted client with 1 password")
+    print(f"   Encrypted {len(internal_content)} internal sections")
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -976,6 +995,7 @@ def generate_html():
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer">
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
+    <meta name="robots" content="noindex, nofollow, noarchive">
     <title>Rsquare Studios — Dashboard</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
@@ -1753,18 +1773,37 @@ def generate_html():
             color: #6b7280;
             margin-bottom: 24px;
         }}
-        .pw-input {{
-            padding: 10px 16px;
+        .pw-input-wrap {{
+            display: inline-flex;
+            align-items: center;
             background: #202020;
             border: 1px solid #2d2d2d;
             border-radius: 8px;
+            width: 260px;
+            overflow: hidden;
+        }}
+        .pw-input-wrap:focus-within {{ border-color: #8b5cf6; }}
+        .pw-input {{
+            padding: 10px 16px;
+            background: transparent;
+            border: none;
             color: #e0e0e0;
             font-size: 15px;
             outline: none;
-            width: 260px;
+            flex: 1;
             text-align: center;
+            min-width: 0;
         }}
-        .pw-input:focus {{ border-color: #8b5cf6; }}
+        .pw-eye-btn {{
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 8px 10px;
+            font-size: 16px;
+            line-height: 1;
+        }}
+        .pw-eye-btn:hover {{ color: #e0e0e0; }}
         .pw-btn {{
             display: inline-block;
             margin-left: 8px;
@@ -1778,6 +1817,26 @@ def generate_html():
             cursor: pointer;
         }}
         .pw-btn:hover {{ background: #7c3aed; }}
+        .pw-reminder {{
+            color: #525252;
+            font-size: 11px;
+            margin-top: 16px;
+        }}
+        .logout-btn {{
+            position: fixed;
+            top: 12px;
+            right: 16px;
+            background: #374151;
+            color: #9ca3af;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+            z-index: 100;
+        }}
+        .logout-btn:hover {{ background: #4b5563; color: #e0e0e0; }}
         .pw-error {{
             color: #ef4444;
             font-size: 13px;
@@ -2844,6 +2903,7 @@ def generate_html():
 
     <script>
         const ENCRYPTED_CLIENT = "{encrypted_client_blob}";
+        const ENCRYPTED_CLIENT_OTP = "{encrypted_client_otp_blob}";
         const ENCRYPTED_INTERNAL = "{encrypted_internal_blob}";
         const PBKDF2_ITERATIONS = {PBKDF2_ITERATIONS};
         let clientUnlocked = false;
@@ -2970,16 +3030,21 @@ def generate_html():
             btn.textContent = 'Checking...';
             let matched = false;
 
-            // Try client blob first
+            // Try client blobs (permanent + OTP)
             if (!clientUnlocked) {{
-                try {{
-                    const plaintext = await decryptContent(input, ENCRYPTED_CLIENT);
-                    const sections = JSON.parse(plaintext);
-                    injectDecryptedContent(sections);
-                    clientUnlocked = true;
-                    matched = true;
-                    updateClientLinks();
-                }} catch(e) {{ /* not client password */ }}
+                const clientBlobs = [ENCRYPTED_CLIENT];
+                if (ENCRYPTED_CLIENT_OTP) clientBlobs.push(ENCRYPTED_CLIENT_OTP);
+                for (const blob of clientBlobs) {{
+                    try {{
+                        const plaintext = await decryptContent(input, blob);
+                        const sections = JSON.parse(plaintext);
+                        injectDecryptedContent(sections);
+                        clientUnlocked = true;
+                        matched = true;
+                        updateClientLinks();
+                        break;
+                    }} catch(e) {{ /* not this password */ }}
+                }}
             }}
 
             // Try internal blob
