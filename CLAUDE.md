@@ -105,11 +105,16 @@ git push
 - **Two-level AES-256-GCM** encryption at build time (Python `cryptography` package)
   - `ENCRYPTED_CLIENT` blob: pricing, booking, `__config__` (rates) — password `rsquare2026`
   - `ENCRYPTED_INTERNAL` blob: workflow, checklists, posing guides, editing projects — password `r2workflow`
-- **Web Crypto API** decryption at runtime (PBKDF2, 100k iterations, SHA-256)
+- **Web Crypto API** decryption at runtime (PBKDF2, 400k iterations, SHA-256)
 - Random 16-byte salt + 12-byte IV per build (`os.urandom`)
 - No sessionStorage/localStorage — decrypted content is memory-only (`_appConfig`)
+- **Schema versioned** encrypted payloads (`"v": 1`)
 - 3-strike lockout with 15s cooldown on wrong password
-- Password hint shown below input
+- **Password toggle** (show/hide eye icon) + password hint
+- **Logout button** (visible when unlocked, clears decrypted content + reloads)
+- **"Don't share" reminder** on password gate
+- **Quote builder:** DOM-based construction (no innerHTML with user input — XSS safe)
+- **Privacy:** `<meta name="robots" content="noindex, nofollow, noarchive">`
 - Git history cleaned with `filter-repo` — no plaintext in old commits
 - Client password cannot decrypt internal sections (verified via cross-test)
 
