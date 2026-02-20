@@ -419,10 +419,7 @@ def generate_html(image_counts, cover_images, password):
         "monika": {
             "galleries": [resolve_gallery(g, image_counts, cover_images) for g in MONIKA_GALLERIES],
             "videos": [resolve_video(v) for v in MONIKA_VIDEOS],
-        },
-        "family": {
-            "galleries": [resolve_gallery(g, image_counts, cover_images) for g in FAMILY_GALLERIES],
-            "videos": [],
+            "family_galleries": [resolve_gallery(g, image_counts, cover_images) for g in FAMILY_GALLERIES],
         },
         "reels": [resolve_reel(r) for r in REELS],
     })
@@ -532,6 +529,7 @@ def generate_html(image_counts, cover_images, password):
       if (!container) return;
       const galleries = tabData.galleries || [];
       const videos = tabData.videos || [];
+      const familyGalleries = tabData.family_galleries || [];
 
       if (galleries.length > 0) {
         container.appendChild(makeEl('div', 'section-label', 'Photo Galleries'));
@@ -548,6 +546,16 @@ def generate_html(image_counts, cover_images, password):
         const grid = makeEl('div', 'cards-list video-grid');
         videos.forEach(v => {
           const card = buildVideoCard(v);
+          if (card) grid.appendChild(card);
+        });
+        container.appendChild(grid);
+      }
+
+      if (familyGalleries.length > 0) {
+        container.appendChild(makeEl('div', 'section-label', 'Family'));
+        const grid = makeEl('div', 'cards-list');
+        familyGalleries.forEach(g => {
+          const card = buildGalleryCard(g);
           if (card) grid.appendChild(card);
         });
         container.appendChild(grid);
@@ -656,7 +664,6 @@ def generate_html(image_counts, cover_images, password):
         // Build DOM from data (no innerHTML)
         buildTabContent('krithin', data.krithin);
         buildTabContent('monika', data.monika);
-        buildTabContent('family', data.family);
         buildReelsTab(data.reels);
 
         // Show app, hide gate
@@ -665,6 +672,12 @@ def generate_html(image_counts, cover_images, password):
         document.getElementById('app-footer').style.display = 'block';
         document.getElementById('logout-btn').style.display = 'inline-block';
         _failCount = 0;
+
+        // Save session (30 min timeout)
+        try {
+          sessionStorage.setItem('_kn_pw', input);
+          sessionStorage.setItem('_kn_ts', Date.now().toString());
+        } catch(e) { /* private browsing */ }
       } catch(e) {
         _failCount++;
         document.getElementById('pw-error').style.display = 'block';
@@ -679,15 +692,50 @@ def generate_html(image_counts, cover_images, password):
 
     // ─── Logout ──────────────────────────────────────────────────────
     function logout() {
-      ['krithin', 'monika', 'family', 'reels'].forEach(id => {
+      try {
+        sessionStorage.removeItem('_kn_pw');
+        sessionStorage.removeItem('_kn_ts');
+      } catch(e) {}
+      ['krithin', 'monika', 'reels'].forEach(id => {
         const el = document.getElementById('tab-' + id);
         if (el) el.replaceChildren();
       });
       location.reload();
     }
 
-    // Focus password input on load
-    document.getElementById('pw-input').focus();
+    // ─── Auto-unlock from session (30 min timeout) ──────────────────
+    const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+    (async function autoUnlock() {
+      try {
+        const savedPw = sessionStorage.getItem('_kn_pw');
+        const savedTs = sessionStorage.getItem('_kn_ts');
+        if (!savedPw || !savedTs) return;
+        if (Date.now() - parseInt(savedTs) > SESSION_TIMEOUT_MS) {
+          sessionStorage.removeItem('_kn_pw');
+          sessionStorage.removeItem('_kn_ts');
+          return;
+        }
+        const plaintext = await decryptContent(savedPw, ENCRYPTED_BLOB);
+        const data = JSON.parse(plaintext);
+        buildTabContent('krithin', data.krithin);
+        buildTabContent('monika', data.monika);
+        buildReelsTab(data.reels);
+        document.getElementById('pw-gate').style.display = 'none';
+        document.getElementById('app-content').classList.add('unlocked');
+        document.getElementById('app-footer').style.display = 'block';
+        document.getElementById('logout-btn').style.display = 'inline-block';
+        // Refresh timestamp
+        sessionStorage.setItem('_kn_ts', Date.now().toString());
+      } catch(e) {
+        sessionStorage.removeItem('_kn_pw');
+        sessionStorage.removeItem('_kn_ts');
+      }
+    })();
+
+    // Focus password input if gate is visible
+    if (document.getElementById('pw-gate').style.display !== 'none') {
+      document.getElementById('pw-input').focus();
+    }
     """.replace("__BLOB__", encrypted_blob).replace("__ITERATIONS__", str(PBKDF2_ITERATIONS))
 
     return f"""<!DOCTYPE html>
@@ -1277,13 +1325,11 @@ def generate_html(image_counts, cover_images, password):
       <button class="tab-btn active" onclick="switchTab('krithin')">Krithin</button>
       <button class="tab-btn" onclick="switchTab('reels')">Reels</button>
       <button class="tab-btn" onclick="switchTab('monika')">Monika</button>
-      <button class="tab-btn" onclick="switchTab('family')">Family</button>
     </div>
 
     <div id="tab-krithin" class="tab-content active"></div>
     <div id="tab-reels" class="tab-content"></div>
     <div id="tab-monika" class="tab-content"></div>
-    <div id="tab-family" class="tab-content"></div>
   </div>
 
   <div class="footer" style="display:none" id="app-footer">
