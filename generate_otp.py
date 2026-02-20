@@ -117,24 +117,37 @@ def git_push():
 
 
 def notify_slack(password, expires):
-    """Send OTP to Slack channel."""
+    """Send OTP to Slack channel via HTTP API (no slack_sdk dependency)."""
+    import urllib.request
+
     token, channel = load_slack_creds()
     if not token or not channel:
         print("   WARNING: Slack credentials not found, skipping notification.")
         return
 
     try:
-        from slack_sdk import WebClient
-        client = WebClient(token=token)
-        client.chat_postMessage(
-            channel=channel,
-            text=f"🔑 *New Dashboard OTP Generated*\n\n"
-                 f"Password: `{password}`\n"
-                 f"Expires: {expires}\n"
-                 f"Site: https://kneil31.github.io/rsquare-studios/\n\n"
-                 f"_Share this with the client for pricing access._"
+        msg = (
+            f"🔑 *New Dashboard OTP Generated*\n\n"
+            f"Password: `{password}`\n"
+            f"Expires: {expires}\n"
+            f"Site: https://kneil31.github.io/rsquare-studios/\n\n"
+            f"_Share this with the client for pricing access._"
         )
-        print("   Slack notification sent.")
+        payload = json.dumps({"channel": channel, "text": msg}).encode("utf-8")
+        req = urllib.request.Request(
+            "https://slack.com/api/chat.postMessage",
+            data=payload,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            },
+        )
+        resp = urllib.request.urlopen(req, timeout=10)
+        result = json.loads(resp.read().decode("utf-8"))
+        if result.get("ok"):
+            print("   Slack notification sent.")
+        else:
+            print(f"   WARNING: Slack API error: {result.get('error')}")
     except Exception as e:
         print(f"   WARNING: Slack notification failed: {e}")
 
