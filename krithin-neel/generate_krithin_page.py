@@ -30,9 +30,10 @@ import json
 import os
 import base64
 import sys
+import secrets
 import webbrowser
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
@@ -46,6 +47,23 @@ SECRET_FILE = SCRIPT_DIR / ".secret"
 
 # AES-256-GCM encryption settings
 PBKDF2_ITERATIONS = 400_000
+OTP_VALIDITY_HOURS = 48
+
+# Word list for generating memorable OTP passphrases
+OTP_WORDS = [
+    "alpine", "breeze", "canyon", "driftwood", "ember", "falcon", "glacier",
+    "harbor", "indigo", "jasmine", "kestrel", "lantern", "marble", "nimbus",
+    "orchid", "pinecone", "quartz", "ripple", "saffron", "thistle", "umber",
+    "velvet", "willow", "zenith", "amber", "birch", "coral", "dahlia",
+    "eclipse", "flint", "grove", "hazel", "ivory", "juniper", "kelp",
+    "lotus", "mosaic", "nectar", "opal", "prism", "raven", "summit",
+    "tundra", "violet", "walnut", "yarrow", "zephyr", "cobalt", "fern",
+]
+
+
+def generate_otp():
+    """Generate a 4-word memorable passphrase for OTP."""
+    return "-".join(secrets.choice(OTP_WORDS) for _ in range(4))
 
 
 def get_password():
@@ -405,12 +423,12 @@ def resolve_reel(reel):
     }
 
 
-def generate_html(image_counts, cover_images, password):
+def generate_html(image_counts, cover_images, password, otp):
     """Generate the full HTML page with AES-256-GCM encrypted content."""
     now = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     # Build data-only payload (no HTML strings)
-    content_payload = json.dumps({
+    content_data = {
         "v": 1,
         "krithin": {
             "galleries": [resolve_gallery(g, image_counts, cover_images) for g in KRITHIN_GALLERIES],
@@ -422,13 +440,24 @@ def generate_html(image_counts, cover_images, password):
             "family_galleries": [resolve_gallery(g, image_counts, cover_images) for g in FAMILY_GALLERIES],
         },
         "reels": [resolve_reel(r) for r in REELS],
-    })
-    encrypted_blob = encrypt_content(content_payload, password)
-    print(f"  Encrypted content: {len(encrypted_blob)} chars")
+    }
+
+    # Master blob (no expiry)
+    master_payload = json.dumps(content_data)
+    encrypted_master = encrypt_content(master_payload, password)
+    print(f"  Master blob: {len(encrypted_master)} chars")
+
+    # OTP blob (with expiry timestamp)
+    expiry_ts = int((datetime.now() + timedelta(hours=OTP_VALIDITY_HOURS)).timestamp() * 1000)
+    otp_data = {**content_data, "_expiry": expiry_ts}
+    otp_payload = json.dumps(otp_data)
+    encrypted_otp = encrypt_content(otp_payload, otp)
+    print(f"  OTP blob: {len(encrypted_otp)} chars (expires {OTP_VALIDITY_HOURS}h)")
 
     # JS block as a separate string to avoid f-string brace escaping
     js_block = """
-    const ENCRYPTED_BLOB = "__BLOB__";
+    const ENCRYPTED_MASTER = "__MASTER_BLOB__";
+    const ENCRYPTED_OTP = "__OTP_BLOB__";
     const PBKDF2_ITERATIONS = __ITERATIONS__;
     const ALLOWED_HOSTS = ['www.rsquarestudios.com', 'rsquarestudios.com',
       'photos.smugmug.com', 'www.youtube.com', 'youtube.com', 'youtu.be',
@@ -658,8 +687,38 @@ def generate_html(image_counts, cover_images, password):
       btn.textContent = 'Checking...';
 
       try {
-        const plaintext = await decryptContent(input, ENCRYPTED_BLOB);
-        const data = JSON.parse(plaintext);
+        let data = null;
+        let usedBlob = null;
+
+        // Try master password first
+        try {
+          const plaintext = await decryptContent(input, ENCRYPTED_MASTER);
+          data = JSON.parse(plaintext);
+          usedBlob = 'master';
+        } catch(e) { /* not master */ }
+
+        // Try OTP password
+        if (!data) {
+          try {
+            const plaintext = await decryptContent(input, ENCRYPTED_OTP);
+            const parsed = JSON.parse(plaintext);
+            // Check expiry
+            if (parsed._expiry && Date.now() > parsed._expiry) {
+              document.getElementById('pw-error').textContent = 'This password has expired.';
+              document.getElementById('pw-error').style.display = 'block';
+              document.getElementById('pw-input').value = '';
+              document.getElementById('pw-input').focus();
+              btn.disabled = false;
+              btn.textContent = 'Enter';
+              return;
+            }
+            delete parsed._expiry;
+            data = parsed;
+            usedBlob = 'otp';
+          } catch(e) { /* not OTP either */ }
+        }
+
+        if (!data) throw new Error('wrong password');
 
         // Build DOM from data (no innerHTML)
         buildTabContent('krithin', data.krithin);
@@ -677,6 +736,7 @@ def generate_html(image_counts, cover_images, password):
         try {
           sessionStorage.setItem('_kn_pw', input);
           sessionStorage.setItem('_kn_ts', Date.now().toString());
+          sessionStorage.setItem('_kn_blob', usedBlob);
         } catch(e) { /* private browsing */ }
       } catch(e) {
         _failCount++;
@@ -695,6 +755,7 @@ def generate_html(image_counts, cover_images, password):
       try {
         sessionStorage.removeItem('_kn_pw');
         sessionStorage.removeItem('_kn_ts');
+        sessionStorage.removeItem('_kn_blob');
       } catch(e) {}
       ['krithin', 'monika', 'reels'].forEach(id => {
         const el = document.getElementById('tab-' + id);
@@ -709,26 +770,37 @@ def generate_html(image_counts, cover_images, password):
       try {
         const savedPw = sessionStorage.getItem('_kn_pw');
         const savedTs = sessionStorage.getItem('_kn_ts');
+        const savedBlob = sessionStorage.getItem('_kn_blob') || 'master';
         if (!savedPw || !savedTs) return;
         if (Date.now() - parseInt(savedTs) > SESSION_TIMEOUT_MS) {
           sessionStorage.removeItem('_kn_pw');
           sessionStorage.removeItem('_kn_ts');
+          sessionStorage.removeItem('_kn_blob');
           return;
         }
-        const plaintext = await decryptContent(savedPw, ENCRYPTED_BLOB);
-        const data = JSON.parse(plaintext);
-        buildTabContent('krithin', data.krithin);
-        buildTabContent('monika', data.monika);
-        buildReelsTab(data.reels);
+        const blob = savedBlob === 'otp' ? ENCRYPTED_OTP : ENCRYPTED_MASTER;
+        const plaintext = await decryptContent(savedPw, blob);
+        const parsed = JSON.parse(plaintext);
+        // Check OTP expiry on auto-unlock too
+        if (parsed._expiry && Date.now() > parsed._expiry) {
+          sessionStorage.removeItem('_kn_pw');
+          sessionStorage.removeItem('_kn_ts');
+          sessionStorage.removeItem('_kn_blob');
+          return;
+        }
+        delete parsed._expiry;
+        buildTabContent('krithin', parsed.krithin);
+        buildTabContent('monika', parsed.monika);
+        buildReelsTab(parsed.reels);
         document.getElementById('pw-gate').style.display = 'none';
         document.getElementById('app-content').classList.add('unlocked');
         document.getElementById('app-footer').style.display = 'block';
         document.getElementById('logout-btn').style.display = 'inline-block';
-        // Refresh timestamp
         sessionStorage.setItem('_kn_ts', Date.now().toString());
       } catch(e) {
         sessionStorage.removeItem('_kn_pw');
         sessionStorage.removeItem('_kn_ts');
+        sessionStorage.removeItem('_kn_blob');
       }
     })();
 
@@ -736,7 +808,7 @@ def generate_html(image_counts, cover_images, password):
     if (document.getElementById('pw-gate').style.display !== 'none') {
       document.getElementById('pw-input').focus();
     }
-    """.replace("__BLOB__", encrypted_blob).replace("__ITERATIONS__", str(PBKDF2_ITERATIONS))
+    """.replace("__MASTER_BLOB__", encrypted_master).replace("__OTP_BLOB__", encrypted_otp).replace("__ITERATIONS__", str(PBKDF2_ITERATIONS))
 
     return f"""<!DOCTYPE html>
 <html lang="en">
@@ -1371,14 +1443,17 @@ def main():
         else:
             print(f"  [-] {g['title']}: no node_id")
 
+    otp = generate_otp()
+
     print("\nGenerating HTML...")
-    html = generate_html(image_counts, cover_images, password)
+    html = generate_html(image_counts, cover_images, password, otp)
 
     OUTPUT_DIR.mkdir(exist_ok=True)
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"  Written to {OUTPUT_FILE}")
     print(f"  File size: {OUTPUT_FILE.stat().st_size / 1024:.1f} KB")
+    print(f"\n  OTP (valid {OTP_VALIDITY_HOURS}h): {otp}")
 
     webbrowser.open(f"file://{OUTPUT_FILE.resolve()}")
     print("\nDone! Opening in browser...")
