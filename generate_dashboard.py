@@ -40,6 +40,56 @@ POSING_DIR = SCRIPT_DIR.parent.parent.parent / "Upskill" / "Posing_Upskill" / "p
 TWOMANN_DIR = SCRIPT_DIR.parent / "TwoMann_Course" / "chapters"
 EDITING_PROJECTS_FILE = SCRIPT_DIR / "editing_projects.json"
 
+# Gear list — rendered inline on the home page
+GEAR_LIST = {
+    "\U0001f4f7 Camera Bodies": [
+        "Canon EOS R5 C (Cinema)",
+        "Canon EOS C50 (Cinema)",
+        "Canon EOS R6 Mark II",
+        "Canon EOS R6 (\u00d72)",
+    ],
+    "\U0001f52d Lenses": [
+        "Canon RF 28-70mm f/2L USM",
+        "Canon RF 15-35mm f/2.8L IS USM",
+        "Canon RF 70-200mm f/2.8L IS USM",
+"Canon RF 35mm f/1.8 IS Macro STM",
+        "Canon RF 50mm f/1.8 STM",
+        "Canon RF 16mm f/2.8 STM",
+    ],
+    "\U0001f4a1 Lighting": [
+        "Godox VL300 LED",
+        "Godox AD600 Pro",
+        "Godox AD200 Pro",
+        "Godox M1 RGB LED",
+        "Godox LC500 Light Stick",
+        "Flashpoint Zoom Li-on X R2 TTL",
+        "GVM 2-Pack LED Video Lights",
+    ],
+    "\U0001f527 Light Modifiers": [
+        "MagMod MagBox PRO 24\u2033 Octa",
+        "MagMod MagShoe v2",
+        "MagMod MagRing 2",
+        "Godox CS-85D Lantern",
+        "Neewer C-Stand",
+    ],
+    "\U0001f3ac Stabilization & Drone": [
+        "DJI RS 4 Gimbal",
+        "DJI R Twist Grip Dual Handle",
+        "DJI Mavic Air 2",
+    ],
+    "\U0001f5a5 Monitors": [
+        "Atomos Ninja V 5\u2033",
+    ],
+    "\U0001f392 Accessories": [
+        "SmallRig Cage (R5/R6)",
+        "FALCAM F22 Quick Release Handle",
+        "FALCAM F22 Articulating Arm",
+        "Freewell 95mm Variable ND",
+        "Pelican 1510 Case",
+        "Logitech Mevo Start (streaming)",
+    ],
+}
+
 # Passwords loaded from .secret file or env vars (never hardcoded)
 def _load_passwords():
     """Load client and internal passwords from .secret JSON, env vars, or defaults."""
@@ -557,6 +607,17 @@ def generate_html():
     workflow_md = load_workflow()
     workflow_html = md_to_html_simple(workflow_md)
     total_galleries = sum(c["count"] for c in gallery_cards.values())
+
+    # Build gear categories HTML
+    gear_categories_html = ""
+    for category, items in GEAR_LIST.items():
+        items_html = "".join(f'<div class="gear-item">{item}</div>' for item in items)
+        gear_categories_html += (
+            f'                        <div class="gear-category">'
+            f'<div class="gear-category-label">{category}</div>'
+            f'<div class="gear-grid">{items_html}</div>'
+            f'</div>\n'
+        )
 
     # Build sidebar gallery links
     gallery_sidebar = ""
@@ -2460,6 +2521,10 @@ def generate_html():
             background: rgba(139,92,246,0.08);
             border-color: rgba(139,92,246,0.2);
         }}
+        .gear-card.expanded {{
+            border-radius: 12px 12px 0 0;
+            border-bottom: 1px solid rgba(139,92,246,0.15);
+        }}
         .gear-icon {{
             font-size: 36px;
             flex-shrink: 0;
@@ -2482,6 +2547,50 @@ def generate_html():
             font-size: 18px;
             color: #525252;
             flex-shrink: 0;
+            transition: transform 0.3s;
+        }}
+        .gear-card.expanded .gear-arrow {{
+            transform: rotate(90deg);
+        }}
+        .gear-body {{
+            display: none;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-top: none;
+            border-radius: 0 0 12px 12px;
+            padding: 20px 24px 24px;
+        }}
+        .gear-body.open {{
+            display: block;
+        }}
+        .gear-category {{
+            margin-bottom: 20px;
+        }}
+        .gear-category:last-child {{
+            margin-bottom: 0;
+        }}
+        .gear-category-label {{
+            font-size: 13px;
+            font-weight: 600;
+            color: #8b5cf6;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 10px;
+        }}
+        .gear-grid {{
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 16px;
+        }}
+        .gear-item {{
+            font-size: 13px;
+            color: #9ca3af;
+            line-height: 1.6;
+        }}
+        @media (min-width: 768px) {{
+            .gear-grid {{
+                grid-template-columns: 1fr 1fr 1fr;
+            }}
         }}
 
         /* Toast */
@@ -2665,14 +2774,17 @@ def generate_html():
 
                 <!-- My Gear -->
                 <div class="gear-section">
-                    <a class="gear-card" href="https://kit.co/kotara8/neal-films-kit" target="_blank" rel="noreferrer noopener">
+                    <div class="gear-card" onclick="toggleGear()" id="gear-toggle">
                         <div class="gear-icon">🎥</div>
                         <div class="gear-info">
                             <div class="gear-title">My Gear</div>
-                            <div class="gear-desc">Curious what cameras, lenses, and lighting I use? Check out my full gear kit.</div>
+                            <div class="gear-desc">Curious what cameras, lenses, and lighting I use? Tap to see the full kit.</div>
                         </div>
                         <div class="gear-arrow">&rarr;</div>
-                    </a>
+                    </div>
+                    <div class="gear-body" id="gear-body">
+{gear_categories_html}
+                    </div>
                 </div>
             </div>
 
@@ -2987,7 +3099,6 @@ def generate_html():
             'www.instagram.com', 'instagram.com',
             'we.tl', 'mega.nz',
             'cal.com', 'app.cal.com',
-            'kit.co',
             'literate-basketball-b5e.notion.site',
         ];
         function isAllowedUrl(url) {{
@@ -2996,6 +3107,16 @@ def generate_html():
                 if (!['http:', 'https:'].includes(parsed.protocol)) return false;
                 return ALLOWED_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h));
             }} catch {{ return false; }}
+        }}
+
+        function toggleGear() {{
+            const toggle = document.getElementById('gear-toggle');
+            const body = document.getElementById('gear-body');
+            toggle.classList.toggle('expanded');
+            body.classList.toggle('open');
+            if (body.classList.contains('open')) {{
+                setTimeout(() => body.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }}), 50);
+            }}
         }}
 
         function showSection(id) {{
@@ -3366,7 +3487,7 @@ def generate_html():
 
             // Greeting
             const greetLine1 = document.createTextNode('Hey ' + name + '! 👋');
-            const greetLine2 = document.createTextNode('Thanks for reaching out \u2014 here\'s the quote for your ' + event.toLowerCase() + ':');
+            const greetLine2 = document.createTextNode("Thanks for reaching out \u2014 here's the quote for your " + event.toLowerCase() + ":");
             const greetDiv = qEl('div', 'quote-greeting');
             greetDiv.appendChild(greetLine1);
             greetDiv.appendChild(document.createElement('br'));
@@ -3407,7 +3528,7 @@ def generate_html():
             // How You Get Your Photos
             preview.appendChild(qSection([
                 qEl('div', 'quote-section-title', 'How You Get Your Photos'),
-                qEl('div', 'quote-note', 'You\'ll get a private gallery link. Download all pics at once from desktop \u2014 email with the download link usually takes 15\u201330 min. Link works for 3 months so grab them soon!'),
+                qEl('div', 'quote-note', "You'll get a private gallery link. Download all pics at once from desktop \u2014 email with the download link usually takes 15\u201330 min. Link works for 3 months so grab them soon!"),
             ]));
 
             // Signoff
