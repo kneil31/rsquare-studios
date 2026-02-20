@@ -1,4 +1,5 @@
 __pycache__/
 editing_projects.json
 .secret
+.otp_log.json
 krithin-neel/.secret
