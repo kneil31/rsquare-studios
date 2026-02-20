@@ -126,12 +126,25 @@ def notify_slack(password, expires):
         return
 
     try:
+        # Send password as its own message first (easy to copy on mobile)
+        payload_pw = json.dumps({
+            "channel": channel,
+            "text": password,
+        }).encode("utf-8")
+        req_pw = urllib.request.Request(
+            "https://slack.com/api/chat.postMessage",
+            data=payload_pw,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            },
+        )
+        urllib.request.urlopen(req_pw, timeout=10)
+
+        # Then send context message
         msg = (
-            f"🔑 *New Dashboard OTP Generated*\n\n"
-            f"Password: `{password}`\n"
-            f"Expires: {expires}\n"
-            f"Site: https://kneil31.github.io/rsquare-studios/\n\n"
-            f"_Share this with the client for pricing access._"
+            f"🔑 *Dashboard OTP* — expires {expires}\n"
+            f"Site: https://kneil31.github.io/rsquare-studios/"
         )
         payload = json.dumps({"channel": channel, "text": msg}).encode("utf-8")
         req = urllib.request.Request(
