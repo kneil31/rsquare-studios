@@ -107,8 +107,94 @@ def open_follow_ups(overdue):
         subprocess.run(["osascript", "-e", script], capture_output=True, timeout=30)
 
 
+def get_pending_projects(projects):
+    """Get all non-completed projects with days elapsed."""
+    today = datetime.now()
+    pending = []
+    for p in projects:
+        if p["status"] == "COMPLETED":
+            continue
+        sent = datetime.strptime(p["date_sent"], "%Y-%m-%d")
+        p["days_elapsed"] = (today - sent).days
+        pending.append(p)
+    return pending
+
+
+def build_pending_summary_link(pending):
+    """Generate wa.me link with a summary of all pending projects."""
+    if not pending:
+        return None
+
+    phone = pending[0].get("editor_phone", "")
+    editor = pending[0].get("editor", "there")
+    if not phone:
+        return None
+
+    lines = []
+    for p in pending:
+        sent_date = datetime.strptime(p["date_sent"], "%Y-%m-%d").strftime("%b %d")
+        status = "OVERDUE" if p["days_elapsed"] > p["expected_days"] else f"{p['days_elapsed']}d"
+        lines.append(f"• {p['task']} ({p['priority']}) — sent {sent_date} [{status}]")
+
+    project_list = "\n".join(lines)
+    msg = (
+        f"Hi {editor},\n\n"
+        f"Here's a summary of the pending edits:\n\n"
+        f"{project_list}\n\n"
+        f"Could you share an update on these? "
+        f"Let me know if you need anything!\n\n"
+        f"Thanks,\nRam"
+    )
+    encoded = urllib.parse.quote(msg)
+    return f"https://wa.me/{phone}?text={encoded}"
+
+
+def show_pending_popup(pending):
+    """Show popup with all pending projects and option to send WhatsApp summary."""
+    lines = []
+    for p in pending:
+        status = "OVERDUE" if p["days_elapsed"] > p["expected_days"] else f"{p['days_elapsed']}d"
+        lines.append(f"• {p['task']} ({p['priority']}) — {status}")
+
+    body = "\\n".join(lines)
+    count = len(pending)
+    title = f"Pending Edits — {count} Projects"
+
+    script = (
+        f'display dialog "{count} pending editing project(s):\\n\\n{body}" '
+        f'with title "{title}" '
+        f'buttons {{"Dismiss", "Send to Laxman"}} default button 2 '
+        f'with icon note'
+    )
+
+    try:
+        result = subprocess.run(
+            ["osascript", "-e", script],
+            capture_output=True, text=True, timeout=300
+        )
+        output = result.stdout.strip()
+        if "Send to Laxman" in output:
+            link = build_pending_summary_link(pending)
+            if link:
+                webbrowser.open(link)
+    except subprocess.TimeoutExpired:
+        pass
+
+
 def main():
     projects = load_projects()
+
+    # Check for --pending flag to send full summary
+    import sys
+    if "--pending" in sys.argv:
+        pending = get_pending_projects(projects)
+        if not pending:
+            print("No pending projects.")
+            return
+        show_pending_popup(pending)
+        return
+
+    # Default: overdue-only reminder
     overdue = get_overdue_projects(projects)
 
     if not overdue:
