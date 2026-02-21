@@ -130,19 +130,13 @@ def build_pending_summary_link(pending):
     if not phone:
         return None
 
-    lines = []
-    for p in pending:
-        sent_date = datetime.strptime(p["date_sent"], "%Y-%m-%d").strftime("%b %d")
-        status = "OVERDUE" if p["days_elapsed"] > p["expected_days"] else f"{p['days_elapsed']}d"
-        lines.append(f"• {p['task']} ({p['priority']}) — sent {sent_date} [{status}]")
-
+    lines = [f"• {p['task']}" for p in pending]
     project_list = "\n".join(lines)
     msg = (
         f"Hi bro,\n\n"
-        f"Here's a summary of the pending edits:\n\n"
+        f"These are the pending projects:\n\n"
         f"{project_list}\n\n"
-        f"Could you share an update on these? "
-        f"Let me know if you need anything!\n\n"
+        f"Could you share an update on these?\n\n"
         f"Thanks,\nRam"
     )
     encoded = urllib.parse.quote(msg)
