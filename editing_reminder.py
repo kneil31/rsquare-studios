@@ -40,7 +40,7 @@ def build_wa_link(project):
     sent_date = datetime.strptime(project["date_sent"], "%Y-%m-%d").strftime("%b %d")
     editor = project.get("editor", "there")
     msg = (
-        f"Hi {editor},\n\n"
+        f"Hi bro,\n\n"
         f"Just checking in on the {project['task']} edit — "
         f"it's been {project['days_elapsed']} days since I sent the files on {sent_date}.\n\n"
         f"Could you share an update on the progress? "
@@ -138,7 +138,7 @@ def build_pending_summary_link(pending):
 
     project_list = "\n".join(lines)
     msg = (
-        f"Hi {editor},\n\n"
+        f"Hi bro,\n\n"
         f"Here's a summary of the pending edits:\n\n"
         f"{project_list}\n\n"
         f"Could you share an update on these? "
