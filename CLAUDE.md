@@ -97,8 +97,24 @@ git add index.html generate_dashboard.py
 git commit -m "description"
 git push
 
+# Generate new client OTP (from terminal)
+python3 generate_otp.py              # Generate + rebuild + push + Slack notify
+python3 generate_otp.py --no-push    # Generate + rebuild only (no git push, no Slack)
+
+# Generate new client OTP (from Slack)
+# Type "otp" in #instagram-posts channel — generates, pushes, and sends password
+
 # Cache busting — tell user to add ?v=N or use incognito
 ```
+
+## OTP (Rotating Client Password)
+
+- **Script:** `generate_otp.py` — generates random 8-char password, updates `.secret`, rebuilds dashboard, pushes to GitHub Pages
+- **Slack command:** Type `otp` in #instagram-posts → bot calls `generate_otp.py`, sends password to Slack
+- **Expiry:** 48 hours (logged in `.otp_log.json`, last 20 entries kept)
+- **Internal password (`r2workflow`) is permanent** — OTP only rotates the client password
+- **Slack notify:** Sends password as standalone message (easy mobile copy) + context with expiry
+- **Uses system python3** (`/opt/homebrew/bin/python3`) because `cryptography` package is not in Instagram AutoPoster venv
 
 ## Pricing (AES-encrypted in output)
 
