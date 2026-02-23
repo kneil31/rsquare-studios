@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
 """Daily editing project reminder — shows osascript popup for overdue projects."""
 
-import json
 import subprocess
 import urllib.parse
 import webbrowser
 from datetime import datetime
-from pathlib import Path
 
-SCRIPT_DIR = Path(__file__).parent
-PROJECTS_FILE = SCRIPT_DIR / "editing_projects.json"
+from sheets_sync import read_projects
 
 
 def load_projects():
-    with open(PROJECTS_FILE) as f:
-        return json.load(f)["projects"]
+    return read_projects()
 
 
 def get_overdue_projects(projects):

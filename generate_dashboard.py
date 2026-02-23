@@ -933,13 +933,22 @@ def generate_html():
                 <div class="page-meta">Ingest &rarr; Sort &rarr; Cull &rarr; Edit &rarr; Export &rarr; Deliver</div>
                 <div class="wf-content">{workflow_html}</div>"""
 
-    # Editing projects tracker
+    # Editing projects tracker — read from Google Sheet, fall back to local JSON
     editing_rows = ""
-    if EDITING_PROJECTS_FILE.exists():
-        with open(EDITING_PROJECTS_FILE, "r", encoding="utf-8") as f:
-            editing_data = json.load(f)
+    editing_project_list = None
+    try:
+        from sheets_sync import read_projects as _read_sheet_projects
+        editing_project_list = _read_sheet_projects()
+        print(f"  Editing projects: {len(editing_project_list)} from Google Sheet")
+    except Exception as e:
+        print(f"  Google Sheet unavailable ({e}), falling back to local JSON")
+        if EDITING_PROJECTS_FILE.exists():
+            with open(EDITING_PROJECTS_FILE, "r", encoding="utf-8") as f:
+                editing_project_list = json.load(f).get("projects", [])
+
+    if editing_project_list:
         today = datetime.now()
-        for p in editing_data.get("projects", []):
+        for p in editing_project_list:
             sent = datetime.strptime(p["date_sent"], "%Y-%m-%d")
             days_elapsed = (today - sent).days
             status = p["status"]

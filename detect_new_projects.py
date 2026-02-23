@@ -5,15 +5,15 @@ against editing_projects.json. Shows untracked shoots via macOS popup.
 """
 
 import json
-import os
 import subprocess
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from sheets_sync import read_projects, add_project
+
 SCRIPT_DIR = Path(__file__).parent
 CATALOG_INDEX = SCRIPT_DIR / ".." / "lrcat_indexer" / "catalog_index.json"
-EDITING_PROJECTS = SCRIPT_DIR / "editing_projects.json"
 GENERATOR = SCRIPT_DIR / "generate_dashboard.py"
 
 LOOKBACK_DAYS = 60
@@ -33,12 +33,6 @@ DEFAULTS = {
 def load_json(path):
     with open(path) as f:
         return json.load(f)
-
-
-def save_editing_projects(data):
-    with open(EDITING_PROJECTS, "w") as f:
-        json.dump(data, f, indent=2)
-        f.write("\n")
 
 
 def osascript_dialog(title, message, buttons=("OK",), default_button=None, icon="note"):
@@ -119,19 +113,16 @@ def main():
         print("Run 'lrcat scan' first to build the index.")
         sys.exit(1)
 
-    if not EDITING_PROJECTS.exists():
-        print(f"Error: editing_projects.json not found at {EDITING_PROJECTS}")
-        sys.exit(1)
-
     # Load data
     catalog_data = load_json(CATALOG_INDEX)
-    editing_data = load_json(EDITING_PROJECTS)
 
     last_scan = catalog_data.get("last_scan", "unknown")
     print(f"Catalog index: {catalog_data.get('catalog_count', '?')} catalogs (last scan: {last_scan})")
 
-    # Get tracked task names
-    tracked_tasks = [p["task"] for p in editing_data.get("projects", [])]
+    # Get tracked task names from Google Sheet
+    print("Reading editing projects from Google Sheet...")
+    existing_projects = read_projects()
+    tracked_tasks = [p["task"] for p in existing_projects]
     print(f"Editing projects: {len(tracked_tasks)} tracked")
 
     # Filter recent catalogs
@@ -225,10 +216,10 @@ def main():
         print("\nNo projects added.")
         return
 
-    # Append to editing_projects.json
-    editing_data["projects"].extend(added)
-    save_editing_projects(editing_data)
-    print(f"\nAppended {len(added)} project(s) to editing_projects.json")
+    # Append to Google Sheet
+    for entry in added:
+        add_project(entry)
+    print(f"\nAppended {len(added)} project(s) to Google Sheet")
 
     # Regenerate dashboard
     print("Regenerating dashboard...")
