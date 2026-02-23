@@ -50,7 +50,7 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 | Posing guides | `../../../Upskill/Posing_Upskill/prompts/{couples,families,weddings}.md` |
 | Workflow reference | `../../photo_workflow/PHOTO_WORKFLOW_CHEATSHEET.md` |
 | Cover images | SmugMug API (image keys hardcoded in `category_covers` dict) |
-| Editing projects | `editing_projects.json` (local, not pushed to GitHub) |
+| Editing projects | Google Sheet (primary) → `editing_projects.json` (fallback) |
 | Gear list | `GEAR_LIST` dict in `generate_dashboard.py` |
 
 ## Cover Images (SmugMug)
@@ -145,17 +145,20 @@ python3 generate_otp.py --no-push    # Generate + rebuild only (no git push, no 
 
 ## Editing Project Tracker
 
-- **Data:** `editing_projects.json` (local only — delivery links are sensitive)
+- **Data:** Google Sheet is the single source of truth (Sheet ID: `***REDACTED_SHEET_ID***`)
+- **Fallback:** `editing_projects.json` (local) used when Google Sheet is unreachable
+- **Shared module:** `sheets_sync.py` — handles auth and read/write to Google Sheet via `gspread`
+- **Credentials:** `~/.config/rsquare/sheets_credentials.json` (GCP service account)
 - **Dashboard:** "Editing Projects" section behind `***REMOVED***`, shows table with status badges
 - **Status auto-detection:** SENT (blue), OVERDUE (red, >14 days), COMPLETED (green)
+- **Auto-detection:** `detect_new_projects.py` scans Lightroom catalogs → adds new projects to Google Sheet
 - **Daily reminder:** `editing_reminder.py` runs at 10 AM via `com.rsquare.editing-reminder.plist`
 - **WhatsApp follow-up:** "Follow Up" button opens wa.me link with pre-filled message to editor
-- **To enable WhatsApp:** Add `editor` name and `editor_phone` (country code + number) in JSON
-- **To update projects:** Edit `editing_projects.json`, then `python3 generate_dashboard.py`
+- **Laxman updates status directly in Google Sheet** — scripts read his changes automatically
 
 ## Subprojects
 
-- **krithin-neel/** — Separate page generator (`generate_krithin_page.py`) with its own cover images and output
+- **krithin-neel/** — Separate repo (`kneil31/krithin-neel`), lives locally in this folder but is `.gitignore`d from rsquare-studios. Never add krithin-neel files to this repo.
 
 ## Mobile-Specific Notes
 

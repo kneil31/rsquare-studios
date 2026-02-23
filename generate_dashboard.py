@@ -1066,6 +1066,12 @@ def generate_html():
     <meta name="referrer" content="no-referrer">
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
     <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta property="og:title" content="Rsquare Studios">
+    <meta property="og:description" content="Wedding & Portrait Photography — Dallas, TX">
+    <meta property="og:image" content="https://gallery.rsquarestudios.com/hero.jpg">
+    <meta property="og:url" content="https://gallery.rsquarestudios.com/">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
     <title>Rsquare Studios — Dashboard</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
