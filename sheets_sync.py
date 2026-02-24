@@ -96,3 +96,45 @@ def get_pending():
     """Return all non-COMPLETED projects."""
     projects = read_projects()
     return [p for p in projects if p["status"] != "COMPLETED"]
+
+
+def read_reviews():
+    """Read approved reviews from the 'Reviews' tab.
+
+    Returns list of dicts: {name, event_type, rating, review, date}
+    Only returns rows where Status == 'approved'.
+    """
+    if not CREDENTIALS_PATH.exists():
+        raise FileNotFoundError(
+            f"Google Sheets credentials not found at {CREDENTIALS_PATH}"
+        )
+    gc = gspread.service_account(filename=str(CREDENTIALS_PATH))
+    spreadsheet = gc.open_by_key(SHEET_ID)
+
+    try:
+        ws = spreadsheet.worksheet("Reviews")
+    except gspread.exceptions.WorksheetNotFound:
+        return []
+
+    records = ws.get_all_values()
+    if not records or len(records) < 2:
+        return []
+
+    headers = records[0]
+    reviews = []
+    for row in records[1:]:
+        if not any(cell.strip() for cell in row):
+            continue
+        padded = row + [""] * (len(headers) - len(row))
+        raw = dict(zip(headers, padded))
+        if raw.get("Status", "").strip().lower() != "approved":
+            continue
+        reviews.append({
+            "name": raw.get("Name", "").strip(),
+            "event_type": raw.get("Event Type", "").strip(),
+            "rating": int(raw.get("Rating", "5") or "5"),
+            "review": raw.get("Review", "").strip(),
+            "date": raw.get("Date", "").strip(),
+        })
+
+    return reviews

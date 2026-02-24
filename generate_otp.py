@@ -128,10 +128,11 @@ def notify_slack(password, expires):
     try:
         # Send client-ready message first (easy to copy-paste to WhatsApp)
         client_msg = (
-            f"Rsquare Studios Gallery\n"
-            f"https://gallery.rsquarestudios.com/\n\n"
-            f"Password: {password}\n"
-            f"(for the Investment section — valid 48 hours)"
+            "Hey! Here's a private link to our portfolio and pricing 📷\n\n"
+            "https://gallery.rsquarestudios.com/\n"
+            f"Password: {password}\n\n"
+            "Let me know if you have any questions!\n"
+            "— Ram"
         )
         payload_pw = json.dumps({
             "channel": channel,

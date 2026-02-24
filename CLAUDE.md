@@ -8,7 +8,8 @@
 
 Notion-style dark-themed dashboard for Rsquare Studios photography business. Hosted on GitHub Pages.
 
-- **Live URL:** https://kneil31.github.io/rsquare-studios/
+- **Live URL:** https://gallery.rsquarestudios.com/ (custom domain, CNAME → kneil31.github.io)
+- **Legacy URL:** https://kneil31.github.io/rsquare-studios/ (redirects to custom domain)
 - **GitHub Repo:** kneil31/rsquare-studios (public)
 - **Generator:** `generate_dashboard.py` → outputs `index.html`
 - **Client password:** `***REMOVED***` (unlocks pricing, booking, quote builder)
@@ -33,6 +34,7 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 - **Background position:** Per-category `background-position` values in `category_covers` dict (tuples of URL + position). Adjust position values when photos crop subjects poorly
 - **No external dependencies:** Single self-contained HTML file, no frameworks
 - **Professional copy:** "Investment" not "pricing", "images" not "pictures", "coverage" not "shooting"
+- **Open Graph tags:** og:title, og:description, og:image (hero.jpg), og:url — enables WhatsApp/social link previews
 
 ## My Gear Section
 
@@ -76,9 +78,17 @@ Current covers (all 9 categories have tuned `background-position`):
 | Cradle | R3QTwKk | center 47% |
 | Celebrations | J8zjNdj | 38% 30% |
 
-Homepage hero: `hero.jpg` — purple silhouette wedding photo (local file, not SmugMug). Option D split layout with CSS mask blend.
+Homepage hero: `hero.jpg` — purple silhouette wedding photo (local file, not SmugMug). Option D split layout with CSS mask blend. Also used as OG image for WhatsApp/social link previews.
 
 Spare image (not yet used): `i-6trRsbK`
+
+## Custom Domain
+
+- **Domain:** `gallery.rsquarestudios.com`
+- **CNAME file:** In repo root, content `gallery.rsquarestudios.com`
+- **DNS:** CNAME record `gallery` → `kneil31.github.io` (GoDaddy, domaincontrol.com nameservers)
+- **HTTPS:** Enforced via GitHub Pages (after DNS propagation)
+- **OG tags and Slack messages** all reference the custom domain URL
 
 ## SmugMug API Auth
 
@@ -113,7 +123,8 @@ python3 generate_otp.py --no-push    # Generate + rebuild only (no git push, no 
 - **Slack command:** Type `otp` in #instagram-posts → bot calls `generate_otp.py`, sends password to Slack
 - **Expiry:** 48 hours (logged in `.otp_log.json`, last 20 entries kept)
 - **Internal password (`***REMOVED***`) is permanent** — OTP only rotates the client password
-- **Slack notify:** Sends password as standalone message (easy mobile copy) + context with expiry
+- **Slack notify:** Sends two messages: (1) client-ready copy-paste message with URL + password + sign-off, (2) internal expiry context
+- **Slack message tone:** Warm & conversational — "Hey! Here's a private link to our portfolio and pricing" + "Let me know if you have any questions! — Ram"
 - **Uses system python3** (`/opt/homebrew/bin/python3`) because `cryptography` package is not in Instagram AutoPoster venv
 
 ## Pricing (AES-encrypted in output)

@@ -90,6 +90,21 @@ GEAR_LIST = {
     ],
 }
 
+# Seed reviews — used as fallback when Google Sheet is unreachable
+SEED_REVIEWS = [
+    {"name": "Client", "event_type": "Event Photography", "rating": 5,
+     "review": "Pictures came out so well. We feel that we made the right choice. We definitely recommend too."},
+    {"name": "Client", "event_type": "Wedding Photography", "rating": 5,
+     "review": "Your relaxed, personable approach made us feel very welcome. Your work is flawless. Thank you so much for capturing the strong emotions of the day."},
+    {"name": "Client", "event_type": "Photo & Video", "rating": 5,
+     "review": "Editing and videography looks so amazing and thanks for being so flexible to add changes that we asked for. It was so good working with you."},
+    {"name": "Client", "event_type": "Event Photography", "rating": 5,
+     "review": "All the photos look stunning! Everyone in the house loved the pictures a lot."},
+]
+
+# Google Apps Script URL for review form submission (set after deploying the script)
+REVIEW_FORM_URL = "https://script.google.com/macros/s/***REDACTED_SCRIPT_ID***/exec"
+
 # Passwords loaded from .secret file or env vars (never hardcoded)
 def _load_passwords():
     """Load client and internal passwords from .secret JSON, env vars, or defaults."""
@@ -619,6 +634,41 @@ def generate_html():
             f'</div>\n'
         )
 
+    # Google Apps Script URL for review submissions
+    review_form_url = REVIEW_FORM_URL
+
+    # Client reviews — read from Google Sheet, fall back to seed data
+    reviews = None
+    try:
+        from sheets_sync import read_reviews as _read_sheet_reviews
+        reviews = _read_sheet_reviews()
+        print(f"  Reviews: {len(reviews)} approved from Google Sheet")
+    except Exception as e:
+        print(f"  Reviews sheet unavailable ({e}), using seed reviews")
+
+    if not reviews:
+        reviews = SEED_REVIEWS
+
+    import html as _html_mod
+
+    def _build_review_cards(review_list):
+        cards = []
+        for r in review_list:
+            name = _html_mod.escape(r["name"])
+            event = _html_mod.escape(r["event_type"])
+            text = _html_mod.escape(r["review"])
+            rating = int(r.get("rating", 5))
+            stars = "&#9733;" * rating + "&#9734;" * (5 - rating)
+            cards.append(f'''                        <div class="testimonial-card">
+                            <div class="testimonial-stars">{stars}</div>
+                            <div class="testimonial-quote">{text}</div>
+                            <div class="testimonial-name">{name}</div>
+                            <div class="testimonial-event">{event}</div>
+                        </div>''')
+        return "\n".join(cards)
+
+    reviews_html = _build_review_cards(reviews)
+
     # Build sidebar gallery links
     gallery_sidebar = ""
     for cat, info in gallery_cards.items():
@@ -752,16 +802,7 @@ def generate_html():
                 <div style="margin-top:32px;">
                     <div class="testimonials-title">What Clients Say</div>
                     <div class="testimonials-grid">
-                        <div class="testimonial-card">
-                            <div class="testimonial-quote">Pictures came out so well. We feel that we made the right choice. We definitely recommend too.</div>
-                            <div class="testimonial-name">Client</div>
-                            <div class="testimonial-event">Event Photography</div>
-                        </div>
-                        <div class="testimonial-card">
-                            <div class="testimonial-quote">Editing and videography looks so amazing and thanks for being so flexible to add changes that we asked for.</div>
-                            <div class="testimonial-name">Client</div>
-                            <div class="testimonial-event">Photo &amp; Video</div>
-                        </div>
+{_build_review_cards(reviews[:2])}
                     </div>
                 </div>"""
 
@@ -2398,6 +2439,8 @@ def generate_html():
             .testimonials-grid {{ grid-template-columns: 1fr; }}
             .testimonial-card {{ padding: 16px; }}
             .testimonial-quote {{ font-size: 13px; }}
+            .review-form {{ max-width: 100%; }}
+            .star-rating .star {{ font-size: 32px; }}
 
             /* How It Works mobile */
             .how-steps {{ grid-template-columns: 1fr 1fr; gap: 10px; }}
@@ -2463,6 +2506,135 @@ def generate_html():
         .testimonial-event {{
             font-size: 11px;
             color: #525252;
+        }}
+        .testimonial-stars {{
+            color: #f59e0b;
+            font-size: 14px;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }}
+
+        /* Review Form */
+        .review-form-section {{
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }}
+        .review-form-header {{
+            font-size: 15px;
+            font-weight: 600;
+            color: #d1d5db;
+            text-align: center;
+            margin-bottom: 20px;
+        }}
+        .review-form {{
+            max-width: 480px;
+            margin: 0 auto;
+        }}
+        .review-form .form-row {{
+            margin-bottom: 16px;
+        }}
+        .review-form .form-label {{
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: #6b7280;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }}
+        .review-form .form-input {{
+            width: 100%;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #e5e7eb;
+            font-size: 14px;
+            font-family: inherit;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+        }}
+        .review-form .form-input:focus {{
+            outline: none;
+            border-color: #8b5cf6;
+        }}
+        .review-form select.form-input {{
+            cursor: pointer;
+        }}
+        .review-form textarea.form-input {{
+            resize: vertical;
+            min-height: 80px;
+        }}
+        .star-rating {{
+            display: flex;
+            gap: 6px;
+            flex-direction: row-reverse;
+            justify-content: flex-end;
+        }}
+        .star-rating .star {{
+            font-size: 28px;
+            color: #374151;
+            cursor: pointer;
+            transition: color 0.15s;
+            -webkit-tap-highlight-color: transparent;
+        }}
+        .star-rating .star.active,
+        .star-rating .star.active ~ .star {{
+            color: #f59e0b;
+        }}
+        .star-rating .star:hover,
+        .star-rating .star:hover ~ .star {{
+            color: #fbbf24;
+        }}
+        .review-submit-btn {{
+            width: 100%;
+            padding: 14px;
+            background: #8b5cf6;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: opacity 0.2s;
+        }}
+        .review-submit-btn:hover {{
+            opacity: 0.9;
+        }}
+        .review-submit-btn:disabled {{
+            opacity: 0.5;
+            cursor: not-allowed;
+        }}
+        .review-success {{
+            text-align: center;
+            padding: 24px 16px;
+            margin-top: 16px;
+        }}
+        .review-success-icon {{
+            width: 48px;
+            height: 48px;
+            background: #065f46;
+            color: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin: 0 auto 12px;
+        }}
+        .review-success-text {{
+            color: #9ca3af;
+            font-size: 14px;
+        }}
+        .review-error {{
+            text-align: center;
+            color: #ef4444;
+            font-size: 13px;
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(239,68,68,0.1);
+            border-radius: 8px;
         }}
 
         /* How It Works */
@@ -2733,26 +2905,54 @@ def generate_html():
                 <div class="testimonials-section">
                     <div class="testimonials-title">What Clients Say</div>
                     <div class="testimonials-grid">
-                        <div class="testimonial-card">
-                            <div class="testimonial-quote">Pictures came out so well. We feel that we made the right choice. We definitely recommend too.</div>
-                            <div class="testimonial-name">Client</div>
-                            <div class="testimonial-event">Event Photography</div>
+{reviews_html}
+                    </div>
+
+                    <div class="review-form-section">
+                        <div class="review-form-header">Loved working with us? Share your experience</div>
+                        <form class="review-form" id="review-form" onsubmit="submitReview(event)">
+                            <div class="form-row">
+                                <label class="form-label">YOUR NAME</label>
+                                <input class="form-input" id="rv-name" placeholder="Full name" required>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">EVENT TYPE</label>
+                                <select class="form-input" id="rv-event" required>
+                                    <option value="">Select event type</option>
+                                    <option value="Wedding Photography">Wedding Photography</option>
+                                    <option value="Engagement">Engagement</option>
+                                    <option value="Pre-Wedding">Pre-Wedding</option>
+                                    <option value="Half Saree">Half Saree</option>
+                                    <option value="Maternity">Maternity</option>
+                                    <option value="Baby Shower">Baby Shower</option>
+                                    <option value="Birthday">Birthday</option>
+                                    <option value="Cradle Ceremony">Cradle Ceremony</option>
+                                    <option value="Event Photography">Event Photography</option>
+                                    <option value="Photo &amp; Video">Photo &amp; Video</option>
+                                </select>
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">RATING</label>
+                                <div class="star-rating" id="star-rating">
+                                    <span class="star" data-value="1">&#9733;</span>
+                                    <span class="star" data-value="2">&#9733;</span>
+                                    <span class="star" data-value="3">&#9733;</span>
+                                    <span class="star" data-value="4">&#9733;</span>
+                                    <span class="star active" data-value="5">&#9733;</span>
+                                </div>
+                                <input type="hidden" id="rv-rating" value="5">
+                            </div>
+                            <div class="form-row">
+                                <label class="form-label">YOUR REVIEW</label>
+                                <textarea class="form-input" id="rv-text" rows="4" placeholder="Tell us about your experience..." required></textarea>
+                            </div>
+                            <button type="submit" class="review-submit-btn" id="rv-submit">Submit Review</button>
+                        </form>
+                        <div class="review-success" id="review-success" style="display:none;">
+                            <div class="review-success-icon">&#10003;</div>
+                            <div class="review-success-text">Thank you! Your review will appear after approval.</div>
                         </div>
-                        <div class="testimonial-card">
-                            <div class="testimonial-quote">Your relaxed, personable approach made us feel very welcome. Your work is flawless. Thank you so much for capturing the strong emotions of the day.</div>
-                            <div class="testimonial-name">Client</div>
-                            <div class="testimonial-event">Wedding Photography</div>
-                        </div>
-                        <div class="testimonial-card">
-                            <div class="testimonial-quote">Editing and videography looks so amazing and thanks for being so flexible to add changes that we asked for. It was so good working with you.</div>
-                            <div class="testimonial-name">Client</div>
-                            <div class="testimonial-event">Photo &amp; Video</div>
-                        </div>
-                        <div class="testimonial-card">
-                            <div class="testimonial-quote">All the photos look stunning! Everyone in the house loved the pictures a lot.</div>
-                            <div class="testimonial-name">Client</div>
-                            <div class="testimonial-event">Event Photography</div>
-                        </div>
+                        <div class="review-error" id="review-error" style="display:none;"></div>
                     </div>
                 </div>
 
@@ -3610,6 +3810,68 @@ Looking forward to it! 🙌
             window.open('https://wa.me/?text=' + encoded, '_blank');
             const conf = document.getElementById('booking-confirmation');
             if (conf) conf.style.display = 'block';
+        }}
+
+        /* Star rating widget */
+        (function() {{
+            const container = document.getElementById('star-rating');
+            if (!container) return;
+            const stars = container.querySelectorAll('.star');
+            const input = document.getElementById('rv-rating');
+            function setRating(val) {{
+                input.value = val;
+                stars.forEach(function(s) {{
+                    s.classList.toggle('active', parseInt(s.dataset.value) === val);
+                }});
+            }}
+            stars.forEach(function(s) {{
+                s.addEventListener('click', function() {{
+                    setRating(parseInt(s.dataset.value));
+                }});
+            }});
+            setRating(5);
+        }})();
+
+        /* Review form submission */
+        function submitReview(e) {{
+            e.preventDefault();
+            const url = '{review_form_url}';
+            if (!url) {{
+                document.getElementById('review-error').textContent = 'Review submissions are not yet configured.';
+                document.getElementById('review-error').style.display = 'block';
+                return;
+            }}
+            const btn = document.getElementById('rv-submit');
+            const errEl = document.getElementById('review-error');
+            errEl.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            const data = {{
+                name: document.getElementById('rv-name').value.trim(),
+                event_type: document.getElementById('rv-event').value,
+                rating: document.getElementById('rv-rating').value,
+                review: document.getElementById('rv-text').value.trim()
+            }};
+
+            var formBody = new URLSearchParams();
+            formBody.append('name', data.name);
+            formBody.append('event_type', data.event_type);
+            formBody.append('rating', data.rating);
+            formBody.append('review', data.review);
+
+            fetch(url, {{
+                method: 'POST',
+                body: formBody
+            }}).then(function(resp) {{
+                document.getElementById('review-form').style.display = 'none';
+                document.getElementById('review-success').style.display = 'block';
+            }}).catch(function(err) {{
+                errEl.textContent = 'Something went wrong. Please try again.';
+                errEl.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Submit Review';
+            }});
         }}
 
     </script>
