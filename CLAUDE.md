@@ -53,6 +53,7 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 | Workflow reference | `../../photo_workflow/PHOTO_WORKFLOW_CHEATSHEET.md` |
 | Cover images | SmugMug API (image keys hardcoded in `category_covers` dict) |
 | Editing projects | Google Sheet (primary) → `editing_projects.json` (fallback) |
+| Client reviews | Google Sheet "Reviews" tab (primary) → `SEED_REVIEWS` in code (fallback) |
 | Gear list | `GEAR_LIST` dict in `generate_dashboard.py` |
 
 ## Cover Images (SmugMug)
@@ -167,9 +168,23 @@ python3 generate_otp.py --no-push    # Generate + rebuild only (no git push, no 
 - **WhatsApp follow-up:** "Follow Up" button opens wa.me link with pre-filled message to editor
 - **Laxman updates status directly in Google Sheet** — scripts read his changes automatically
 
+## Client Reviews
+
+- **Google Sheet:** "Reviews" tab in `Rsquare_Review_Sheet` (separate sheet from editing projects)
+- **Google Apps Script:** `doPost(e)` receives form submissions, appends row with status "pending"
+- **Apps Script URL:** `REVIEW_FORM_URL` constant in `generate_dashboard.py`
+- **Module:** `sheets_sync.py` → `read_reviews()` reads approved reviews from the "Reviews" tab
+- **Fallback:** `SEED_REVIEWS` list in `generate_dashboard.py` (4 hardcoded reviews)
+- **Form:** Star rating (default 5), name, event type dropdown, textarea — on home page below reviews grid
+- **Submit flow:** Form POSTs via `fetch` with `URLSearchParams` to Google Apps Script
+- **Moderation:** All submissions land as "pending" → Ram approves in Google Sheet → regenerate to display
+- **Status values:** `pending` / `approved` / `rejected`
+- **XSS safe:** Reviews are HTML-escaped at build time in Python, not rendered dynamically
+
 ## Subprojects
 
 - **krithin-neel/** — Separate repo (`kneil31/krithin-neel`), lives locally in this folder but is `.gitignore`d from rsquare-studios. Never add krithin-neel files to this repo.
+  - **Custom domain:** `krithin.rsquarestudios.com` (CNAME → kneil31.github.io)
 
 ## Mobile-Specific Notes
 
