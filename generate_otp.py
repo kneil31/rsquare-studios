@@ -129,7 +129,7 @@ def notify_slack(password, expires):
         # Send client-ready message first (easy to copy-paste to WhatsApp)
         client_msg = (
             "Hey! Here's a private link to our portfolio and pricing 📷\n\n"
-            "https://gallery.rsquarestudios.com/\n"
+            "https://portfolio.rsquarestudios.com/\n"
             f"Password: {password}\n\n"
             "Let me know if you have any questions!\n"
             "— Ram"

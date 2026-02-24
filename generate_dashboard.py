@@ -1109,8 +1109,8 @@ def generate_html():
     <meta name="robots" content="noindex, nofollow, noarchive">
     <meta property="og:title" content="Rsquare Studios">
     <meta property="og:description" content="Wedding & Portrait Photography — Dallas, TX">
-    <meta property="og:image" content="https://gallery.rsquarestudios.com/hero.jpg">
-    <meta property="og:url" content="https://gallery.rsquarestudios.com/">
+    <meta property="og:image" content="https://portfolio.rsquarestudios.com/hero.jpg">
+    <meta property="og:url" content="https://portfolio.rsquarestudios.com/">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
     <title>Rsquare Studios — Dashboard</title>

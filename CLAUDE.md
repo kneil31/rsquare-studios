@@ -8,7 +8,7 @@
 
 Notion-style dark-themed dashboard for Rsquare Studios photography business. Hosted on GitHub Pages.
 
-- **Live URL:** https://gallery.rsquarestudios.com/ (custom domain, CNAME → kneil31.github.io)
+- **Live URL:** https://portfolio.rsquarestudios.com/ (custom domain, CNAME → kneil31.github.io)
 - **Legacy URL:** https://kneil31.github.io/rsquare-studios/ (redirects to custom domain)
 - **GitHub Repo:** kneil31/rsquare-studios (public)
 - **Generator:** `generate_dashboard.py` → outputs `index.html`
@@ -84,9 +84,9 @@ Spare image (not yet used): `i-6trRsbK`
 
 ## Custom Domain
 
-- **Domain:** `gallery.rsquarestudios.com`
-- **CNAME file:** In repo root, content `gallery.rsquarestudios.com`
-- **DNS:** CNAME record `gallery` → `kneil31.github.io` (GoDaddy, domaincontrol.com nameservers)
+- **Domain:** `portfolio.rsquarestudios.com`
+- **CNAME file:** In repo root, content `portfolio.rsquarestudios.com`
+- **DNS:** CNAME record `portfolio` → `kneil31.github.io` (GoDaddy, domaincontrol.com nameservers)
 - **HTTPS:** Enforced via GitHub Pages (after DNS propagation)
 - **OG tags and Slack messages** all reference the custom domain URL
 
