@@ -117,6 +117,12 @@ python3 generate_otp.py --no-push    # Generate + rebuild only (no git push, no 
 
 # Cache busting — tell user to add ?v=N or use incognito
 
+# Detect new video editing projects (aliases: megaup, megadet)
+python3 detect_video_projects.py --scan-ssd      # Scan SSD, upload to MEGA + add to Sheet
+python3 detect_video_projects.py --mega           # List MEGA folders, detect untracked
+python3 detect_video_projects.py --mega-url URL   # Add specific MEGA URL directly
+python3 detect_video_projects.py --scan-ssd --auto  # Unattended (LaunchAgent, 10 PM daily)
+
 # Daily sync (runs automatically at 1 AM via LaunchAgent)
 python3 sync_dashboard.py           # Sync from Google Sheet + deploy if changed
 python3 sync_dashboard.py --force   # Regenerate + deploy even if unchanged
@@ -175,7 +181,14 @@ python3 sync_dashboard.py --dry-run # Regenerate but don't push
 - **Status auto-detection:** SENT (blue), OVERDUE (red, >14 days)
 - **Daily sync:** `sync_dashboard.py` runs at 1 AM via `com.rsquare.dashboard-sync.plist` — regenerates from Google Sheet + pushes if changed
 - **Daily reminder:** `editing_reminder.py` runs at 10 AM via `com.rsquare.editing-reminder.plist`
-- **Auto-detection:** `detect_new_projects.py` scans Lightroom catalogs → adds new projects to Google Sheet
+- **Auto-detection (photo):** `detect_new_projects.py` scans Lightroom catalogs → adds new projects to Google Sheet (tab 1)
+- **Auto-detection (video):** `detect_video_projects.py` scans SSD `Videos/` folders and MEGA → adds to Google Sheet (tab 2)
+- **Video write access:** Apps Script POST (shared with reviews handler, `type=video_project` param) — no GCP/gspread needed
+- **MEGA upload:** `detect_video_projects.py --scan-ssd` uploads MP4s to `/Root/Video RAW Data/{name} Videos/` via `megatools put`
+- **MEGA account:** `***REDACTED_EMAIL***`, auth via `~/.megarc`
+- **MEGA shared folder:** `https://***REMOVED***`
+- **Video detect LaunchAgent:** `com.rsquare.video-detect.plist` — runs daily at 10 PM (`--scan-ssd --auto`), log: `/tmp/video-detect.log`
+- **Aliases:** `megaup` (scan SSD + upload to MEGA), `megadet` (scan MEGA folders for untracked)
 - **WhatsApp follow-up:** "Follow Up" button opens wa.me link with pre-filled message to editor
 - **Laxman updates status directly in Google Sheet** — daily sync picks up changes automatically
 - **Sync log:** `/tmp/dashboard-sync.log`
@@ -183,8 +196,8 @@ python3 sync_dashboard.py --dry-run # Regenerate but don't push
 ## Client Reviews
 
 - **Google Sheet:** "Reviews" tab in `Rsquare_Review_Sheet` (separate sheet from editing projects)
-- **Google Apps Script:** `doPost(e)` receives form submissions, appends row with status "pending"
-- **Apps Script URL:** `REVIEW_FORM_URL` constant in `generate_dashboard.py`
+- **Google Apps Script:** Shared `doPost(e)` handles both reviews (default) and video projects (`type=video_project`)
+- **Apps Script URL:** `REVIEW_FORM_URL` constant in `generate_dashboard.py` (reviews); `VIDEO_PROJECT_SCRIPT_URL` in `sheets_sync.py` (video projects)
 - **Module:** `sheets_sync.py` → `read_reviews()` reads approved reviews from the "Reviews" tab
 - **Fallback:** `SEED_REVIEWS` list in `generate_dashboard.py` (4 hardcoded reviews)
 - **Form:** Star rating (default 5), name, event type dropdown, textarea — on home page below reviews grid

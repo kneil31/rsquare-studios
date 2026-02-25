@@ -18,6 +18,7 @@ Setup (only needed for write access):
 
 import csv
 import io
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -27,10 +28,12 @@ CREDENTIALS_PATH = Path.home() / ".config" / "rsquare" / "sheets_credentials.jso
 # GID for each tab (from the sheet URL ?gid=...)
 GID_PROJECTS = "0"
 
+# Tab 2: video editing projects (Madhu, GL Studios, Karthik)
+GID_VIDEO_PROJECTS = "1513492429"
+
 # Client reviews are in a separate Google Sheet (Rsquare_Review_Sheet)
 # accessed via the same sheet ID but different tab — see CLAUDE.md
 REVIEW_SHEET_ID = "***REDACTED_SHEET_ID***"
-GID_REVIEWS = "1513492429"
 
 
 def _fetch_public_csv(sheet_id, gid):
@@ -141,13 +144,78 @@ def get_pending():
     return [p for p in projects if p["status"] != "COMPLETED"]
 
 
+def _video_row_to_dict(headers, row):
+    """Convert a Sheet row to a video project dict. Like _row_to_dict but with editor column."""
+    padded = row + [""] * (len(headers) - len(row))
+    raw = dict(zip(headers, padded))
+
+    def find(keywords):
+        for h in headers:
+            hl = h.lower().strip()
+            if all(k in hl for k in keywords):
+                return raw.get(h, "")
+        return ""
+
+    return {
+        "task": find(["task"]),
+        "date_sent": _normalize_date(find(["sent"])),
+        "editor": find(["editor"]) or "Madhu",
+        "priority": find(["priority"]) or "P1",
+        "status": find(["status"]) or "SENT",
+        "edit_completed": _normalize_date(find(["completed"])) or None,
+        "delivery_link": find(["link"]) or find(["transfer"]),
+        "expected_days": 14,
+    }
+
+
+def read_video_projects():
+    """Read video editing projects from tab 2 of the Sheet."""
+    records = _fetch_public_csv(SHEET_ID, GID_VIDEO_PROJECTS)
+
+    if not records:
+        return []
+
+    headers = records[0]
+    projects = []
+    for row in records[1:]:
+        if not any(cell.strip() for cell in row):
+            continue
+        proj = _video_row_to_dict(headers, row)
+        if not proj["task"].strip() or not proj["date_sent"]:
+            continue
+        projects.append(proj)
+
+    return projects
+
+
+VIDEO_PROJECT_SCRIPT_URL = "https://script.google.com/macros/s/***REDACTED_SCRIPT_ID***/exec"
+
+
+def add_video_project(data):
+    """Append a new video project row to tab 2 via Google Apps Script."""
+    params = urllib.parse.urlencode({
+        "type": "video_project",
+        "task": data.get("task", ""),
+        "date_sent": data.get("date_sent", ""),
+        "editor": data.get("editor", "Madhu"),
+        "priority": data.get("priority", "P1"),
+        "status": data.get("status", "SENT"),
+        "edit_completed": data.get("edit_completed", "") or "",
+        "delivery_link": data.get("delivery_link", ""),
+    }).encode("utf-8")
+    req = urllib.request.Request(VIDEO_PROJECT_SCRIPT_URL, data=params, method="POST")
+    req.add_header("Content-Type", "application/x-www-form-urlencoded")
+    resp = urllib.request.urlopen(req, timeout=15)
+    return resp.read().decode("utf-8")
+
+
 def read_reviews():
     """Read approved reviews from the 'Reviews' tab.
 
     Returns list of dicts: {name, event_type, rating, review, date}
     Only returns rows where Status == 'approved'.
     """
-    records = _fetch_public_csv(REVIEW_SHEET_ID, GID_REVIEWS)
+    records = _fetch_public_csv(REVIEW_SHEET_ID, GID_VIDEO_PROJECTS)
 
     if not records or len(records) < 2:
         return []

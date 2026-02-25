@@ -853,7 +853,8 @@ def generate_html():
         "tiles": [
             {"icon": "\u2705", "label": "Checklists", "section": "checklists"},
             {"icon": "\U0001f4d6", "label": "Workflow Reference", "section": "workflow-ref"},
-            {"icon": "\U0001f3ac", "label": "Editing Projects", "section": "editing-projects"},
+            {"icon": "\U0001f3ac", "label": "Photo Editing", "section": "editing-projects"},
+            {"icon": "\U0001f3a5", "label": "Video Editing", "section": "video-projects"},
             {"icon": "\U0001f491", "label": "Couple Poses", "section": "posing-couples"},
             {"icon": "\U0001f468\u200d\U0001f469\u200d\U0001f467", "label": "Family Poses", "section": "posing-families"},
             {"icon": "\U0001f48d", "label": "Wedding Poses", "section": "posing-weddings"},
@@ -928,12 +929,64 @@ def generate_html():
 
     internal_content["editing-projects"] = {
         "breadcrumb": "Workflow",
-        "title": "Editing Projects",
-        "subtitle": "Track outsourced editing \u2014 status, delivery links, and follow-ups",
+        "title": "Photo Editing",
+        "subtitle": "Track outsourced photo editing \u2014 status, delivery links, and follow-ups",
         "has_back": True,
         "back_section": "workflow-home",
         "columns": ["Project", "Priority", "Sent", "Days", "Status", "Completed", "Files"],
         "rows": editing_rows_data,
+    }
+
+    # Video editing projects — read from Google Sheet tab 2
+    video_rows_data = []
+    try:
+        from sheets_sync import read_video_projects as _read_video_projects
+        video_project_list = _read_video_projects()
+        print(f"  Video projects: {len(video_project_list)} from Google Sheet")
+    except Exception as e:
+        print(f"  Video projects unavailable ({e})")
+        video_project_list = []
+
+    if video_project_list:
+        today = datetime.now()
+        for p in video_project_list:
+            status = p["status"].strip().upper()
+            # Skip fully completed projects — keep "1st Cut DONE" as in-progress
+            if "PROJECT COMPLETED" in status:
+                continue
+            if status == "COMPLETED":
+                continue
+
+            sent = datetime.strptime(p["date_sent"], "%Y-%m-%d")
+            days_elapsed = (today - sent).days
+            if days_elapsed > p.get("expected_days", 14):
+                display_status = "OVERDUE"
+            elif "1ST CUT" in status:
+                display_status = "1ST CUT DONE"
+            elif status == "SENT":
+                display_status = "SENT"
+            else:
+                display_status = status
+
+            video_rows_data.append({
+                "task": p["task"],
+                "editor": p.get("editor", "Madhu"),
+                "priority": p["priority"],
+                "date_sent": sent.strftime("%b %d, %Y"),
+                "days": days_elapsed,
+                "status": display_status,
+                "completed": p.get("edit_completed", "") or "\u2014",
+                "delivery_link": p.get("delivery_link", ""),
+            })
+
+    internal_content["video-projects"] = {
+        "breadcrumb": "Workflow",
+        "title": "Video Editing",
+        "subtitle": "Track video editing \u2014 reels, teasers, wedding films",
+        "has_back": True,
+        "back_section": "workflow-home",
+        "columns": ["Project", "Editor", "Priority", "Sent", "Days", "Status", "Completed", "Files"],
+        "rows": video_rows_data,
     }
 
     # Booking confirmation tool — WhatsApp message builder
@@ -2824,7 +2877,8 @@ def generate_html():
                 <a class="sidebar-link internal-link" data-access="workflow-home">📋 Dashboard</a>
                 <a class="sidebar-link internal-link" data-access="checklists">✅ Checklists</a>
                 <a class="sidebar-link internal-link" data-access="workflow-ref">📖 Workflow Reference</a>
-                <a class="sidebar-link internal-link" data-access="editing-projects">🎬 Editing Projects</a>
+                <a class="sidebar-link internal-link" data-access="editing-projects">🎬 Photo Editing</a>
+                <a class="sidebar-link internal-link" data-access="video-projects">🎥 Video Editing</a>
                 <div class="sidebar-section-label" style="padding-top:8px">POSING GUIDES</div>
                 {posing_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link internal-link"').replace('data-section=', 'data-access=')}
             </div>
@@ -3206,6 +3260,11 @@ def generate_html():
                 <div class="encrypted-placeholder">This content is encrypted. Enter the password to view editing projects.</div>
             </div>
 
+            <!-- VIDEO PROJECTS (encrypted) -->
+            <div class="page" id="video-projects">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view video projects.</div>
+            </div>
+
             <!-- BOOKING CONFIRM (encrypted) -->
             <div class="page" id="booking-confirm">
                 <div class="encrypted-placeholder">This content is encrypted. Enter the password to view booking confirmation.</div>
@@ -3322,7 +3381,7 @@ def generate_html():
 
         // Client sections need client password; internal sections need internal password
         const CLIENT_SECTIONS = ['pricing', 'booking'];
-        const INTERNAL_SECTIONS = ['workflow-home', 'checklists', 'workflow-ref', 'editing-projects', 'booking-confirm', 'posing-couples', 'posing-families', 'posing-weddings'];
+        const INTERNAL_SECTIONS = ['workflow-home', 'checklists', 'workflow-ref', 'editing-projects', 'video-projects', 'booking-confirm', 'posing-couples', 'posing-families', 'posing-weddings'];
 
         function showPrivateGate() {{
             // If both unlocked, go to pricing (client) or workflow (internal)
@@ -3538,6 +3597,7 @@ def generate_html():
             else if (id === 'workflow-home') buildWorkflowHome(el, data);
             else if (id === 'checklists') buildChecklists(el, data);
             else if (id === 'editing-projects') buildEditingProjects(el, data);
+            else if (id === 'video-projects') buildVideoProjects(el, data);
             else if (id === 'booking-confirm') buildBookingConfirm(el, data);
             else if (data.markdown !== undefined) {{
                 const wfContent = makeEl('div', 'wf-content');
@@ -3881,6 +3941,55 @@ def generate_html():
                 // Status
                 const statusTd = document.createElement('td');
                 const badgeMap = {{ 'OVERDUE': 'badge-overdue', 'COMPLETED': 'badge-completed', 'SENT': 'badge-sent' }};
+                statusTd.appendChild(makeEl('span', 'status-badge ' + (badgeMap[row.status] || 'badge-progress'), row.status));
+                tr.appendChild(statusTd);
+                // Completed
+                tr.appendChild(makeEl('td', null, row.completed));
+                // Files (delivery link)
+                const filesTd = document.createElement('td');
+                if (row.delivery_link) {{
+                    filesTd.appendChild(makeLink(row.delivery_link, 'View', 'delivery-link'));
+                }} else {{
+                    const dash = makeEl('span', null, '\u2014');
+                    dash.style.color = '#6b7280';
+                    filesTd.appendChild(dash);
+                }}
+                tr.appendChild(filesTd);
+                tbody.appendChild(tr);
+            }});
+            table.appendChild(tbody);
+            wrap.appendChild(table);
+            el.appendChild(wrap);
+        }}
+
+        function buildVideoProjects(el, data) {{
+            const wrap = makeEl('div', 'editing-table-wrap');
+            const table = makeEl('table', 'editing-table');
+            const thead = document.createElement('thead');
+            const headRow = document.createElement('tr');
+            (data.columns || []).forEach(col => {{
+                headRow.appendChild(makeEl('th', null, col));
+            }});
+            thead.appendChild(headRow);
+            table.appendChild(thead);
+            const tbody = document.createElement('tbody');
+            (data.rows || []).forEach(row => {{
+                const tr = document.createElement('tr');
+                // Project
+                tr.appendChild(makeEl('td', null, row.task));
+                // Editor
+                tr.appendChild(makeEl('td', null, row.editor));
+                // Priority
+                const priTd = document.createElement('td');
+                priTd.appendChild(makeEl('span', 'priority-badge priority-' + row.priority.toLowerCase(), row.priority));
+                tr.appendChild(priTd);
+                // Sent
+                tr.appendChild(makeEl('td', null, row.date_sent));
+                // Days
+                tr.appendChild(makeEl('td', null, row.days + 'd'));
+                // Status
+                const statusTd = document.createElement('td');
+                const badgeMap = {{ 'OVERDUE': 'badge-overdue', 'COMPLETED': 'badge-completed', 'SENT': 'badge-sent', '1ST CUT DONE': 'badge-progress' }};
                 statusTd.appendChild(makeEl('span', 'status-badge ' + (badgeMap[row.status] || 'badge-progress'), row.status));
                 tr.appendChild(statusTd);
                 // Completed
