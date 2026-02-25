@@ -208,12 +208,14 @@ python3 sync_dashboard.py --dry-run # Regenerate but don't push
 
 ## Video Feedback Page
 
-Client-facing page for submitting song choices and timestamped video corrections directly to the editor — removes Ram as middleman.
+Client-facing page for submitting song choices and timestamped video corrections directly to the editor — removes Ram as middleman. Includes an **editor dashboard** for viewing and resolving corrections.
 
-- **URL:** `portfolio.rsquarestudios.com/feedback/?p={project_slug}`
-- **Generator:** `generate_feedback.py` → `feedback/index.html`
-- **Access:** Project-specific 4-digit PIN (not the dashboard password)
-- **No encryption:** Feedback page is separate from dashboard internals; PIN gate only
+- **Client URL:** `portfolio.rsquarestudios.com/feedback/?p={project_slug}`
+- **Editor URL:** `portfolio.rsquarestudios.com/feedback/?role=editor`
+- **Generator:** `generate_feedback.py` → `feedback/index.html` (same file, role-switched via URL param)
+- **Client access:** Project-specific 4-digit PIN (not the dashboard password)
+- **Editor access:** Password `***REMOVED***` (sees all projects)
+- **No encryption:** Feedback page is separate from dashboard internals; PIN/password gate only
 
 ### Project Registry
 
@@ -246,7 +248,26 @@ Client submits form → fetch() POST → Google Apps Script (type=feedback)
 
 ### Google Sheet — "Feedback" Tab
 
-Columns: `Project`, `Type` (song/correction), `Timestamp`, `Content`, `Priority`, `Submitted`, `PIN`
+Columns: `Project`, `Type` (song/correction), `Timestamp`, `Content`, `Priority`, `Submitted`, `PIN`, `Fixed`
+
+- Column H (`Fixed`): "yes" or empty. Updated by editor via Apps Script `type=feedback_update` handler.
+
+### Editor Dashboard
+
+The editor view (`?role=editor`) provides:
+- **Live data:** Fetches corrections from Google Sheet public CSV at runtime (no regenerate needed)
+- **Project cards:** All projects grouped with status, version links, song choices, corrections
+- **Fixed toggle:** Editor clicks "Fix" button → POSTs `type=feedback_update` to Apps Script → updates column H
+- **Stats:** Shows X/Y corrections fixed per project
+- **Client sees status:** Client view also fetches from Sheet and shows which corrections are fixed (read-only, green checkmarks)
+
+Data flow:
+```
+Editor clicks "Fix" → fetch() POST (type=feedback_update) → Apps Script
+  → finds row by Project + Timestamp + Content → sets column H = "yes"
+  → editor UI updates immediately
+  → client page shows green checkmark on next load
+```
 
 ### WhatsApp Auto-Message Format
 
@@ -278,8 +299,8 @@ git push
 
 - PIN gate (4-digit, per-project, entered manually — not in URL)
 - XSS safe: all DOM via `createElement`/`textContent`
-- CSP with nonce, `connect-src` allows `script.google.com`
-- URL allowlist for wa.me and script.google.com
+- CSP with nonce, `connect-src` allows `script.google.com` + `docs.google.com` (CSV reads)
+- URL allowlist for wa.me, script.google.com, docs.google.com
 - No sensitive data exposed (only project name after PIN)
 
 ## Subprojects

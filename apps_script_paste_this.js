@@ -1,0 +1,154 @@
+var FEEDBACK_EMAIL_RAM = "***REDACTED_EMAIL***";
+var FEEDBACK_EMAIL_EDITOR = "editor@example.com";
+
+function doGet(e) {
+  var action = (e.parameter.action || "");
+  if (action === "feedback_read") {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Feedback");
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error", entries: []
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    var data = sheet.getDataRange().getValues();
+    if (data.length < 2) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "ok", entries: []
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    var entries = [];
+    for (var i = 1; i < data.length; i++) {
+      var row = data[i];
+      if (!row[0]) continue;
+      // Timestamp: Google Sheets auto-converts "0:45" to Date — extract M:SS
+      var tsRaw = row[2];
+      var ts = "";
+      if (tsRaw) {
+        try {
+          var d = new Date(tsRaw);
+          if (!isNaN(d.getTime())) {
+            var h = d.getHours();
+            var m = d.getMinutes();
+            var s = d.getSeconds();
+            if (h > 0) {
+              ts = h + ":" + (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+            } else {
+              ts = m + ":" + (s < 10 ? "0" : "") + s;
+            }
+          } else {
+            ts = tsRaw.toString();
+          }
+        } catch(e) {
+          ts = tsRaw.toString();
+        }
+      }
+      entries.push({
+        project: row[0] || "",
+        type: row[1] || "",
+        timestamp: ts,
+        content: row[3] || "",
+        priority: row[4] || "",
+        submitted: row[5] ? Utilities.formatDate(row[5], Session.getScriptTimeZone(), "MMM d, h:mm a") : "",
+        fixed: (row[7] || "").toString().toLowerCase() === "yes"
+      });
+    }
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "ok", entries: entries
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  return ContentService.createTextOutput(JSON.stringify({
+    status: "error", message: "Unknown action"
+  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  var p = e.parameter;
+  var type = p.type || "";
+
+  if (type === "feedback") {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Feedback");
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error", message: "Feedback tab not found"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    sheet.appendRow([
+      p.project || "",
+      p.feedback_type || "",
+      "'" + (p.timestamp || ""),
+      p.content || "",
+      p.priority || "",
+      new Date(),
+      p.pin || "",
+      ""
+    ]);
+
+    try {
+      var feedbackType = p.feedback_type || "feedback";
+      var subject = "[Rsquare] " + (p.project || "Unknown") + " - New " + feedbackType;
+      var body = "Project: " + (p.project || "Unknown") + "\n" +
+                 "Type: " + feedbackType + "\n";
+      if (p.timestamp) body += "Timestamp: " + p.timestamp + "\n";
+      body += "Content: " + (p.content || "") + "\n";
+      if (p.priority) body += "Priority: " + p.priority + "\n";
+      body += "\nSubmitted: " + new Date().toLocaleString() + "\n";
+      body += "\nView all feedback: https://portfolio.rsquarestudios.com/feedback/?role=editor";
+      MailApp.sendEmail({ to: FEEDBACK_EMAIL_EDITOR, cc: FEEDBACK_EMAIL_RAM, subject: subject, body: body });
+    } catch(err) { Logger.log("Email failed: " + err); }
+
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "ok", message: "Feedback saved"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  if (type === "feedback_update") {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Feedback");
+    if (!sheet) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error", message: "Feedback tab not found"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    var rows = sheet.getDataRange().getValues();
+    var found = false;
+    for (var i = 1; i < rows.length; i++) {
+      if (rows[i][0] == p.project && rows[i][2] == p.timestamp && rows[i][3] == p.content) {
+        var isFixed = p.fixed === "yes";
+        sheet.getRange(i + 1, 8).setValue(isFixed ? "yes" : "");
+        found = true;
+        if (isFixed) {
+          try {
+            var fixSubject = "[Rsquare] " + (p.project || "Unknown") + " - Correction fixed";
+            var fixBody = "Project: " + (p.project || "Unknown") + "\n";
+            if (p.timestamp) fixBody += "Timestamp: " + p.timestamp + "\n";
+            fixBody += "Correction: " + (p.content || "") + "\n";
+            fixBody += "\nMarked as fixed by editor at " + new Date().toLocaleString() + "\n";
+            fixBody += "\nView all: https://portfolio.rsquarestudios.com/feedback/?role=editor";
+            MailApp.sendEmail({ to: FEEDBACK_EMAIL_RAM, subject: fixSubject, body: fixBody });
+          } catch(err) { Logger.log("Email failed: " + err); }
+        }
+        break;
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({
+      status: found ? "ok" : "not_found",
+      message: found ? "Fixed status updated" : "Correction row not found"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Reviews");
+  sheet.appendRow([
+    p.name || "",
+    p.event_type || "",
+    p.rating || 5,
+    p.review || "",
+    new Date().toISOString().split("T")[0],
+    "pending"
+  ]);
+
+  return ContentService.createTextOutput(JSON.stringify({
+    status: "ok"
+  })).setMimeType(ContentService.MimeType.JSON);
+}

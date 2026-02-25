@@ -210,7 +210,7 @@ def add_video_project(data):
 
 
 # GID for Feedback tab — update after creating the tab in Google Sheets
-GID_FEEDBACK = ""  # TODO: set after creating "Feedback" tab
+GID_FEEDBACK = "***REDACTED_GID***"
 
 
 def read_feedback(project=None):
@@ -243,6 +243,7 @@ def read_feedback(project=None):
             "content": raw.get("Content", "").strip(),
             "priority": raw.get("Priority", "").strip(),
             "submitted": raw.get("Submitted", "").strip(),
+            "fixed": raw.get("Fixed", "").strip().lower() == "yes",
         }
         if project and entry["project"].lower() != project.lower():
             continue

@@ -26,12 +26,22 @@ OUTPUT_DIR = SCRIPT_DIR / "feedback"
 OUTPUT_FILE = OUTPUT_DIR / "index.html"
 
 # Google Apps Script URL (shared with reviews + video projects)
-# The same doPost() handles type=feedback
+# The same doPost() handles type=feedback and type=feedback_update
 FEEDBACK_SCRIPT_URL = (
     "https://script.google.com/macros/s/"
     "***REDACTED_SCRIPT_ID***"
     "/exec"
 )
+
+# Google Sheet for live feedback reads (editor + client views)
+FEEDBACK_SHEET_ID = "***REDACTED_SHEET_ID***"
+FEEDBACK_GID = "***REDACTED_GID***"
+
+# Editor password — embedded in JS (not sensitive business data, just gates editor view)
+EDITOR_PASSWORD = "***REMOVED***"
+
+# Ram's WhatsApp number (editor can notify Ram when corrections are fixed)
+RAM_PHONE = "***REDACTED_PHONE***"
 
 # ── Project Registry ────────────────────────────────────────────────
 # Each project gets a slug (URL param), display name, 4-digit PIN,
@@ -90,7 +100,7 @@ def generate():
     <meta name="referrer" content="no-referrer">
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
     <meta name="robots" content="noindex, nofollow, noarchive">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-{csp_nonce}'; style-src 'unsafe-inline'; img-src 'self' data: https://img.youtube.com; connect-src https://script.google.com; font-src 'none'; frame-src https://www.youtube.com https://youtube.com; base-uri 'none'; form-action https://script.google.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-{csp_nonce}'; style-src 'unsafe-inline'; img-src 'self' data: https://img.youtube.com; connect-src https://script.google.com https://script.googleusercontent.com https://docs.google.com; font-src 'none'; frame-src https://www.youtube.com https://youtube.com; base-uri 'none'; form-action https://script.google.com;">
     <title>Rsquare Studios — Video Feedback</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
@@ -491,6 +501,220 @@ def generate():
             color: #22c55e;
         }}
 
+        /* ── Editor Password Gate ── */
+        .editor-pw-gate {{
+            text-align: center;
+            padding: 40px 20px;
+        }}
+        .editor-pw-gate p {{
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 20px;
+        }}
+        .editor-pw-input {{
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 16px;
+        }}
+        .editor-pw-input input {{
+            width: 200px;
+            height: 44px;
+            background: #2a2a2a;
+            border: 2px solid #444;
+            border-radius: 10px;
+            padding: 0 14px;
+            font-size: 15px;
+            color: #fff;
+            outline: none;
+            transition: border-color 0.2s;
+        }}
+        .editor-pw-input input:focus {{
+            border-color: #8b5cf6;
+        }}
+        .editor-pw-input button {{
+            height: 44px;
+            padding: 0 18px;
+            background: #8b5cf6;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }}
+
+        /* ── Editor Dashboard ── */
+        .editor-project-card {{
+            background: #232323;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border-left: 3px solid #8b5cf6;
+        }}
+        .editor-project-card h3 {{
+            font-size: 16px;
+            color: #fff;
+            margin-bottom: 8px;
+        }}
+        .editor-stats {{
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 12px;
+        }}
+        .editor-stats .done {{
+            color: #22c55e;
+            font-weight: 600;
+        }}
+        .editor-song {{
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            border-left: 3px solid #c4b5fd;
+        }}
+        .editor-song .song-label {{
+            color: #c4b5fd;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }}
+        .editor-correction {{
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }}
+        .editor-correction.is-fixed {{
+            opacity: 0.5;
+            border-left: 3px solid #22c55e;
+        }}
+        .editor-correction .correction-body {{
+            flex: 1;
+        }}
+        .editor-correction .ts-badge {{
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 12px;
+            color: #8b5cf6;
+            background: #1e1340;
+            padding: 2px 6px;
+            border-radius: 4px;
+            white-space: nowrap;
+        }}
+        .editor-correction .correction-text {{
+            font-size: 13px;
+            margin-top: 4px;
+        }}
+        .editor-correction .correction-meta {{
+            font-size: 11px;
+            color: #777;
+            margin-top: 4px;
+        }}
+        .priority-must {{
+            color: #fbbf24;
+            font-size: 11px;
+            font-weight: 600;
+        }}
+        .priority-nice {{
+            color: #60a5fa;
+            font-size: 11px;
+        }}
+        .fix-btn {{
+            min-width: 70px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid #444;
+            background: #333;
+            color: #999;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }}
+        .fix-btn:hover {{
+            border-color: #22c55e;
+            color: #22c55e;
+        }}
+        .fix-btn.fixed {{
+            background: #166534;
+            border-color: #22c55e;
+            color: #86efac;
+        }}
+        .fix-btn:disabled {{
+            opacity: 0.5;
+            cursor: not-allowed;
+        }}
+        .editor-section-label {{
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 12px 0 8px;
+            font-weight: 600;
+        }}
+        .editor-empty {{
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            padding: 20px;
+        }}
+        .editor-loading {{
+            text-align: center;
+            color: #999;
+            font-size: 13px;
+            padding: 40px 20px;
+        }}
+        .editor-refresh {{
+            text-align: center;
+            margin-bottom: 16px;
+        }}
+        .editor-refresh button {{
+            background: #333;
+            border: 1px solid #444;
+            color: #999;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }}
+        .editor-refresh button:hover {{
+            background: #444;
+            color: #e0e0e0;
+        }}
+
+        /* ── Client Fixed Indicator ── */
+        .client-fixed-list {{
+            margin-top: 12px;
+        }}
+        .client-fixed-item {{
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+        .client-fixed-item.is-fixed {{
+            opacity: 0.6;
+            text-decoration: line-through;
+        }}
+        .fix-indicator {{
+            font-size: 14px;
+            flex-shrink: 0;
+        }}
+
         /* ── Batch Submit Banner ── */
         .batch-banner {{
             background: #1e3a5f;
@@ -534,7 +758,14 @@ def generate():
             <div class="pin-error" id="pin-error"></div>
         </div>
 
+        <div id="editor-gate" class="editor-pw-gate hidden">
+            <p>Enter editor password</p>
+            <div class="editor-pw-input" id="editor-pw-input"></div>
+            <div class="pin-error" id="editor-error"></div>
+        </div>
+
         <div id="main-content" class="hidden"></div>
+        <div id="editor-content" class="hidden"></div>
 
         <div class="toast" id="toast"></div>
     </div>
@@ -546,6 +777,10 @@ def generate():
         // ── Data (embedded at build time) ──
         var PROJECTS = {projects_json};
         var SCRIPT_URL = '{FEEDBACK_SCRIPT_URL}';
+        var EDITOR_PW = '{EDITOR_PASSWORD}';
+        var SHEET_ID = '{FEEDBACK_SHEET_ID}';
+        var GID_FEEDBACK = '{FEEDBACK_GID}';
+        var RAM_PHONE = '{RAM_PHONE}';
 
         // ── URL Allowlist ──
         var ALLOWED_HOSTS = [
@@ -556,6 +791,7 @@ def generate():
             'www.youtube.com',
             'youtu.be',
             'drive.google.com',
+            'docs.google.com',
         ];
 
         function isAllowedUrl(url) {{
@@ -736,6 +972,9 @@ def generate():
 
             // Privacy note
             main.appendChild(el('div', {{className: 'privacy-note', textContent: 'Submissions are shared with your editor only.'}}));
+
+            // Load fixed status from Sheet (async)
+            loadClientFixedStatus();
         }}
 
         // ── Video Versions Section ──
@@ -1129,8 +1368,336 @@ def generate():
             return card;
         }}
 
+        // ── CSV Parser (no external lib) ──
+        function parseCSV(text) {{
+            var lines = [];
+            var current = '';
+            var inQuotes = false;
+            var rows = [];
+            for (var i = 0; i < text.length; i++) {{
+                var ch = text[i];
+                if (inQuotes) {{
+                    if (ch === '"' && text[i + 1] === '"') {{
+                        current += '"';
+                        i++;
+                    }} else if (ch === '"') {{
+                        inQuotes = false;
+                    }} else {{
+                        current += ch;
+                    }}
+                }} else {{
+                    if (ch === '"') {{
+                        inQuotes = true;
+                    }} else if (ch === ',') {{
+                        lines.push(current);
+                        current = '';
+                    }} else if (ch === '\\n' || (ch === '\\r' && text[i + 1] === '\\n')) {{
+                        lines.push(current);
+                        current = '';
+                        if (ch === '\\r') i++;
+                        rows.push(lines);
+                        lines = [];
+                    }} else {{
+                        current += ch;
+                    }}
+                }}
+            }}
+            if (current || lines.length > 0) {{
+                lines.push(current);
+                rows.push(lines);
+            }}
+            return rows;
+        }}
+
+        function fetchFeedbackCSV(callback) {{
+            var url = SCRIPT_URL + '?action=feedback_read';
+            fetch(url).then(function(r) {{ return r.json(); }}).then(function(data) {{
+                callback(data.entries || []);
+            }}).catch(function() {{
+                callback([]);
+            }});
+        }}
+
+        // ── Editor Password Gate ──
+        var editorAttempts = 0;
+        var editorLockUntil = 0;
+
+        function initEditorGate() {{
+            var gate = document.getElementById('editor-gate');
+            gate.classList.remove('hidden');
+            var container = document.getElementById('editor-pw-input');
+            var inp = el('input', {{type: 'password', placeholder: 'Password', autocomplete: 'off'}});
+            var btn = el('button', {{textContent: 'Unlock'}});
+            container.appendChild(inp);
+            container.appendChild(btn);
+            btn.addEventListener('click', function() {{ checkEditorPw(inp); }});
+            inp.addEventListener('keydown', function(e) {{
+                if (e.key === 'Enter') checkEditorPw(inp);
+            }});
+            inp.focus();
+        }}
+
+        function checkEditorPw(inp) {{
+            var now = Date.now();
+            var errEl = document.getElementById('editor-error');
+            if (now < editorLockUntil) {{
+                var secs = Math.ceil((editorLockUntil - now) / 1000);
+                errEl.textContent = 'Too many attempts. Wait ' + secs + 's';
+                return;
+            }}
+            if (inp.value === EDITOR_PW) {{
+                document.getElementById('editor-gate').classList.add('hidden');
+                document.getElementById('editor-content').classList.remove('hidden');
+                buildEditorDashboard();
+            }} else {{
+                editorAttempts++;
+                if (editorAttempts >= 3) {{
+                    editorLockUntil = now + 15000;
+                    errEl.textContent = 'Too many attempts. Wait 15s';
+                    editorAttempts = 0;
+                }} else {{
+                    errEl.textContent = 'Incorrect password.';
+                }}
+                inp.value = '';
+                inp.focus();
+            }}
+        }}
+
+        // ── Editor Dashboard ──
+        function buildEditorDashboard() {{
+            var container = document.getElementById('editor-content');
+            container.textContent = '';
+            container.appendChild(el('div', {{className: 'editor-loading', textContent: 'Loading corrections...'}}));
+            fetchFeedbackCSV(function(entries) {{
+                container.textContent = '';
+
+                // Refresh button
+                var refreshDiv = el('div', {{className: 'editor-refresh'}});
+                var refreshBtn = el('button', {{textContent: '\\u21BB Refresh'}});
+                refreshBtn.addEventListener('click', buildEditorDashboard);
+                refreshDiv.appendChild(refreshBtn);
+                container.appendChild(refreshDiv);
+
+                // Group entries by project
+                var projectSlugs = Object.keys(PROJECTS);
+                var hasAny = false;
+                projectSlugs.forEach(function(slug) {{
+                    var proj = PROJECTS[slug];
+                    var projEntries = entries.filter(function(e) {{
+                        return e.project.toLowerCase() === proj.name.toLowerCase();
+                    }});
+                    if (projEntries.length === 0 && proj.status === 'done') return;
+
+                    hasAny = true;
+                    var card = el('div', {{className: 'editor-project-card'}});
+
+                    // Project name + status
+                    card.appendChild(el('h3', {{textContent: proj.name}}));
+                    var statusLabels = {{
+                        'pending_song': 'Awaiting Song',
+                        'editing': 'In Editing',
+                        'review': 'Under Review',
+                        'done': 'Completed',
+                    }};
+                    card.appendChild(el('span', {{
+                        className: 'project-status status-' + proj.status,
+                        textContent: statusLabels[proj.status] || proj.status,
+                    }}));
+
+                    // Version links
+                    var versions = proj.versions || [];
+                    if (versions.length > 0) {{
+                        var vList = el('div', {{className: 'version-list', style: 'margin-top: 10px;'}});
+                        versions.forEach(function(v, idx) {{
+                            var isCurrent = idx === versions.length - 1;
+                            var link = el('a', {{
+                                className: 'version-link' + (isCurrent ? ' version-current' : ''),
+                                target: '_blank',
+                                rel: 'noreferrer noopener',
+                            }});
+                            if (isAllowedUrl(v.url)) link.setAttribute('href', v.url);
+                            link.appendChild(el('span', {{className: 'v-badge', textContent: v.label}}));
+                            link.appendChild(document.createTextNode(isCurrent ? 'Latest' : 'Watch'));
+                            vList.appendChild(link);
+                        }});
+                        card.appendChild(vList);
+                    }}
+
+                    // Song choices
+                    var songs = projEntries.filter(function(e) {{ return e.type === 'song'; }});
+                    if (songs.length > 0) {{
+                        card.appendChild(el('div', {{className: 'editor-section-label', textContent: 'Song Choices'}}));
+                        songs.forEach(function(s) {{
+                            var songDiv = el('div', {{className: 'editor-song'}});
+                            songDiv.appendChild(el('div', {{className: 'song-label', textContent: '\\u266B Song'}}));
+                            songDiv.appendChild(el('div', {{textContent: s.content}}));
+                            if (s.submitted) {{
+                                songDiv.appendChild(el('div', {{
+                                    style: 'font-size: 11px; color: #777; margin-top: 4px;',
+                                    textContent: 'Submitted: ' + s.submitted,
+                                }}));
+                            }}
+                            card.appendChild(songDiv);
+                        }});
+                    }}
+
+                    // Corrections
+                    var corrections = projEntries.filter(function(e) {{ return e.type === 'correction'; }});
+                    if (corrections.length > 0) {{
+                        var fixedCount = corrections.filter(function(c) {{ return c.fixed; }}).length;
+                        card.appendChild(el('div', {{
+                            className: 'editor-section-label',
+                            textContent: 'Corrections (' + fixedCount + '/' + corrections.length + ' fixed)',
+                        }}));
+                        card.appendChild(el('div', {{
+                            className: 'editor-stats',
+                        }}));
+                        corrections.forEach(function(c) {{
+                            var row = el('div', {{className: 'editor-correction' + (c.fixed ? ' is-fixed' : '')}});
+                            var body = el('div', {{className: 'correction-body'}});
+
+                            if (c.timestamp) {{
+                                body.appendChild(el('span', {{className: 'ts-badge', textContent: '[' + c.timestamp + ']'}}));
+                            }}
+                            body.appendChild(el('div', {{className: 'correction-text', textContent: c.content}}));
+
+                            var metaParts = [];
+                            if (c.priority) {{
+                                var pClass = c.priority.toLowerCase().indexOf('must') >= 0 ? 'priority-must' : 'priority-nice';
+                                body.appendChild(el('span', {{className: pClass, textContent: c.priority}}));
+                            }}
+                            if (c.submitted) {{
+                                body.appendChild(el('div', {{className: 'correction-meta', textContent: 'Submitted: ' + c.submitted}}));
+                            }}
+
+                            row.appendChild(body);
+
+                            // Fixed toggle button
+                            var fixBtn = el('button', {{
+                                className: 'fix-btn' + (c.fixed ? ' fixed' : ''),
+                                textContent: c.fixed ? '\\u2714 Fixed' : 'Fix',
+                            }});
+                            fixBtn.addEventListener('click', (function(correction, button, rowEl) {{
+                                return function() {{
+                                    var newFixed = !correction.fixed;
+                                    button.disabled = true;
+                                    button.textContent = '...';
+                                    var params = new URLSearchParams();
+                                    params.append('type', 'feedback_update');
+                                    params.append('project', proj.name);
+                                    params.append('timestamp', correction.timestamp);
+                                    params.append('content', correction.content);
+                                    params.append('fixed', newFixed ? 'yes' : '');
+                                    fetch(SCRIPT_URL, {{method: 'POST', body: params}}).then(function() {{
+                                        correction.fixed = newFixed;
+                                        button.disabled = false;
+                                        button.textContent = newFixed ? '\\u2714 Fixed' : 'Fix';
+                                        button.className = 'fix-btn' + (newFixed ? ' fixed' : '');
+                                        if (newFixed) rowEl.classList.add('is-fixed');
+                                        else rowEl.classList.remove('is-fixed');
+                                        // Update counter
+                                        var allCorr = projEntries.filter(function(e) {{ return e.type === 'correction'; }});
+                                        var fc = allCorr.filter(function(cc) {{ return cc.fixed; }}).length;
+                                        var label = card.querySelector('.editor-section-label');
+                                        if (label && label.textContent.indexOf('Corrections') === 0) {{
+                                            label.textContent = 'Corrections (' + fc + '/' + allCorr.length + ' fixed)';
+                                        }}
+                                        showToast(newFixed ? 'Marked as fixed' : 'Unmarked', 'success');
+                                        // Offer WhatsApp notify to Ram when fixed
+                                        if (newFixed) {{
+                                            var waMsg = 'Hi Ram\\n\\n' + proj.name + ' — fixed correction:\\n';
+                                            if (correction.timestamp) waMsg += '[' + correction.timestamp + '] ';
+                                            waMsg += correction.content;
+                                            var waUrl = 'https://wa.me/' + RAM_PHONE + '?text=' + encodeURIComponent(waMsg);
+                                            if (isAllowedUrl(waUrl)) {{
+                                                var waLink = el('a', {{href: waUrl, target: '_blank', rel: 'noreferrer noopener'}});
+                                                waLink.click();
+                                            }}
+                                        }}
+                                    }}).catch(function() {{
+                                        button.disabled = false;
+                                        button.textContent = correction.fixed ? '\\u2714 Fixed' : 'Fix';
+                                        showToast('Failed to update. Try again.', 'error');
+                                    }});
+                                }};
+                            }})(c, fixBtn, row));
+                            row.appendChild(fixBtn);
+
+                            card.appendChild(row);
+                        }});
+                    }}
+
+                    // No entries at all
+                    if (projEntries.length === 0) {{
+                        card.appendChild(el('div', {{className: 'editor-empty', textContent: 'No feedback submitted yet.'}}));
+                    }}
+
+                    container.appendChild(card);
+                }});
+
+                if (!hasAny) {{
+                    container.appendChild(el('div', {{className: 'editor-empty', textContent: 'No projects found.'}}));
+                }}
+            }});
+        }}
+
+        // ── Client View: Show Fixed Status ──
+        function loadClientFixedStatus() {{
+            if (!GID_FEEDBACK || !currentProject) return;
+            fetchFeedbackCSV(function(entries) {{
+                var corrections = entries.filter(function(e) {{
+                    return e.project.toLowerCase() === currentProject.name.toLowerCase() && e.type === 'correction';
+                }});
+                if (corrections.length === 0) return;
+
+                // Find or create the fixed status section
+                var existingSection = document.getElementById('client-fixed-section');
+                if (existingSection) existingSection.remove();
+
+                var section = el('div', {{className: 'section-card', id: 'client-fixed-section'}});
+                var heading = el('h3');
+                heading.appendChild(el('span', {{className: 'section-icon', textContent: '\\u2714'}}));
+                heading.appendChild(document.createTextNode(' Correction Status'));
+                section.appendChild(heading);
+
+                var fixedCount = corrections.filter(function(c) {{ return c.fixed; }}).length;
+                section.appendChild(el('div', {{
+                    style: 'font-size: 12px; color: #999; margin-bottom: 10px;',
+                    textContent: fixedCount + ' of ' + corrections.length + ' corrections fixed',
+                }}));
+
+                var list = el('div', {{className: 'client-fixed-list'}});
+                corrections.forEach(function(c) {{
+                    var item = el('div', {{className: 'client-fixed-item' + (c.fixed ? ' is-fixed' : '')}});
+                    item.appendChild(el('span', {{
+                        className: 'fix-indicator',
+                        textContent: c.fixed ? '\\u2705' : '\\u23F3',
+                    }}));
+                    var text = '';
+                    if (c.timestamp) text += '[' + c.timestamp + '] ';
+                    text += c.content;
+                    item.appendChild(el('span', {{textContent: text}}));
+                    list.appendChild(item);
+                }});
+                section.appendChild(list);
+
+                // Insert before the history section
+                var main = document.getElementById('main-content');
+                var historyCard = main.lastElementChild ? main.lastElementChild.previousElementSibling : null;
+                main.insertBefore(section, main.querySelector('.privacy-note') || null);
+            }});
+        }}
+
         // ── Init ──
-        initPinGate();
+        var params = new URLSearchParams(window.location.search);
+        var role = params.get('role') || '';
+        if (role === 'editor') {{
+            document.getElementById('pin-gate').classList.add('hidden');
+            document.querySelector('.subtitle').textContent = 'Editor Dashboard';
+            initEditorGate();
+        }} else {{
+            initPinGate();
+        }}
     }})();
     </script>
 </body>
