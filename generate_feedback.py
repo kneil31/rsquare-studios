@@ -56,7 +56,7 @@ PROJECTS = {
         "editor": "Madhu",
         "editor_phone": "***REDACTED_PHONE***",
         "mega_link": "",
-        "status": "editing",  # pending_song / editing / review / done
+        "status": "editing",  # shoot_done / sent / editing / review / delivered
         # Version links — editor shares YouTube/Drive links as cuts are ready
         # Add entries as versions are delivered: {"label": "V1", "url": "https://..."}
         "versions": [],
@@ -201,9 +201,12 @@ def generate():
             border-radius: 4px;
             font-weight: 500;
         }}
+        .status-shoot_done {{ background: #92400e; color: #fbbf24; }}
         .status-pending_song {{ background: #92400e; color: #fbbf24; }}
+        .status-sent {{ background: #4c1d95; color: #c4b5fd; }}
         .status-editing {{ background: #1e3a5f; color: #60a5fa; }}
         .status-review {{ background: #365314; color: #86efac; }}
+        .status-delivered {{ background: #166534; color: #86efac; }}
         .status-done {{ background: #333; color: #999; }}
 
         /* ── Section Cards ── */
@@ -381,6 +384,110 @@ def generate():
             margin-top: 24px;
             padding-top: 16px;
             border-top: 1px solid #2a2a2a;
+        }}
+
+        /* ── Progress Tracker (Domino's style) ── */
+        .tracker {{
+            background: #232323;
+            border-radius: 12px;
+            padding: 20px 16px 24px;
+            margin-bottom: 16px;
+        }}
+        .tracker h3 {{
+            font-size: 13px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }}
+        .tracker-steps {{
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            position: relative;
+            padding: 0 4px;
+        }}
+        .tracker-step {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }}
+        .tracker-dot {{
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #333;
+            border: 3px solid #444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #666;
+            transition: all 0.3s;
+            position: relative;
+        }}
+        .tracker-step.completed .tracker-dot {{
+            background: #166534;
+            border-color: #22c55e;
+            color: #86efac;
+        }}
+        .tracker-step.active .tracker-dot {{
+            background: #1e3a5f;
+            border-color: #3b82f6;
+            color: #93c5fd;
+            box-shadow: 0 0 12px rgba(59, 130, 246, 0.4);
+            animation: pulse-dot 2s infinite;
+        }}
+        @keyframes pulse-dot {{
+            0%, 100% {{ box-shadow: 0 0 8px rgba(59, 130, 246, 0.3); }}
+            50% {{ box-shadow: 0 0 16px rgba(59, 130, 246, 0.6); }}
+        }}
+        .tracker-label {{
+            font-size: 10px;
+            color: #666;
+            margin-top: 8px;
+            text-align: center;
+            line-height: 1.2;
+            max-width: 60px;
+        }}
+        .tracker-step.completed .tracker-label {{
+            color: #86efac;
+        }}
+        .tracker-step.active .tracker-label {{
+            color: #93c5fd;
+            font-weight: 600;
+        }}
+        /* Connector line between dots */
+        .tracker-line {{
+            position: absolute;
+            top: 14px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            z-index: 0;
+        }}
+        .tracker-line-bg {{
+            position: absolute;
+            top: 0;
+            left: 24px;
+            right: 24px;
+            height: 100%;
+            background: #333;
+            border-radius: 2px;
+        }}
+        .tracker-line-fill {{
+            position: absolute;
+            top: 0;
+            left: 24px;
+            height: 100%;
+            background: linear-gradient(90deg, #22c55e, #3b82f6);
+            border-radius: 2px;
+            transition: width 0.5s;
         }}
 
         /* ── Hidden ── */
@@ -982,18 +1089,10 @@ def generate():
             // Project info card
             var info = el('div', {{className: 'project-info'}});
             info.appendChild(el('h2', {{textContent: currentProject.name}}));
-            var statusLabels = {{
-                'pending_song': 'Awaiting Song Choice',
-                'editing': 'In Editing',
-                'review': 'Under Review',
-                'done': 'Completed',
-            }};
-            var badge = el('span', {{
-                className: 'project-status status-' + currentProject.status,
-                textContent: statusLabels[currentProject.status] || currentProject.status,
-            }});
-            info.appendChild(badge);
             main.appendChild(info);
+
+            // Progress tracker (Domino's style)
+            main.appendChild(buildTracker(currentProject.status));
 
             // Video versions section
             main.appendChild(buildVersionsSection());
@@ -1019,6 +1118,69 @@ def generate():
 
             // Load fixed status from Sheet (async)
             loadClientFixedStatus();
+        }}
+
+        // ── Progress Tracker ──
+        function buildTracker(status) {{
+            var stages = [
+                {{key: 'shoot_done', label: 'Shoot Done', icon: '\\uD83D\\uDCF7'}},
+                {{key: 'sent', label: 'Sent to Editor', icon: '\\uD83D\\uDCE8'}},
+                {{key: 'editing', label: 'Editing', icon: '\\u270F\\uFE0F'}},
+                {{key: 'review', label: 'Edits Done', icon: '\\u2714'}},
+                {{key: 'delivered', label: 'Delivered', icon: '\\uD83C\\uDF89'}},
+            ];
+
+            // Also map old statuses
+            var statusMap = {{
+                'pending_song': 'sent',
+                'done': 'delivered',
+            }};
+            var current = statusMap[status] || status;
+
+            // Find active index
+            var activeIdx = -1;
+            for (var i = 0; i < stages.length; i++) {{
+                if (stages[i].key === current) {{ activeIdx = i; break; }}
+            }}
+            if (activeIdx === -1) activeIdx = 0;
+
+            var tracker = el('div', {{className: 'tracker'}});
+            tracker.appendChild(el('h3', {{textContent: 'Your Edit Status'}}));
+
+            var container = el('div', {{style: 'position: relative;'}});
+
+            // Background + fill lines
+            var lineWrap = el('div', {{className: 'tracker-line'}});
+            lineWrap.appendChild(el('div', {{className: 'tracker-line-bg'}}));
+            var fillPercent = activeIdx / (stages.length - 1) * 100;
+            var fill = el('div', {{className: 'tracker-line-fill'}});
+            fill.style.width = 'calc(' + fillPercent + '% - 24px)';
+            lineWrap.appendChild(fill);
+            container.appendChild(lineWrap);
+
+            var steps = el('div', {{className: 'tracker-steps'}});
+            stages.forEach(function(stage, idx) {{
+                var stepClass = 'tracker-step';
+                if (idx < activeIdx) stepClass += ' completed';
+                else if (idx === activeIdx) stepClass += ' active';
+
+                var step = el('div', {{className: stepClass}});
+                var dot = el('div', {{className: 'tracker-dot'}});
+                if (idx < activeIdx) {{
+                    dot.textContent = '\\u2714';
+                }} else if (idx === activeIdx) {{
+                    dot.textContent = stage.icon;
+                }} else {{
+                    dot.textContent = (idx + 1).toString();
+                }}
+                step.appendChild(dot);
+                step.appendChild(el('div', {{className: 'tracker-label', textContent: stage.label}}));
+                steps.appendChild(step);
+            }});
+
+            container.appendChild(steps);
+            tracker.appendChild(container);
+            return tracker;
         }}
 
         // ── Video Versions Section ──
@@ -1535,18 +1697,9 @@ def generate():
                     hasAny = true;
                     var card = el('div', {{className: 'editor-project-card'}});
 
-                    // Project name + status
+                    // Project name + tracker
                     card.appendChild(el('h3', {{textContent: proj.name}}));
-                    var statusLabels = {{
-                        'pending_song': 'Awaiting Song',
-                        'editing': 'In Editing',
-                        'review': 'Under Review',
-                        'done': 'Completed',
-                    }};
-                    card.appendChild(el('span', {{
-                        className: 'project-status status-' + proj.status,
-                        textContent: statusLabels[proj.status] || proj.status,
-                    }}));
+                    card.appendChild(buildTracker(proj.status));
 
                     // Version links
                     var versions = proj.versions || [];
