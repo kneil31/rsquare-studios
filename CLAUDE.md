@@ -206,6 +206,82 @@ python3 sync_dashboard.py --dry-run # Regenerate but don't push
 - **Status values:** `pending` / `approved` / `rejected`
 - **XSS safe:** Reviews are HTML-escaped at build time in Python, not rendered dynamically
 
+## Video Feedback Page
+
+Client-facing page for submitting song choices and timestamped video corrections directly to the editor — removes Ram as middleman.
+
+- **URL:** `portfolio.rsquarestudios.com/feedback/?p={project_slug}`
+- **Generator:** `generate_feedback.py` → `feedback/index.html`
+- **Access:** Project-specific 4-digit PIN (not the dashboard password)
+- **No encryption:** Feedback page is separate from dashboard internals; PIN gate only
+
+### Project Registry
+
+`PROJECTS` dict in `generate_feedback.py` maps slugs to config:
+```python
+PROJECTS = {
+    "sandhya": {
+        "name": "***REDACTED_NAME***",
+        "pin": "***REDACTED_PIN***",
+        "editor": "Madhu",
+        "editor_phone": "***REDACTED_PHONE***",
+        "mega_link": "https://mega.nz/folder/...",
+        "status": "editing",  # pending_song / editing / review / done
+    },
+}
+```
+
+### Forms
+
+1. **Song Choice:** Song name + link + notes → Apps Script POST → WhatsApp to editor
+2. **Corrections:** Timestamp rows (time + description + priority) + general notes → Apps Script POST → WhatsApp to editor
+
+### Data Flow
+
+```
+Client submits form → fetch() POST → Google Apps Script (type=feedback)
+  → appends to "Feedback" tab in Google Sheet
+  → page shows wa.me link to editor with formatted message
+```
+
+### Google Sheet — "Feedback" Tab
+
+Columns: `Project`, `Type` (song/correction), `Timestamp`, `Content`, `Priority`, `Submitted`, `PIN`
+
+### WhatsApp Auto-Message Format
+
+Opens `wa.me/{editor_phone}?text=...` with:
+```
+Hi bro
+
+{Project} corrections:
+
+[2:34] Remove this clip
+[4:12] Add more of ceremony
+
+Notes: ...
+```
+
+### Commands
+
+```bash
+# Generate feedback page
+python3 generate_feedback.py
+
+# Deploy (push to GitHub Pages with dashboard)
+git add feedback/index.html generate_feedback.py
+git commit -m "description"
+git push
+```
+
+### Security
+
+- PIN gate (4-digit, per-project, entered manually — not in URL)
+- XSS safe: all DOM via `createElement`/`textContent`
+- CSP with nonce, `connect-src` allows `script.google.com`
+- URL allowlist for wa.me and script.google.com
+- No sensitive data exposed (only project name after PIN)
+
 ## Subprojects
 
 - **krithin-neel/** — Separate repo (`kneil31/krithin-neel`), lives locally in this folder but is `.gitignore`d from rsquare-studios. Never add krithin-neel files to this repo.

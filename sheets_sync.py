@@ -209,6 +209,53 @@ def add_video_project(data):
     return resp.read().decode("utf-8")
 
 
+# GID for Feedback tab — update after creating the tab in Google Sheets
+GID_FEEDBACK = ""  # TODO: set after creating "Feedback" tab
+
+
+def read_feedback(project=None):
+    """Read feedback entries from the 'Feedback' tab.
+
+    Args:
+        project: Optional project name to filter by. If None, returns all.
+
+    Returns list of dicts: {project, type, timestamp, content, priority, submitted}
+    """
+    if not GID_FEEDBACK:
+        return []
+
+    records = _fetch_public_csv(SHEET_ID, GID_FEEDBACK)
+
+    if not records or len(records) < 2:
+        return []
+
+    headers = records[0]
+    entries = []
+    for row in records[1:]:
+        if not any(cell.strip() for cell in row):
+            continue
+        padded = row + [""] * (len(headers) - len(row))
+        raw = dict(zip(headers, padded))
+        entry = {
+            "project": raw.get("Project", "").strip(),
+            "type": raw.get("Type", "").strip(),
+            "timestamp": raw.get("Timestamp", "").strip(),
+            "content": raw.get("Content", "").strip(),
+            "priority": raw.get("Priority", "").strip(),
+            "submitted": raw.get("Submitted", "").strip(),
+        }
+        if project and entry["project"].lower() != project.lower():
+            continue
+        entries.append(entry)
+
+    return entries
+
+
+def get_project_feedback_url(project_slug):
+    """Return the feedback URL for a project."""
+    return f"https://portfolio.rsquarestudios.com/feedback/?p={project_slug}"
+
+
 def read_reviews():
     """Read approved reviews from the 'Reviews' tab.
 

@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-3419b2800f68c462a80c4648bd60247f'; style-src 'unsafe-inline'; img-src 'self' data: https://img.youtube.com; connect-src https://script.google.com; font-src 'none'; frame-src https://www.youtube.com https://youtube.com; base-uri 'none'; form-action https://script.google.com;">
+    <title>Rsquare Studios — Video Feedback</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #191919;
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 20px 16px 40px;
+        }
+
+        /* ── Header ── */
+        .header {
+            text-align: center;
+            padding: 24px 0 16px;
+            border-bottom: 1px solid #333;
+            margin-bottom: 24px;
+        }
+        .header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+        .header .subtitle {
+            font-size: 13px;
+            color: #8b5cf6;
+            margin-top: 4px;
+        }
+
+        /* ── PIN Gate ── */
+        .pin-gate {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        .pin-gate p {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 20px;
+        }
+        .pin-input {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+        .pin-input input {
+            width: 48px;
+            height: 56px;
+            text-align: center;
+            font-size: 22px;
+            font-weight: 600;
+            background: #2a2a2a;
+            border: 2px solid #444;
+            border-radius: 10px;
+            color: #fff;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .pin-input input:focus {
+            border-color: #8b5cf6;
+        }
+        .pin-error {
+            color: #ef4444;
+            font-size: 13px;
+            min-height: 20px;
+            margin-top: 8px;
+        }
+        .pin-lockout {
+            color: #ef4444;
+            font-size: 13px;
+        }
+
+        /* ── Project Info ── */
+        .project-info {
+            background: #232323;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-left: 3px solid #8b5cf6;
+        }
+        .project-info h2 {
+            font-size: 16px;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .project-status {
+            font-size: 12px;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+        .status-pending_song { background: #92400e; color: #fbbf24; }
+        .status-editing { background: #1e3a5f; color: #60a5fa; }
+        .status-review { background: #365314; color: #86efac; }
+        .status-done { background: #333; color: #999; }
+
+        /* ── Section Cards ── */
+        .section-card {
+            background: #232323;
+            border-radius: 12px;
+            padding: 20px 16px;
+            margin-bottom: 16px;
+        }
+        .section-card h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .section-icon {
+            font-size: 16px;
+        }
+
+        /* ── Form Elements ── */
+        label {
+            display: block;
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        input[type="text"], textarea, select {
+            width: 100%;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 14px;
+            color: #e0e0e0;
+            font-family: inherit;
+            outline: none;
+            transition: border-color 0.2s;
+            margin-bottom: 14px;
+        }
+        input[type="text"]:focus, textarea:focus, select:focus {
+            border-color: #8b5cf6;
+        }
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        /* ── Correction Rows ── */
+        .correction-row {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+            position: relative;
+        }
+        .correction-row .row-header {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .correction-row input.timestamp {
+            width: 80px;
+            margin-bottom: 0;
+            text-align: center;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 13px;
+        }
+        .correction-row select {
+            width: auto;
+            flex: 1;
+            margin-bottom: 0;
+            font-size: 13px;
+        }
+        .correction-row textarea {
+            min-height: 50px;
+            font-size: 13px;
+            margin-bottom: 0;
+        }
+        .remove-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #3a3a3a;
+            border: none;
+            color: #999;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+        }
+        .remove-btn:hover {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        /* ── Buttons ── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            border: none;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            font-family: inherit;
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .btn-primary {
+            background: #8b5cf6;
+            color: #fff;
+            width: 100%;
+        }
+        .btn-primary:hover:not(:disabled) {
+            opacity: 0.9;
+        }
+        .btn-secondary {
+            background: #333;
+            color: #e0e0e0;
+            width: 100%;
+            margin-bottom: 12px;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: #444;
+        }
+
+        /* ── Toast / Status ── */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        .toast.show {
+            opacity: 1;
+        }
+        .toast-success {
+            background: #065f46;
+            color: #6ee7b7;
+        }
+        .toast-error {
+            background: #7f1d1d;
+            color: #fca5a5;
+        }
+
+        /* ── Privacy Note ── */
+        .privacy-note {
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+            margin-top: 24px;
+            padding-top: 16px;
+            border-top: 1px solid #2a2a2a;
+        }
+
+        /* ── Hidden ── */
+        .hidden { display: none; }
+
+        /* ── Submission History ── */
+        .history-item {
+            background: #2a2a2a;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        .history-item .type-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-right: 6px;
+        }
+        .type-song { background: #4c1d95; color: #c4b5fd; }
+        .type-correction { background: #1e3a5f; color: #93c5fd; }
+        .type-approval { background: #166534; color: #86efac; }
+        .history-item .timestamp-ref {
+            font-family: 'SF Mono', 'Menlo', monospace;
+            color: #8b5cf6;
+            font-size: 12px;
+        }
+        .history-empty {
+            text-align: center;
+            color: #666;
+            font-size: 13px;
+            padding: 20px;
+        }
+
+        /* ── Version Links ── */
+        .version-card {
+            background: #232323;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .version-card h3 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 12px;
+        }
+        .version-list {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .version-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 16px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            color: #8b5cf6;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: background 0.2s;
+        }
+        .version-link:hover {
+            background: #333;
+        }
+        .version-link .v-badge {
+            background: #8b5cf6;
+            color: #fff;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .version-current {
+            border-color: #8b5cf6;
+            background: #1e1340;
+        }
+        .no-versions {
+            color: #666;
+            font-size: 13px;
+            font-style: italic;
+        }
+
+        /* ── Mark as Fixed ── */
+        .correction-row.fixed {
+            opacity: 0.5;
+            border-left: 3px solid #22c55e;
+        }
+        .correction-row.fixed textarea,
+        .correction-row.fixed input,
+        .correction-row.fixed select {
+            text-decoration: line-through;
+            color: #666;
+        }
+        .fix-toggle {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #999;
+            user-select: none;
+        }
+        .fix-toggle input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #22c55e;
+            margin-bottom: 0;
+        }
+        .fix-toggle.checked {
+            color: #22c55e;
+        }
+
+        /* ── Batch Submit Banner ── */
+        .batch-banner {
+            background: #1e3a5f;
+            border: 1px solid #2563eb;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 12px;
+            font-size: 12px;
+            color: #93c5fd;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .batch-banner .info-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        /* ── Approve Final ── */
+        .btn-approve {
+            background: #166534;
+            color: #86efac;
+            width: 100%;
+            margin-top: 12px;
+        }
+        .btn-approve:hover:not(:disabled) {
+            background: #15803d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Rsquare Studios</h1>
+            <div class="subtitle">Video Feedback</div>
+        </div>
+
+        <div id="pin-gate" class="pin-gate">
+            <p>Enter your project PIN to continue</p>
+            <div class="pin-input" id="pin-input"></div>
+            <div class="pin-error" id="pin-error"></div>
+        </div>
+
+        <div id="main-content" class="hidden"></div>
+
+        <div class="toast" id="toast"></div>
+    </div>
+
+    <script nonce="3419b2800f68c462a80c4648bd60247f">
+    (function() {
+        'use strict';
+
+        // ── Data (embedded at build time) ──
+        var PROJECTS = {"sandhya": {"name": "***REDACTED_NAME***", "pin": "***REDACTED_PIN***", "editor": "Madhu", "editor_phone": "***REDACTED_PHONE***", "mega_link": "", "status": "editing", "versions": []}};
+        var SCRIPT_URL = 'https://script.google.com/macros/s/***REDACTED_SCRIPT_ID***/exec';
+
+        // ── URL Allowlist ──
+        var ALLOWED_HOSTS = [
+            'wa.me',
+            'script.google.com',
+            'mega.nz',
+            'youtube.com',
+            'www.youtube.com',
+            'youtu.be',
+            'drive.google.com',
+        ];
+
+        function isAllowedUrl(url) {
+            try {
+                var u = new URL(url);
+                return ALLOWED_HOSTS.some(function(h) {
+                    return u.hostname === h || u.hostname.endsWith('.' + h);
+                });
+            } catch(e) {
+                return false;
+            }
+        }
+
+        // ── DOM Helpers (no innerHTML — security) ──
+        function el(tag, attrs, children) {
+            var e = document.createElement(tag);
+            if (attrs) {
+                Object.keys(attrs).forEach(function(k) {
+                    if (k === 'className') e.className = attrs[k];
+                    else if (k === 'textContent') e.textContent = attrs[k];
+                    else if (k === 'htmlFor') e.htmlFor = attrs[k];
+                    else e.setAttribute(k, attrs[k]);
+                });
+            }
+            if (children) {
+                (Array.isArray(children) ? children : [children]).forEach(function(c) {
+                    if (typeof c === 'string') e.appendChild(document.createTextNode(c));
+                    else if (c) e.appendChild(c);
+                });
+            }
+            return e;
+        }
+
+        // ── Toast ──
+        function showToast(msg, type) {
+            var t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast show toast-' + (type || 'success');
+            setTimeout(function() { t.className = 'toast'; }, 3500);
+        }
+
+        // ── PIN Gate ──
+        var pinAttempts = 0;
+        var pinLockUntil = 0;
+        var currentProject = null;
+
+        function getProjectSlug() {
+            var params = new URLSearchParams(window.location.search);
+            return params.get('p') || '';
+        }
+
+        function initPinGate() {
+            var slug = getProjectSlug();
+            if (!slug || !PROJECTS[slug]) {
+                var gate = document.getElementById('pin-gate');
+                gate.textContent = '';
+                gate.appendChild(el('p', {textContent: 'Invalid project link. Please check the URL you received.', style: 'color: #ef4444;'}));
+                return;
+            }
+
+            var container = document.getElementById('pin-input');
+            // Build 4 PIN input boxes
+            for (var i = 0; i < 4; i++) {
+                var inp = el('input', {
+                    type: 'text',
+                    inputmode: 'numeric',
+                    maxlength: '1',
+                    autocomplete: 'off',
+                    'data-idx': String(i),
+                });
+                container.appendChild(inp);
+            }
+
+            // Event listeners for PIN inputs
+            var inputs = container.querySelectorAll('input');
+            inputs.forEach(function(inp, idx) {
+                inp.addEventListener('input', function(e) {
+                    var val = e.target.value.replace(/[^0-9]/g, '');
+                    e.target.value = val;
+                    if (val && idx < 3) inputs[idx + 1].focus();
+                    if (idx === 3 && val) checkPin(inputs, slug);
+                });
+                inp.addEventListener('keydown', function(e) {
+                    if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+                        inputs[idx - 1].focus();
+                    }
+                });
+                // Prevent paste of non-numeric
+                inp.addEventListener('paste', function(e) {
+                    e.preventDefault();
+                    var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
+                    for (var j = 0; j < 4 && j < paste.length; j++) {
+                        inputs[j].value = paste[j];
+                    }
+                    if (paste.length >= 4) checkPin(inputs, slug);
+                    else if (paste.length > 0) inputs[Math.min(paste.length, 3)].focus();
+                });
+            });
+
+            inputs[0].focus();
+        }
+
+        function checkPin(inputs, slug) {
+            var now = Date.now();
+            if (now < pinLockUntil) {
+                var secs = Math.ceil((pinLockUntil - now) / 1000);
+                document.getElementById('pin-error').textContent = 'Too many attempts. Wait ' + secs + 's';
+                clearPinInputs(inputs);
+                return;
+            }
+
+            var entered = '';
+            inputs.forEach(function(inp) { entered += inp.value; });
+
+            if (entered === PROJECTS[slug].pin) {
+                currentProject = PROJECTS[slug];
+                currentProject.slug = slug;
+                document.getElementById('pin-gate').classList.add('hidden');
+                document.getElementById('main-content').classList.remove('hidden');
+                buildMainContent();
+            } else {
+                pinAttempts++;
+                if (pinAttempts >= 3) {
+                    pinLockUntil = now + 15000;
+                    document.getElementById('pin-error').textContent = 'Too many attempts. Wait 15s';
+                    pinAttempts = 0;
+                } else {
+                    document.getElementById('pin-error').textContent = 'Incorrect PIN. Try again.';
+                }
+                clearPinInputs(inputs);
+            }
+        }
+
+        function clearPinInputs(inputs) {
+            inputs.forEach(function(inp) { inp.value = ''; });
+            inputs[0].focus();
+        }
+
+        // ── Main Content Builder ──
+        function buildMainContent() {
+            var main = document.getElementById('main-content');
+            main.textContent = '';
+
+            // Project info card
+            var info = el('div', {className: 'project-info'});
+            info.appendChild(el('h2', {textContent: currentProject.name}));
+            var statusLabels = {
+                'pending_song': 'Awaiting Song Choice',
+                'editing': 'In Editing',
+                'review': 'Under Review',
+                'done': 'Completed',
+            };
+            var badge = el('span', {
+                className: 'project-status status-' + currentProject.status,
+                textContent: statusLabels[currentProject.status] || currentProject.status,
+            });
+            info.appendChild(badge);
+            main.appendChild(info);
+
+            // Video versions section
+            main.appendChild(buildVersionsSection());
+
+            // Song choice section
+            main.appendChild(buildSongSection());
+
+            // Corrections section
+            main.appendChild(buildCorrectionsSection());
+
+            // Approve final button (only in review status)
+            if (currentProject.status === 'review') {
+                var approveBtn = el('button', {className: 'btn btn-approve', textContent: '\u2714 Approve Final Cut'});
+                approveBtn.addEventListener('click', approveFinal);
+                main.appendChild(approveBtn);
+            }
+
+            // Submission history
+            main.appendChild(buildHistorySection());
+
+            // Privacy note
+            main.appendChild(el('div', {className: 'privacy-note', textContent: 'Submissions are shared with your editor only.'}));
+        }
+
+        // ── Video Versions Section ──
+        function buildVersionsSection() {
+            var card = el('div', {className: 'version-card'});
+            var heading = el('h3');
+            heading.appendChild(el('span', {className: 'section-icon', textContent: '\u25B6'}));
+            heading.appendChild(document.createTextNode(' Video Versions'));
+            card.appendChild(heading);
+
+            var versions = currentProject.versions || [];
+            if (versions.length === 0) {
+                card.appendChild(el('div', {className: 'no-versions', textContent: 'No versions shared yet. Your editor will share the first cut here.'}));
+                return card;
+            }
+
+            var list = el('div', {className: 'version-list'});
+            versions.forEach(function(v, idx) {
+                var isCurrent = idx === versions.length - 1;
+                var link = el('a', {
+                    className: 'version-link' + (isCurrent ? ' version-current' : ''),
+                    target: '_blank',
+                    rel: 'noreferrer noopener',
+                });
+                // Only set href if URL passes allowlist
+                if (isAllowedUrl(v.url)) {
+                    link.setAttribute('href', v.url);
+                }
+                link.appendChild(el('span', {className: 'v-badge', textContent: v.label}));
+                link.appendChild(document.createTextNode(isCurrent ? 'Latest' : 'Watch'));
+                list.appendChild(link);
+            });
+            card.appendChild(list);
+
+            return card;
+        }
+
+        // ── Approve Final ──
+        function approveFinal() {
+            if (!confirm('Are you sure you want to approve the final cut? This will notify the editor.')) return;
+
+            postFeedback({
+                type: 'feedback',
+                project: currentProject.name,
+                feedback_type: 'approval',
+                timestamp: '',
+                content: 'APPROVED — Client approved final cut',
+                priority: '',
+                pin: currentProject.pin,
+            }, function() {
+                var msg = 'Hi bro\n\n' + currentProject.name + ' — client has APPROVED the final cut! Ready for delivery.';
+                openWhatsApp(msg);
+                addToHistory({type: 'approval', content: 'Final cut approved', time: new Date().toLocaleString()});
+            });
+        }
+
+        // ── Song Choice Section ──
+        function buildSongSection() {
+            var card = el('div', {className: 'section-card'});
+            var heading = el('h3');
+            heading.appendChild(el('span', {className: 'section-icon', textContent: '\u266B'}));
+            heading.appendChild(document.createTextNode(' Song Choice'));
+            card.appendChild(heading);
+
+            card.appendChild(el('label', {textContent: 'Song name', htmlFor: 'song-name'}));
+            card.appendChild(el('input', {type: 'text', id: 'song-name', placeholder: 'e.g. Samajavaragamana', autocomplete: 'off'}));
+
+            card.appendChild(el('label', {textContent: 'Song link (YouTube, Spotify, etc.)', htmlFor: 'song-link'}));
+            card.appendChild(el('input', {type: 'text', id: 'song-link', placeholder: 'Paste URL here', autocomplete: 'off'}));
+
+            card.appendChild(el('label', {textContent: 'Notes (optional)', htmlFor: 'song-notes'}));
+            card.appendChild(el('textarea', {id: 'song-notes', placeholder: 'e.g. I want the video to feel joyful and upbeat...'}));
+
+            var btn = el('button', {className: 'btn btn-primary', textContent: 'Submit Song Choice'});
+            btn.addEventListener('click', submitSong);
+            card.appendChild(btn);
+
+            return card;
+        }
+
+        function submitSong() {
+            var name = document.getElementById('song-name').value.trim();
+            var link = document.getElementById('song-link').value.trim();
+            var notes = document.getElementById('song-notes').value.trim();
+
+            if (!name) {
+                showToast('Please enter a song name', 'error');
+                return;
+            }
+
+            var content = name;
+            if (link) content += ' — ' + link;
+            if (notes) content += ' — Notes: ' + notes;
+
+            var payload = {
+                type: 'feedback',
+                project: currentProject.name,
+                feedback_type: 'song',
+                timestamp: '',
+                content: content,
+                priority: '',
+                pin: currentProject.pin,
+            };
+
+            postFeedback(payload, function() {
+                // Build WhatsApp message
+                var msg = 'Hi bro\n\n' + currentProject.name + ' song choice:\n\n';
+                msg += 'Song: ' + name;
+                if (link) msg += '\nLink: ' + link;
+                if (notes) msg += '\nNotes: ' + notes;
+                openWhatsApp(msg);
+
+                // Clear form
+                document.getElementById('song-name').value = '';
+                document.getElementById('song-link').value = '';
+                document.getElementById('song-notes').value = '';
+
+                // Add to local history
+                addToHistory({type: 'song', content: content, time: new Date().toLocaleString()});
+            });
+        }
+
+        // ── Corrections Section ──
+        var correctionCount = 0;
+
+        function buildCorrectionsSection() {
+            var card = el('div', {className: 'section-card', id: 'corrections-section'});
+            var heading = el('h3');
+            heading.appendChild(el('span', {className: 'section-icon', textContent: '\u270F'}));
+            heading.appendChild(document.createTextNode(' Corrections'));
+            card.appendChild(heading);
+
+            // Batch submit tip
+            var banner = el('div', {className: 'batch-banner'});
+            banner.appendChild(el('span', {className: 'info-icon', textContent: '\u24D8'}));
+            banner.appendChild(el('span', {textContent: 'Add all your corrections first, then submit once. This sends everything to the editor in one batch.'}));
+            card.appendChild(banner);
+
+            // Corrections container
+            card.appendChild(el('div', {id: 'corrections-list'}));
+
+            // Add correction button
+            var addBtn = el('button', {className: 'btn btn-secondary', textContent: '+ Add Correction'});
+            addBtn.addEventListener('click', addCorrectionRow);
+            card.appendChild(addBtn);
+
+            // General notes
+            card.appendChild(el('label', {textContent: 'General notes (optional)', htmlFor: 'general-notes'}));
+            card.appendChild(el('textarea', {id: 'general-notes', placeholder: 'Any overall feedback about the video...'}));
+
+            // Submit button
+            var submitBtn = el('button', {className: 'btn btn-primary', textContent: 'Submit All Corrections'});
+            submitBtn.addEventListener('click', submitCorrections);
+            card.appendChild(submitBtn);
+
+            // Start with one correction row
+            setTimeout(addCorrectionRow, 0);
+
+            return card;
+        }
+
+        function addCorrectionRow() {
+            var list = document.getElementById('corrections-list');
+            correctionCount++;
+            var rowId = 'correction-' + correctionCount;
+
+            var row = el('div', {className: 'correction-row', id: rowId});
+
+            // Remove button
+            var removeBtn = el('button', {className: 'remove-btn', textContent: '\u00D7'});
+            removeBtn.addEventListener('click', function() {
+                row.remove();
+            });
+            row.appendChild(removeBtn);
+
+            // Header row: timestamp + priority
+            var header = el('div', {className: 'row-header'});
+            header.appendChild(el('input', {
+                type: 'text',
+                className: 'timestamp',
+                placeholder: '0:00',
+                autocomplete: 'off',
+                'data-field': 'ts',
+            }));
+            var sel = el('select', {'data-field': 'priority'});
+            sel.appendChild(el('option', {value: 'must_fix', textContent: 'Must Fix'}));
+            sel.appendChild(el('option', {value: 'nice_to_have', textContent: 'Nice to Have'}));
+            header.appendChild(sel);
+            row.appendChild(header);
+
+            // Description
+            row.appendChild(el('textarea', {
+                placeholder: 'What needs to change at this timestamp?',
+                'data-field': 'desc',
+            }));
+
+            // Mark as fixed toggle
+            var fixToggle = el('label', {className: 'fix-toggle'});
+            var checkbox = el('input', {type: 'checkbox'});
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    row.classList.add('fixed');
+                    fixToggle.classList.add('checked');
+                    fixLabel.textContent = 'Fixed';
+                } else {
+                    row.classList.remove('fixed');
+                    fixToggle.classList.remove('checked');
+                    fixLabel.textContent = 'Mark as fixed';
+                }
+            });
+            fixToggle.appendChild(checkbox);
+            var fixLabel = el('span', {textContent: 'Mark as fixed'});
+            fixToggle.appendChild(fixLabel);
+            row.appendChild(fixToggle);
+
+            list.appendChild(row);
+        }
+
+        function submitCorrections() {
+            var rows = document.querySelectorAll('#corrections-list .correction-row');
+            var generalNotes = document.getElementById('general-notes').value.trim();
+            var corrections = [];
+
+            rows.forEach(function(row) {
+                // Skip rows marked as fixed
+                if (row.classList.contains('fixed')) return;
+                var ts = row.querySelector('[data-field="ts"]').value.trim();
+                var desc = row.querySelector('[data-field="desc"]').value.trim();
+                var priority = row.querySelector('[data-field="priority"]').value;
+                if (desc) {
+                    corrections.push({ts: ts || '\u2014', desc: desc, priority: priority});
+                }
+            });
+
+            if (corrections.length === 0 && !generalNotes) {
+                showToast('Please add at least one correction or note', 'error');
+                return;
+            }
+
+            // Build combined content for Sheet
+            var contentParts = corrections.map(function(c) {
+                return '[' + c.ts + '] (' + c.priority.replace('_', ' ') + ') ' + c.desc;
+            });
+            if (generalNotes) contentParts.push('Notes: ' + generalNotes);
+
+            // Post each correction as a separate row + general notes
+            var pending = 0;
+            var done = 0;
+
+            corrections.forEach(function(c) {
+                pending++;
+                postFeedback({
+                    type: 'feedback',
+                    project: currentProject.name,
+                    feedback_type: 'correction',
+                    timestamp: c.ts,
+                    content: c.desc,
+                    priority: c.priority.replace('_', ' '),
+                    pin: currentProject.pin,
+                }, function() {
+                    done++;
+                    if (done === pending) onAllCorrectionsPosted();
+                });
+            });
+
+            if (generalNotes) {
+                pending++;
+                postFeedback({
+                    type: 'feedback',
+                    project: currentProject.name,
+                    feedback_type: 'correction',
+                    timestamp: '',
+                    content: generalNotes,
+                    priority: '',
+                    pin: currentProject.pin,
+                }, function() {
+                    done++;
+                    if (done === pending) onAllCorrectionsPosted();
+                });
+            }
+
+            if (pending === 0) return;
+
+            function onAllCorrectionsPosted() {
+                // Build WhatsApp message
+                var msg = 'Hi bro\n\n' + currentProject.name + ' corrections:\n\n';
+                corrections.forEach(function(c) {
+                    msg += '[' + c.ts + '] ' + c.desc + '\n';
+                });
+                if (generalNotes) msg += '\nNotes: ' + generalNotes;
+                openWhatsApp(msg);
+
+                // Add to local history
+                addToHistory({
+                    type: 'correction',
+                    content: contentParts.join('\n'),
+                    time: new Date().toLocaleString(),
+                });
+
+                // Clear form
+                document.getElementById('corrections-list').textContent = '';
+                document.getElementById('general-notes').value = '';
+                correctionCount = 0;
+                addCorrectionRow();
+            }
+        }
+
+        // ── POST to Google Apps Script ──
+        function postFeedback(data, onSuccess) {
+            var params = new URLSearchParams();
+            Object.keys(data).forEach(function(k) { params.append(k, data[k]); });
+
+            fetch(SCRIPT_URL, {
+                method: 'POST',
+                body: params,
+            }).then(function() {
+                showToast('Submitted successfully!', 'success');
+                if (onSuccess) onSuccess();
+            }).catch(function(err) {
+                showToast('Failed to submit. Try again.', 'error');
+                console.error('Feedback POST error:', err);
+            });
+        }
+
+        // ── WhatsApp ──
+        function openWhatsApp(message) {
+            var url = 'https://wa.me/' + currentProject.editor_phone + '?text=' + encodeURIComponent(message);
+            if (isAllowedUrl(url)) {
+                var a = el('a', {href: url, target: '_blank', rel: 'noreferrer noopener'});
+                a.click();
+            }
+        }
+
+        // ── Local History (sessionStorage) ──
+        function getHistoryKey() {
+            return 'feedback_history_' + (currentProject ? currentProject.slug : '');
+        }
+
+        function getHistory() {
+            try {
+                return JSON.parse(sessionStorage.getItem(getHistoryKey()) || '[]');
+            } catch(e) { return []; }
+        }
+
+        function addToHistory(entry) {
+            var h = getHistory();
+            h.unshift(entry);
+            if (h.length > 20) h = h.slice(0, 20);
+            sessionStorage.setItem(getHistoryKey(), JSON.stringify(h));
+            renderHistory();
+        }
+
+        function renderHistory() {
+            var container = document.getElementById('history-list');
+            if (!container) return;
+            container.textContent = '';
+
+            var items = getHistory();
+            if (items.length === 0) {
+                container.appendChild(el('div', {className: 'history-empty', textContent: 'No submissions yet for this session.'}));
+                return;
+            }
+
+            items.forEach(function(item) {
+                var div = el('div', {className: 'history-item'});
+                var typeLabels = {'song': 'Song', 'correction': 'Correction', 'approval': 'Approved'};
+                var badge = el('span', {
+                    className: 'type-badge type-' + item.type,
+                    textContent: typeLabels[item.type] || item.type,
+                });
+                div.appendChild(badge);
+                div.appendChild(el('span', {textContent: item.time, style: 'color: #777; font-size: 11px; float: right;'}));
+                div.appendChild(el('br'));
+                // Show content (may be multi-line)
+                item.content.split('\n').forEach(function(line) {
+                    div.appendChild(el('span', {textContent: line}));
+                    div.appendChild(el('br'));
+                });
+                container.appendChild(div);
+            });
+        }
+
+        function buildHistorySection() {
+            var card = el('div', {className: 'section-card'});
+            var heading = el('h3');
+            heading.appendChild(el('span', {className: 'section-icon', textContent: '\uD83D\uDCCB'}));
+            heading.appendChild(document.createTextNode(' This Session'));
+            card.appendChild(heading);
+            card.appendChild(el('div', {id: 'history-list'}));
+            setTimeout(renderHistory, 0);
+            return card;
+        }
+
+        // ── Init ──
+        initPinGate();
+    })();
+    </script>
+</body>
+</html>
