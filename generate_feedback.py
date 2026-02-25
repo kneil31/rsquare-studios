@@ -650,7 +650,51 @@ def generate():
             border-color: #22c55e;
             color: #86efac;
         }}
+        .fix-btn.cant-fix {{
+            background: #7f1d1d;
+            border-color: #ef4444;
+            color: #fca5a5;
+        }}
         .fix-btn:disabled {{
+            opacity: 0.5;
+            cursor: not-allowed;
+        }}
+        .cant-fix-note {{
+            font-size: 11px;
+            color: #fca5a5;
+            margin-top: 4px;
+            font-style: italic;
+        }}
+        .editor-correction.is-cant-fix {{
+            opacity: 0.6;
+            border-left: 3px solid #ef4444;
+        }}
+        .correction-actions {{
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex-shrink: 0;
+        }}
+        .btn-notify {{
+            background: #1e3a5f;
+            border: 1px solid #2563eb;
+            color: #93c5fd;
+            width: 100%;
+            margin-top: 16px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }}
+        .btn-notify:hover {{
+            background: #1e40af;
+        }}
+        .btn-notify:disabled {{
             opacity: 0.5;
             cursor: not-allowed;
         }}
@@ -1544,16 +1588,20 @@ def generate():
                     // Corrections
                     var corrections = projEntries.filter(function(e) {{ return e.type === 'correction'; }});
                     if (corrections.length > 0) {{
-                        var fixedCount = corrections.filter(function(c) {{ return c.fixed; }}).length;
+                        var fixedCount = corrections.filter(function(c) {{ return c.fixed === 'yes'; }}).length;
+                        var cantCount = corrections.filter(function(c) {{ return c.fixed === 'cant_fix'; }}).length;
+                        var counterText = 'Corrections (' + fixedCount + '/' + corrections.length + ' fixed';
+                        if (cantCount > 0) counterText += ', ' + cantCount + ' can\\u2019t fix';
+                        counterText += ')';
                         card.appendChild(el('div', {{
                             className: 'editor-section-label',
-                            textContent: 'Corrections (' + fixedCount + '/' + corrections.length + ' fixed)',
-                        }}));
-                        card.appendChild(el('div', {{
-                            className: 'editor-stats',
+                            textContent: counterText,
                         }}));
                         corrections.forEach(function(c) {{
-                            var row = el('div', {{className: 'editor-correction' + (c.fixed ? ' is-fixed' : '')}});
+                            var rowClass = 'editor-correction';
+                            if (c.fixed === 'yes') rowClass += ' is-fixed';
+                            else if (c.fixed === 'cant_fix') rowClass += ' is-cant-fix';
+                            var row = el('div', {{className: rowClass}});
                             var body = el('div', {{className: 'correction-body'}});
 
                             if (c.timestamp) {{
@@ -1561,10 +1609,12 @@ def generate():
                             }}
                             body.appendChild(el('div', {{className: 'correction-text', textContent: c.content}}));
 
-                            var metaParts = [];
                             if (c.priority) {{
                                 var pClass = c.priority.toLowerCase().indexOf('must') >= 0 ? 'priority-must' : 'priority-nice';
                                 body.appendChild(el('span', {{className: pClass, textContent: c.priority}}));
+                            }}
+                            if (c.fixed === 'cant_fix' && c.fixedNote) {{
+                                body.appendChild(el('div', {{className: 'cant-fix-note', textContent: 'Note: ' + c.fixedNote}}));
                             }}
                             if (c.submitted) {{
                                 body.appendChild(el('div', {{className: 'correction-meta', textContent: 'Submitted: ' + c.submitted}}));
@@ -1572,45 +1622,94 @@ def generate():
 
                             row.appendChild(body);
 
-                            // Fixed toggle button
+                            // Action buttons container
+                            var actions = el('div', {{className: 'correction-actions'}});
+
+                            // Fixed button
                             var fixBtn = el('button', {{
-                                className: 'fix-btn' + (c.fixed ? ' fixed' : ''),
-                                textContent: c.fixed ? '\\u2714 Fixed' : 'Fix',
+                                className: 'fix-btn' + (c.fixed === 'yes' ? ' fixed' : ''),
+                                textContent: c.fixed === 'yes' ? '\\u2714 Fixed' : 'Fix',
                             }});
-                            fixBtn.addEventListener('click', (function(correction, button, rowEl) {{
+
+                            // Can't Fix button
+                            var cantBtn = el('button', {{
+                                className: 'fix-btn' + (c.fixed === 'cant_fix' ? ' cant-fix' : ''),
+                                textContent: c.fixed === 'cant_fix' ? '\\u2718 Can\\u2019t' : 'Can\\u2019t',
+                            }});
+
+                            function updateCorrectionStatus(correction, fixButton, cantButton, rowEl, newStatus, note) {{
+                                fixButton.disabled = true;
+                                cantButton.disabled = true;
+                                var params = new URLSearchParams();
+                                params.append('type', 'feedback_update');
+                                params.append('project', proj.name);
+                                params.append('timestamp', correction.timestamp);
+                                params.append('content', correction.content);
+                                params.append('fixed', newStatus);
+                                if (note) params.append('note', note);
+                                fetch(SCRIPT_URL, {{method: 'POST', body: params}}).then(function() {{
+                                    correction.fixed = newStatus;
+                                    correction.fixedNote = note || '';
+                                    fixButton.disabled = false;
+                                    cantButton.disabled = false;
+                                    fixButton.textContent = newStatus === 'yes' ? '\\u2714 Fixed' : 'Fix';
+                                    fixButton.className = 'fix-btn' + (newStatus === 'yes' ? ' fixed' : '');
+                                    cantButton.textContent = newStatus === 'cant_fix' ? '\\u2718 Can\\u2019t' : 'Can\\u2019t';
+                                    cantButton.className = 'fix-btn' + (newStatus === 'cant_fix' ? ' cant-fix' : '');
+                                    rowEl.className = 'editor-correction';
+                                    if (newStatus === 'yes') rowEl.classList.add('is-fixed');
+                                    else if (newStatus === 'cant_fix') rowEl.classList.add('is-cant-fix');
+                                    // Remove old note, add new if cant_fix
+                                    var oldNote = rowEl.querySelector('.cant-fix-note');
+                                    if (oldNote) oldNote.remove();
+                                    if (newStatus === 'cant_fix' && note) {{
+                                        var noteEl = el('div', {{className: 'cant-fix-note', textContent: 'Note: ' + note}});
+                                        body.insertBefore(noteEl, body.querySelector('.correction-meta'));
+                                    }}
+                                    updateCounter();
+                                    showToast(newStatus === 'yes' ? 'Marked as fixed' : newStatus === 'cant_fix' ? 'Marked as can\\u2019t fix' : 'Unmarked', 'success');
+                                }}).catch(function() {{
+                                    fixButton.disabled = false;
+                                    cantButton.disabled = false;
+                                    showToast('Failed to update. Try again.', 'error');
+                                }});
+                            }}
+
+                            function updateCounter() {{
+                                var allCorr = projEntries.filter(function(e) {{ return e.type === 'correction'; }});
+                                var fc = allCorr.filter(function(cc) {{ return cc.fixed === 'yes'; }}).length;
+                                var cf = allCorr.filter(function(cc) {{ return cc.fixed === 'cant_fix'; }}).length;
+                                var label = card.querySelector('.editor-section-label');
+                                if (label && label.textContent.indexOf('Corrections') === 0) {{
+                                    var text = 'Corrections (' + fc + '/' + allCorr.length + ' fixed';
+                                    if (cf > 0) text += ', ' + cf + ' can\\u2019t fix';
+                                    text += ')';
+                                    label.textContent = text;
+                                }}
+                            }}
+
+                            fixBtn.addEventListener('click', (function(correction, fb, cb, rowEl) {{
                                 return function() {{
-                                    var newFixed = !correction.fixed;
-                                    button.disabled = true;
-                                    button.textContent = '...';
-                                    var params = new URLSearchParams();
-                                    params.append('type', 'feedback_update');
-                                    params.append('project', proj.name);
-                                    params.append('timestamp', correction.timestamp);
-                                    params.append('content', correction.content);
-                                    params.append('fixed', newFixed ? 'yes' : '');
-                                    fetch(SCRIPT_URL, {{method: 'POST', body: params}}).then(function() {{
-                                        correction.fixed = newFixed;
-                                        button.disabled = false;
-                                        button.textContent = newFixed ? '\\u2714 Fixed' : 'Fix';
-                                        button.className = 'fix-btn' + (newFixed ? ' fixed' : '');
-                                        if (newFixed) rowEl.classList.add('is-fixed');
-                                        else rowEl.classList.remove('is-fixed');
-                                        // Update counter
-                                        var allCorr = projEntries.filter(function(e) {{ return e.type === 'correction'; }});
-                                        var fc = allCorr.filter(function(cc) {{ return cc.fixed; }}).length;
-                                        var label = card.querySelector('.editor-section-label');
-                                        if (label && label.textContent.indexOf('Corrections') === 0) {{
-                                            label.textContent = 'Corrections (' + fc + '/' + allCorr.length + ' fixed)';
-                                        }}
-                                        showToast(newFixed ? 'Marked as fixed' : 'Unmarked', 'success');
-                                    }}).catch(function() {{
-                                        button.disabled = false;
-                                        button.textContent = correction.fixed ? '\\u2714 Fixed' : 'Fix';
-                                        showToast('Failed to update. Try again.', 'error');
-                                    }});
+                                    var newStatus = correction.fixed === 'yes' ? '' : 'yes';
+                                    updateCorrectionStatus(correction, fb, cb, rowEl, newStatus, '');
                                 }};
-                            }})(c, fixBtn, row));
-                            row.appendChild(fixBtn);
+                            }})(c, fixBtn, cantBtn, row));
+
+                            cantBtn.addEventListener('click', (function(correction, fb, cb, rowEl) {{
+                                return function() {{
+                                    if (correction.fixed === 'cant_fix') {{
+                                        updateCorrectionStatus(correction, fb, cb, rowEl, '', '');
+                                        return;
+                                    }}
+                                    var note = prompt('Why can\\u2019t this be fixed?');
+                                    if (note === null) return;
+                                    updateCorrectionStatus(correction, fb, cb, rowEl, 'cant_fix', note);
+                                }};
+                            }})(c, fixBtn, cantBtn, row));
+
+                            actions.appendChild(fixBtn);
+                            actions.appendChild(cantBtn);
+                            row.appendChild(actions);
 
                             card.appendChild(row);
                         }});
@@ -1619,6 +1718,68 @@ def generate():
                     // No entries at all
                     if (projEntries.length === 0) {{
                         card.appendChild(el('div', {{className: 'editor-empty', textContent: 'No feedback submitted yet.'}}));
+                    }}
+
+                    // Notify Ram button (one per project, sends summary)
+                    if (corrections.length > 0) {{
+                        var notifyBtn = el('button', {{className: 'btn-notify', textContent: '\\uD83D\\uDCE9 Notify Ram'}});
+                        notifyBtn.addEventListener('click', (function(projData, projCorrections) {{
+                            return function() {{
+                                var fixed = projCorrections.filter(function(c) {{ return c.fixed === 'yes'; }});
+                                var cantFix = projCorrections.filter(function(c) {{ return c.fixed === 'cant_fix'; }});
+                                var pending = projCorrections.filter(function(c) {{ return !c.fixed; }});
+
+                                var summary = 'Project: ' + projData.name + '\\n\\n';
+                                if (fixed.length > 0) {{
+                                    summary += 'FIXED (' + fixed.length + '):\\n';
+                                    fixed.forEach(function(c) {{
+                                        summary += '  [' + (c.timestamp || '-') + '] ' + c.content + '\\n';
+                                    }});
+                                    summary += '\\n';
+                                }}
+                                if (cantFix.length > 0) {{
+                                    summary += 'CAN\\u2019T FIX (' + cantFix.length + '):\\n';
+                                    cantFix.forEach(function(c) {{
+                                        summary += '  [' + (c.timestamp || '-') + '] ' + c.content;
+                                        if (c.fixedNote) summary += ' - ' + c.fixedNote;
+                                        summary += '\\n';
+                                    }});
+                                    summary += '\\n';
+                                }}
+                                if (pending.length > 0) {{
+                                    summary += 'PENDING (' + pending.length + '):\\n';
+                                    pending.forEach(function(c) {{
+                                        summary += '  [' + (c.timestamp || '-') + '] ' + c.content + '\\n';
+                                    }});
+                                }}
+
+                                // Send email via Apps Script
+                                notifyBtn.disabled = true;
+                                notifyBtn.textContent = 'Sending...';
+                                var params = new URLSearchParams();
+                                params.append('type', 'feedback_notify');
+                                params.append('project', projData.name);
+                                params.append('summary', summary);
+                                fetch(SCRIPT_URL, {{method: 'POST', body: params}}).then(function() {{
+                                    notifyBtn.disabled = false;
+                                    notifyBtn.textContent = '\\u2714 Ram notified';
+                                    showToast('Email sent to Ram', 'success');
+                                    // Also open WhatsApp
+                                    var waMsg = 'Hi Ram\\n\\n' + projData.name + ' update:\\n\\n';
+                                    waMsg += fixed.length + ' fixed, ' + cantFix.length + ' can\\u2019t fix, ' + pending.length + ' pending';
+                                    var waUrl = 'https://wa.me/' + RAM_PHONE + '?text=' + encodeURIComponent(waMsg);
+                                    if (isAllowedUrl(waUrl)) {{
+                                        var a = el('a', {{href: waUrl, target: '_blank', rel: 'noreferrer noopener'}});
+                                        a.click();
+                                    }}
+                                }}).catch(function() {{
+                                    notifyBtn.disabled = false;
+                                    notifyBtn.textContent = '\\uD83D\\uDCE9 Notify Ram';
+                                    showToast('Failed to send. Try again.', 'error');
+                                }});
+                            }};
+                        }})(proj, corrections));
+                        card.appendChild(notifyBtn);
                     }}
 
                     container.appendChild(card);
@@ -1649,23 +1810,33 @@ def generate():
                 heading.appendChild(document.createTextNode(' Correction Status'));
                 section.appendChild(heading);
 
-                var fixedCount = corrections.filter(function(c) {{ return c.fixed; }}).length;
+                var fixedCount = corrections.filter(function(c) {{ return c.fixed === 'yes'; }}).length;
+                var cantCount = corrections.filter(function(c) {{ return c.fixed === 'cant_fix'; }}).length;
+                var statusText = fixedCount + ' of ' + corrections.length + ' corrections fixed';
+                if (cantCount > 0) statusText += ', ' + cantCount + ' can\\u2019t fix';
                 section.appendChild(el('div', {{
                     style: 'font-size: 12px; color: #999; margin-bottom: 10px;',
-                    textContent: fixedCount + ' of ' + corrections.length + ' corrections fixed',
+                    textContent: statusText,
                 }}));
 
                 var list = el('div', {{className: 'client-fixed-list'}});
                 corrections.forEach(function(c) {{
-                    var item = el('div', {{className: 'client-fixed-item' + (c.fixed ? ' is-fixed' : '')}});
+                    var itemClass = 'client-fixed-item';
+                    var icon = '\\u23F3';
+                    if (c.fixed === 'yes') {{ itemClass += ' is-fixed'; icon = '\\u2705'; }}
+                    else if (c.fixed === 'cant_fix') {{ icon = '\\u274C'; }}
+                    var item = el('div', {{className: itemClass}});
                     item.appendChild(el('span', {{
                         className: 'fix-indicator',
-                        textContent: c.fixed ? '\\u2705' : '\\u23F3',
+                        textContent: icon,
                     }}));
                     var text = '';
                     if (c.timestamp) text += '[' + c.timestamp + '] ';
                     text += c.content;
                     item.appendChild(el('span', {{textContent: text}}));
+                    if (c.fixed === 'cant_fix' && c.fixedNote) {{
+                        item.appendChild(el('div', {{className: 'cant-fix-note', textContent: 'Note: ' + c.fixedNote}}));
+                    }}
                     list.appendChild(item);
                 }});
                 section.appendChild(list);

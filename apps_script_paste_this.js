@@ -43,6 +43,16 @@ function doGet(e) {
           ts = tsRaw.toString();
         }
       }
+      // Fixed column: "yes", "cant_fix:reason", or empty
+      var fixedRaw = (row[7] || "").toString().trim();
+      var fixedStatus = "";
+      var fixedNote = "";
+      if (fixedRaw.toLowerCase() === "yes") {
+        fixedStatus = "yes";
+      } else if (fixedRaw.toLowerCase().indexOf("cant_fix") === 0) {
+        fixedStatus = "cant_fix";
+        fixedNote = fixedRaw.substring(fixedRaw.indexOf(":") + 1).trim();
+      }
       entries.push({
         project: row[0] || "",
         type: row[1] || "",
@@ -50,7 +60,8 @@ function doGet(e) {
         content: row[3] || "",
         priority: row[4] || "",
         submitted: row[5] ? Utilities.formatDate(row[5], Session.getScriptTimeZone(), "MMM d, h:mm a") : "",
-        fixed: (row[7] || "").toString().toLowerCase() === "yes"
+        fixed: fixedStatus,
+        fixedNote: fixedNote
       });
     }
     return ContentService.createTextOutput(JSON.stringify({
@@ -103,6 +114,7 @@ function doPost(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // Update fixed status (no email — editor uses Notify button for summary)
   if (type === "feedback_update") {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName("Feedback");
@@ -115,26 +127,32 @@ function doPost(e) {
     var found = false;
     for (var i = 1; i < rows.length; i++) {
       if (rows[i][0] == p.project && rows[i][2] == p.timestamp && rows[i][3] == p.content) {
-        var isFixed = p.fixed === "yes";
-        sheet.getRange(i + 1, 8).setValue(isFixed ? "yes" : "");
+        // Column H: "yes", "cant_fix:reason", or ""
+        var val = "";
+        if (p.fixed === "yes") val = "yes";
+        else if (p.fixed === "cant_fix") val = "cant_fix:" + (p.note || "");
+        sheet.getRange(i + 1, 8).setValue(val);
         found = true;
-        if (isFixed) {
-          try {
-            var fixSubject = "[Rsquare] " + (p.project || "Unknown") + " - Correction fixed";
-            var fixBody = "Project: " + (p.project || "Unknown") + "\n";
-            if (p.timestamp) fixBody += "Timestamp: " + p.timestamp + "\n";
-            fixBody += "Correction: " + (p.content || "") + "\n";
-            fixBody += "\nMarked as fixed by editor at " + new Date().toLocaleString() + "\n";
-            fixBody += "\nView all: https://portfolio.rsquarestudios.com/feedback/?role=editor";
-            MailApp.sendEmail({ to: FEEDBACK_EMAIL_RAM, subject: fixSubject, body: fixBody });
-          } catch(err) { Logger.log("Email failed: " + err); }
-        }
         break;
       }
     }
     return ContentService.createTextOutput(JSON.stringify({
       status: found ? "ok" : "not_found",
-      message: found ? "Fixed status updated" : "Correction row not found"
+      message: found ? "Status updated" : "Correction row not found"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // Summary notification from editor (one email for all fixes)
+  if (type === "feedback_notify") {
+    try {
+      var subject = "[Rsquare] " + (p.project || "Unknown") + " - Editor update";
+      var body = p.summary || "No details provided.";
+      body += "\n\nView all: https://portfolio.rsquarestudios.com/feedback/?role=editor";
+      MailApp.sendEmail({ to: FEEDBACK_EMAIL_RAM, subject: subject, body: body });
+    } catch(err) { Logger.log("Email failed: " + err); }
+
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "ok", message: "Notification sent"
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
