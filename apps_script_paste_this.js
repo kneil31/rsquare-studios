@@ -1,4 +1,4 @@
-var FEEDBACK_EMAIL_RAM = "***REMOVED***";
+var FEEDBACK_EMAIL_RAM = "YOUR_EMAIL_HERE";  // Replace with actual email before deploying
 var FEEDBACK_EMAIL_EDITOR = "editor@example.com";
 
 function doGet(e) {

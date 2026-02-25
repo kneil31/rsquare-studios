@@ -1,6 +1,7 @@
 __pycache__/
 editing_projects.json
 .secret
+.dashboard_secrets.json
 .feedback_secrets.json
 .otp_log.json
 krithin-neel/

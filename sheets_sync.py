@@ -18,11 +18,21 @@ Setup (only needed for write access):
 
 import csv
 import io
+import json
 import urllib.parse
 import urllib.request
 from pathlib import Path
 
-SHEET_ID = "***REMOVED***"
+SCRIPT_DIR = Path(__file__).parent
+_SECRETS_FILE = SCRIPT_DIR / ".dashboard_secrets.json"
+
+def _load_dashboard_secrets():
+    with open(_SECRETS_FILE) as f:
+        return json.load(f)
+
+_secrets = _load_dashboard_secrets()
+
+SHEET_ID = _secrets["sheet_id"]
 CREDENTIALS_PATH = Path.home() / ".config" / "rsquare" / "sheets_credentials.json"
 
 # GID for each tab (from the sheet URL ?gid=...)
@@ -33,7 +43,7 @@ GID_VIDEO_PROJECTS = "1513492429"
 
 # Client reviews are in a separate Google Sheet (Rsquare_Review_Sheet)
 # accessed via the same sheet ID but different tab — see CLAUDE.md
-REVIEW_SHEET_ID = "***REMOVED***"
+REVIEW_SHEET_ID = _secrets["sheet_id"]
 
 
 def _fetch_public_csv(sheet_id, gid):
@@ -98,7 +108,7 @@ def _row_to_dict(headers, row):
         "delivery_link": find(["link"]) or find(["transfer"]),
         # Defaults not in Sheet — kept for compatibility with dashboard/reminder
         "editor": "Laxman",
-        "editor_phone": "***REMOVED***",
+        "editor_phone": _secrets["editor_phone_laxman"],
         "expected_days": 14,
     }
 
@@ -188,7 +198,7 @@ def read_video_projects():
     return projects
 
 
-VIDEO_PROJECT_SCRIPT_URL = "https://script.google.com/macros/s/***REMOVED***/exec"
+VIDEO_PROJECT_SCRIPT_URL = _secrets["video_project_script_url"]
 
 
 def add_video_project(data):
@@ -210,7 +220,7 @@ def add_video_project(data):
 
 
 # GID for Feedback tab — update after creating the tab in Google Sheets
-GID_FEEDBACK = "***REMOVED***"
+GID_FEEDBACK = _secrets["gid_feedback"]
 
 
 def read_feedback(project=None):

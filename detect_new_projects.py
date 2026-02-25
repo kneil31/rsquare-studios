@@ -18,10 +18,14 @@ GENERATOR = SCRIPT_DIR / "generate_dashboard.py"
 
 LOOKBACK_DAYS = 60
 
+# Load secrets
+with open(SCRIPT_DIR / ".dashboard_secrets.json") as _f:
+    _secrets = json.load(_f)
+
 # Defaults for new editing project entries
 DEFAULTS = {
     "editor": "Laxman",
-    "editor_phone": "***REMOVED***",
+    "editor_phone": _secrets["editor_phone_laxman"],
     "priority": "P1",
     "status": "SENT",
     "edit_completed": None,

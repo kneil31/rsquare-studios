@@ -103,8 +103,15 @@ SEED_REVIEWS = [
      "review": "All the photos look stunning! Everyone in the house loved the pictures a lot."},
 ]
 
-# Google Apps Script URL for review form submission (set after deploying the script)
-REVIEW_FORM_URL = "https://script.google.com/macros/s/***REMOVED***/exec"
+# Load shared secrets
+_DASHBOARD_SECRETS_FILE = SCRIPT_DIR / ".dashboard_secrets.json"
+def _load_dashboard_secrets():
+    with open(_DASHBOARD_SECRETS_FILE) as f:
+        return json.load(f)
+_dashboard_secrets = _load_dashboard_secrets()
+
+REVIEW_FORM_URL = _dashboard_secrets["review_form_url"]
+RAM_PHONE = _dashboard_secrets["ram_phone"]
 
 # Passwords loaded from .secret file or env vars (never hardcoded)
 def _load_passwords():
@@ -1004,7 +1011,7 @@ def generate_html():
             {"label": "Birthday", "event": "Birthday Photography", "location": "Dallas, TX"},
         ],
         "defaults": {"start_time": "18:00", "end_time": "22:00"},
-        "phone": "***REMOVED***",
+        "phone": RAM_PHONE,
         "photographer_name": "Ram",
     }
 
@@ -1037,6 +1044,8 @@ def generate_html():
             "dual_coverage": "Dual Coverage ($325/hr)",
         },
         "liveStreamingCost": 100,
+        "reviewFormUrl": REVIEW_FORM_URL,
+        "ramPhone": RAM_PHONE,
     }
 
     # Encrypt client and internal content with separate passwords
@@ -2825,8 +2834,8 @@ def generate_html():
     <button class="mobile-toggle" id="mobile-toggle">&#9776;</button>
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
-    <!-- WhatsApp floating button -->
-    <a href="https://wa.me/***REMOVED***?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." class="wa-float" target="_blank" rel="noreferrer noopener" aria-label="Chat on WhatsApp">
+    <!-- WhatsApp floating button — href set by JS after decryption -->
+    <a id="wa-float-btn" class="wa-float" style="display:none" target="_blank" rel="noreferrer noopener" aria-label="Chat on WhatsApp">
         <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
     </a>
 
@@ -3281,7 +3290,7 @@ def generate_html():
                 <div class="page-meta">WhatsApp is the easiest way to reach me. Just say hi!</div>
 
                 <div class="gallery-grid" style="max-width:400px;">
-                    <a href="https://wa.me/***REMOVED***?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." target="_blank" rel="noreferrer noopener" class="gallery-card" style="border-color:#25D366;">
+                    <a id="contact-wa" class="gallery-card" style="border-color:#25D366;display:none" target="_blank" rel="noreferrer noopener">
                         <div class="gallery-icon" style="font-size:28px;">💬</div>
                         <div class="gallery-info">
                             <div class="gallery-name">WhatsApp</div>
@@ -3289,7 +3298,7 @@ def generate_html():
                         </div>
                         <div class="gallery-arrow">&#8599;</div>
                     </a>
-                    <a href="tel:+***REMOVED***" class="gallery-card">
+                    <a id="contact-phone" class="gallery-card" style="display:none">
                         <div class="gallery-icon" style="font-size:28px;">📞</div>
                         <div class="gallery-info">
                             <div class="gallery-name">***REMOVED***</div>
@@ -4234,6 +4243,16 @@ def generate_html():
             if (sections['__config__']) {{
                 _appConfig = sections['__config__'];
                 delete sections['__config__'];
+                if (_appConfig.ramPhone) {{
+                    var waMsg = encodeURIComponent("Hi Ram! I'm interested in a photography session.");
+                    var waUrl = 'https://wa.me/' + _appConfig.ramPhone + '?text=' + waMsg;
+                    var floatBtn = document.getElementById('wa-float-btn');
+                    if (floatBtn) {{ floatBtn.href = waUrl; floatBtn.style.display = ''; }}
+                    var contactWa = document.getElementById('contact-wa');
+                    if (contactWa) {{ contactWa.href = waUrl; contactWa.style.display = ''; }}
+                    var contactPhone = document.getElementById('contact-phone');
+                    if (contactPhone) {{ contactPhone.href = 'tel:+' + _appConfig.ramPhone; contactPhone.style.display = ''; }}
+                }}
             }}
             for (const [id, data] of Object.entries(sections)) {{
                 const el = document.getElementById(id);
@@ -4630,7 +4649,7 @@ Looking forward to it! 🙌
         /* Review form submission */
         function submitReview(e) {{
             e.preventDefault();
-            const url = '{review_form_url}';
+            const url = _appConfig ? _appConfig.reviewFormUrl : '';
             if (!url) {{
                 document.getElementById('review-error').textContent = 'Review submissions are not yet configured.';
                 document.getElementById('review-error').style.display = 'block';
