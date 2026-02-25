@@ -28,7 +28,7 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 - **Hero layout:** Option D split (image left, text right) with CSS `mask-image` blend — photo dissolves into a purple-to-black gradient (`#2d1854` → `#0e0518` → `#050208`). On mobile, stacks vertically with bottom-fade blend.
 - **Hero stats:** 300+ Galleries, 5+ Years, 50+ Weddings (real numbers from SmugMug + Ram)
 - **Hero image:** `hero.jpg` — purple silhouette wedding photo (145KB, 1600px wide)
-- **Two-level AES-256-GCM encryption:** Client sections (pricing, booking, `__config__`) and internal sections (workflow, checklists, posing guides) encrypted with separate passwords. No plaintext in HTML source.
+- **Two-level AES-256-GCM encryption:** Client sections (pricing, booking, `__config__`) and internal sections (workflow, checklists, posing guides) encrypted with separate passwords. No plaintext in HTML source. Encrypted payloads contain JSON data objects; JS builds DOM at runtime (no innerHTML).
 - **Cover images:** Pulled from SmugMug API (highlight images per album). Each category tile has a background photo
 - **Tile labels below image:** Category name and gallery count are displayed below the tile image (not overlaid on top), to avoid clashing with text in photos
 - **Background position:** Per-category `background-position` values in `category_covers` dict (tuples of URL + position). Adjust position values when photos crop subjects poorly
@@ -142,6 +142,10 @@ python3 generate_otp.py --no-push    # Generate + rebuild only (no git push, no 
 - **Two-level AES-256-GCM** encryption at build time (Python `cryptography` package)
   - `ENCRYPTED_CLIENT` blob: pricing, booking, `__config__` (rates) — password `***REMOVED***`
   - `ENCRYPTED_INTERNAL` blob: workflow, checklists, posing guides, editing projects — password `***REMOVED***`
+- **Data-driven DOM building (no innerHTML):** Encrypted payloads contain JSON data objects, not pre-built HTML. JS uses `createElement`/`textContent` DOM builders to render all decrypted content (pricing cards, booking form, workflow sections, checklists, posing guides, editing projects). Matches krithin-neel's security pattern.
+- **Safe markdown renderer:** Workflow reference and posing guides use a client-side markdown-to-DOM converter that builds elements via `createElement`/`textContent` — no `innerHTML` or `dangerouslySetInnerHTML`.
+- **URL allowlist enforced:** `isAllowedUrl()` validates all dynamically set URLs — enforced in `makeLink()` (all anchor creation), `buildWorkflowHome()` (Notion link), and `shareQuoteWA()` (wa.me link). Unrecognized domains are blocked.
+- **Referrer protection:** `referrerpolicy="no-referrer"` on hero `<img>` tag; `rel="noreferrer noopener"` on external links.
 - **Web Crypto API** decryption at runtime (PBKDF2, 400k iterations, SHA-256)
 - Random 16-byte salt + 12-byte IV per build (`os.urandom`)
 - No sessionStorage/localStorage — decrypted content is memory-only (`_appConfig`)

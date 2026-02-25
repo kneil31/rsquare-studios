@@ -25,6 +25,7 @@ import os
 import sys
 import base64
 import webbrowser
+import secrets
 from pathlib import Path
 from datetime import datetime
 from cryptography.hazmat.primitives.ciphers.aead import AESGCM
@@ -579,7 +580,7 @@ def build_posing_html(guides):
         converted = md_to_html_simple(content)
         html += f"""
             <div class="page" id="{section_id}">
-                <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
+                <a class="back-link" href="#" data-section="workflow-home">&larr; Back to Workflow</a>
                 <div class="page-breadcrumb">Posing Guides</div>
                 <h1 class="page-title">{name} Prompts</h1>
                 <div class="wf-content">{converted}</div>
@@ -592,7 +593,7 @@ def build_twomann_sidebar(chapters):
     for i, ch in enumerate(chapters):
         section_id = f"twomann-{i}"
         short = ch["title"][:40] + ("..." if len(ch["title"]) > 40 else "")
-        links += f'<a href="#{section_id}" class="sidebar-link sub-link" onclick="showSection(\'{section_id}\')">{short}</a>\n'
+        links += f'<a href="#{section_id}" class="sidebar-link sub-link" data-section="{section_id}">{short}</a>\n'
     return links
 
 
@@ -603,7 +604,7 @@ def build_twomann_pages(chapters):
         converted = md_to_html_simple(ch["content"])
         html += f"""
             <div class="page" id="{section_id}">
-                <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
+                <a class="back-link" href="#" data-section="workflow-home">&larr; Back to Workflow</a>
                 <div class="page-breadcrumb">TwoMann Course &middot; Chapter {i + 1} of {len(chapters)}</div>
                 <h1 class="page-title">{escape_html(ch['title'])}</h1>
                 <div class="wf-content">{converted}</div>
@@ -614,13 +615,14 @@ def build_twomann_pages(chapters):
 def generate_html():
     now = datetime.now().strftime("%b %d, %Y")
 
+    # CSP nonce — regenerated each build
+    csp_nonce = secrets.token_hex(16)
+
     # Load data
     galleries = load_galleries()
     gallery_cards = build_gallery_cards(galleries)
-    pricing_html = build_pricing_section()
     posing_guides = load_posing_guides()
     workflow_md = load_workflow()
-    workflow_html = md_to_html_simple(workflow_md)
     total_galleries = sum(c["count"] for c in gallery_cards.values())
 
     # Build gear categories HTML
@@ -672,7 +674,7 @@ def generate_html():
     # Build sidebar gallery links
     gallery_sidebar = ""
     for cat, info in gallery_cards.items():
-        gallery_sidebar += f'<a href="#portfolio-{cat}" class="sidebar-link" onclick="showSection(\'portfolio-{cat}\')">{info["icon"]} {info["label"]} ({info["count"]})</a>\n'
+        gallery_sidebar += f'<a href="#portfolio-{cat}" class="sidebar-link" data-section="portfolio-{cat}">{info["icon"]} {info["label"]} ({info["count"]})</a>\n'
 
     # Build portfolio category pages
     portfolio_pages = ""
@@ -680,7 +682,7 @@ def generate_html():
         portfolio_pages += f"""
             <div class="page gallery-page-wrap" id="portfolio-{cat}">
                 <div class="gallery-backdrop" style="background-image:url('{info['cover']}')"></div>
-                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <a class="back-link" href="#" data-section="portfolio-home">&larr; Back to Portfolio</a>
                 <div class="cat-hero" style="background-image:url('{info['cover']}');background-position:{info['hero_pos']}">
                     <div class="cat-hero-content">
                         <div class="cat-hero-title">{info['label']}</div>
@@ -694,7 +696,7 @@ def generate_html():
     posing_sidebar = ""
     for name in posing_guides:
         sid = f"posing-{name.lower().replace(' ', '-')}"
-        posing_sidebar += f'<a href="#{sid}" class="sidebar-link sub-link" onclick="showSection(\'{sid}\')">{name}</a>\n'
+        posing_sidebar += f'<a href="#{sid}" class="sidebar-link sub-link" data-section="{sid}">{name}</a>\n'
 
     # Checklist data
     pre_shoot_items = [
@@ -730,252 +732,161 @@ def generate_html():
         "Backup to external SSD",
     ]
 
-    def checklist_html(items, list_id):
-        html = ""
-        for i, item in enumerate(items):
-            html += f"""
-                <label class="check-item" for="{list_id}-{i}">
-                    <input type="checkbox" id="{list_id}-{i}" onchange="saveChecklist()">
-                    <span>{item}</span>
-                </label>"""
-        return html
-
-    pre_html = checklist_html(pre_shoot_items, "pre")
-    dayof_html = checklist_html(day_of_items, "day")
-    post_html = checklist_html(post_shoot_items, "post")
-
     # Build protected content dicts — two levels of access
     # Client content: pricing, booking, rate config (password from .secret)
     # Internal content: workflow, checklists, posing guides, editing projects (password from .secret)
     client_content = {"v": 1}
     internal_content = {"v": 1}
 
-    # Pricing page inner HTML
-    client_content["pricing"] = f"""
-                <div class="page-breadcrumb">Pricing</div>
-                <h1 class="page-title">Investment</h1>
-                <div class="page-meta">Simple packages. Pick your coverage and hours &mdash; everything else is included.</div>
-                <div class="pricing-grid">
-                    {pricing_html}
-                </div>
+    # Pricing page — structured data (no pre-built HTML)
+    client_content["pricing"] = {
+        "breadcrumb": "Pricing",
+        "title": "Investment",
+        "subtitle": "Simple packages. Pick your coverage and hours \u2014 everything else is included.",
+        "packages": [
+            {
+                "name": "Photo Only",
+                "icon": "\U0001f4f7",
+                "accent": "#8b5cf6",
+                "desc": "Just me and my camera \u2014 all edited photos delivered",
+                "tiers": [
+                    {"name": "2 Hours", "price": "$300", "desc": "Maternity, portraits, small celebrations"},
+                    {"name": "3 Hours", "price": "$450", "desc": "Baby showers, birthdays, cradle ceremonies"},
+                    {"name": "4 Hours", "price": "$600", "desc": "Half saree, housewarming, larger events"},
+                ],
+            },
+            {
+                "name": "Photo + Video",
+                "icon": "\U0001f4f7\u2009\U0001f4f9",
+                "accent": "#3b82f6",
+                "desc": "I shoot both photo and video \u2014 great for events you want to relive",
+                "tiers": [
+                    {"name": "2 Hours", "price": "$470", "desc": "Maternity, portraits, intimate events"},
+                    {"name": "3 Hours", "price": "$705", "desc": "Baby showers, birthdays, cradle ceremonies"},
+                    {"name": "4 Hours", "price": "$940", "desc": "Half saree, housewarming, engagement"},
+                ],
+            },
+            {
+                "name": "Dual Coverage",
+                "icon": "\U0001f4f7\U0001f4f7",
+                "accent": "#f59e0b",
+                "desc": "Me on photos, videographer on video \u2014 nothing gets missed",
+                "tiers": [
+                    {"name": "4 Hours", "price": "$1,300", "desc": "Half saree, engagement, smaller weddings"},
+                    {"name": "8 Hours", "price": "$2,600", "desc": "Full wedding day coverage"},
+                    {"name": "12 Hours", "price": "$3,900", "desc": "Full wedding \u2014 morning prep to reception"},
+                ],
+            },
+            {
+                "name": "Add-on",
+                "icon": "\U0001f4e1",
+                "accent": "#10b981",
+                "desc": "",
+                "tiers": [
+                    {"name": "Live Streaming", "price": "+$100", "price_sub": "flat", "desc": "Family back home can watch live on YouTube/Facebook"},
+                    {"name": "Extra Hour", "price": "+$150", "price_sub": "\u2013 $325", "desc": "Add more time to any package (rate depends on coverage type)"},
+                ],
+            },
+        ],
+        "includes": [
+            "All edited photos \u2014 usually ready in 12\u201315 days",
+            "Cinematic highlight video (4\u20136 min)",
+            "Online gallery \u2014 download, share, print",
+            "Full print rights \u2014 print anywhere you want",
+        ],
+        "comparison": {
+            "title": "Solo or Dual \u2014 which one do you need?",
+            "solo": {
+                "label": "Solo",
+                "color": "#10b981",
+                "border": "#2d4a2d",
+                "pros": [
+                    "Easier on the budget",
+                    "I handle both photo and video \u2014 ceremony, portraits, reception, all covered",
+                ],
+                "note": "Good for: birthdays, baby showers, smaller events",
+            },
+            "dual": {
+                "label": "Dual",
+                "color": "#3b82f6",
+                "border": "#2d3a5e",
+                "pros": [
+                    "Two people, two angles \u2014 nothing gets missed",
+                    "Way more candid shots and guest moments",
+                    "Better highlight video with dedicated video guy",
+                ],
+                "note": "Go with this for: weddings, 100+ guests, multi-spot events",
+            },
+        },
+        "reviews": [{"name": r["name"], "event_type": r["event_type"], "rating": int(r.get("rating", 5)), "text": r["review"]} for r in reviews[:2]],
+    }
 
-                <div class="includes-box">
-                    <h3>What's Included</h3>
-                    <div class="includes-list">
-                        <span>&#10003; All edited photos &mdash; usually ready in 12&ndash;15 days</span>
-                        <span>&#10003; Cinematic highlight video (4&ndash;6 min)</span>
-                        <span>&#10003; Online gallery &mdash; download, share, print</span>
-                        <span>&#10003; Full print rights &mdash; print anywhere you want</span>
-                    </div>
-                </div>
+    # Booking page — structured data (no pre-built HTML)
+    client_content["booking"] = {
+        "breadcrumb": "Book",
+        "title": "Request a Quote",
+        "subtitle": "Fill in your details and I'll send you a quote on WhatsApp.",
+        "event_types": ["Wedding", "Engagement", "Pre-Wedding", "Half Saree", "Baby Shower",
+                        "Maternity", "Birthday", "Cradle Ceremony", "Housewarming",
+                        "Anniversary", "Pooja", "Other"],
+        "settings": ["Outdoor", "Indoor", "Outdoor + Indoor"],
+        "coverage_types": [
+            {"value": "photo_only", "label": "Photo Only"},
+            {"value": "photo_video", "label": "Photo + Video"},
+            {"value": "dual_coverage", "label": "Dual Coverage"},
+        ],
+        "live_streaming_label": "Add Live Streaming (+$100)",
+    }
 
+    # Workflow home — structured data
+    internal_content["workflow-home"] = {
+        "breadcrumb": "Internal",
+        "title": "Workflow Dashboard",
+        "subtitle": "Checklists, posing prompts, course notes & workflow reference",
+        "pipeline": [
+            {"label": "Inquiry", "color": "#3b82f6"},
+            {"label": "Booked", "color": "#8b5cf6"},
+            {"label": "Shot", "color": "#f59e0b"},
+            {"label": "Editing", "color": "#ec4899"},
+            {"label": "Delivered", "color": "#10b981"},
+        ],
+        "tiles": [
+            {"icon": "\u2705", "label": "Checklists", "section": "checklists"},
+            {"icon": "\U0001f4d6", "label": "Workflow Reference", "section": "workflow-ref"},
+            {"icon": "\U0001f3ac", "label": "Editing Projects", "section": "editing-projects"},
+            {"icon": "\U0001f491", "label": "Couple Poses", "section": "posing-couples"},
+            {"icon": "\U0001f468\u200d\U0001f469\u200d\U0001f467", "label": "Family Poses", "section": "posing-families"},
+            {"icon": "\U0001f48d", "label": "Wedding Poses", "section": "posing-weddings"},
+            {"icon": "\U0001f4f8", "label": "Pose References", "url": "https://literate-basketball-b5e.notion.site/PLAN-POSES-13e48bb472084196a825703d7e8a4d10"},
+        ],
+    }
 
-                <!-- Solo vs Dual comparison -->
-                <div style="margin-top:28px;">
-                    <h3 style="font-size:16px; font-weight:700; color:#fff; margin-bottom:4px;">Solo or Dual &mdash; which one do you need?</h3>
-                    <div class="proscons">
-                        <div class="proscons-col" style="border:1px solid #2d4a2d;">
-                            <h4 style="color:#10b981;">Solo</h4>
-                            <ul>
-                                <li>&#10003; Easier on the budget</li>
-                                <li>&#10003; I handle both photo and video &mdash; ceremony, portraits, reception, all covered</li>
-                                <li style="color:#6b7280; font-style:italic; margin-top:6px;">Good for: birthdays, baby showers, smaller events</li>
-                            </ul>
-                        </div>
-                        <div class="proscons-col" style="border:1px solid #2d3a5e;">
-                            <h4 style="color:#3b82f6;">Dual</h4>
-                            <ul>
-                                <li>&#10003; Two people, two angles &mdash; nothing gets missed</li>
-                                <li>&#10003; Way more candid shots and guest moments</li>
-                                <li>&#10003; Better highlight video with dedicated video guy</li>
-                                <li style="color:#6b7280; font-style:italic; margin-top:6px;">Go with this for: weddings, 100+ guests, multi-spot events</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
+    # Checklists — structured data
+    internal_content["checklists"] = {
+        "breadcrumb": "Workflow",
+        "title": "Shoot Checklists",
+        "subtitle": "Check items off as you go \u2014 state is saved in your browser",
+        "has_back": True,
+        "back_section": "workflow-home",
+        "groups": [
+            {"title": "PRE-SHOOT", "prefix": "pre", "items": pre_shoot_items},
+            {"title": "DAY-OF GEAR", "prefix": "day", "items": day_of_items},
+            {"title": "POST-SHOOT", "prefix": "post", "items": post_shoot_items},
+        ],
+    }
 
-                <div style="margin-top:24px; text-align:center;">
-                    <button class="copy-btn" onclick="showSection('booking')" style="background:#8b5cf6;">Request a Quote</button>
-                </div>
-
-                <!-- Testimonials near pricing -->
-                <div style="margin-top:32px;">
-                    <div class="testimonials-title">What Clients Say</div>
-                    <div class="testimonials-grid">
-{_build_review_cards(reviews[:2])}
-                    </div>
-                </div>"""
-
-    # Booking page inner HTML
-    client_content["booking"] = """
-                <div class="page-breadcrumb">Book</div>
-                <h1 class="page-title">Request a Quote</h1>
-                <div class="page-meta">Fill in your details and I'll send you a quote on WhatsApp.</div>
-
-                <div class="book-form" id="book-form">
-                    <div class="form-row">
-                        <label class="form-label">CLIENT NAME</label>
-                        <input class="form-input" id="q-name" placeholder="Full name" oninput="updateQuote()">
-                    </div>
-                    <div class="form-row">
-                        <label class="form-label">EVENT</label>
-                        <select class="form-select" id="q-event" onchange="updateQuote()">
-                            <option value="">Select event type</option>
-                            <option value="Wedding">Wedding</option>
-                            <option value="Engagement">Engagement</option>
-                            <option value="Pre-Wedding">Pre-Wedding</option>
-                            <option value="Half Saree">Half Saree</option>
-                            <option value="Baby Shower">Baby Shower</option>
-                            <option value="Maternity">Maternity</option>
-                            <option value="Birthday">Birthday</option>
-                            <option value="Cradle Ceremony">Cradle Ceremony</option>
-                            <option value="Housewarming">Housewarming</option>
-                            <option value="Anniversary">Anniversary</option>
-                            <option value="Pooja">Pooja</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div class="form-row">
-                        <label class="form-label">LOCATION</label>
-                        <input class="form-input" id="q-location" placeholder="Venue name or city" oninput="updateQuote()">
-                    </div>
-                    <div class="form-row-inline">
-                        <div class="form-row">
-                            <label class="form-label">DATE</label>
-                            <input class="form-input" id="q-date" type="date" oninput="updateQuote()">
-                        </div>
-                        <div class="form-row">
-                            <label class="form-label">HOURS OF COVERAGE</label>
-                            <input class="form-input" id="q-hours" type="number" min="1" placeholder="Hours" oninput="updateQuote()">
-                        </div>
-                    </div>
-                    <div class="form-row-inline">
-                        <div class="form-row">
-                            <label class="form-label">SETTING</label>
-                            <select class="form-select" id="q-shoottype" onchange="updateQuote()">
-                                <option value="Outdoor">Outdoor</option>
-                                <option value="Indoor">Indoor</option>
-                                <option value="Outdoor + Indoor">Outdoor + Indoor</option>
-                            </select>
-                        </div>
-                        <div class="form-row">
-                            <label class="form-label">COVERAGE TYPE</label>
-                            <select class="form-select" id="q-services" onchange="updateQuote()">
-                                <option value="photo_only">Photo Only</option>
-                                <option value="photo_video">Photo + Video</option>
-                                <option value="dual_coverage">Dual Coverage</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row" style="margin-top:4px;">
-                        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px; color:#d1d5db;">
-                            <input type="checkbox" id="q-live" onchange="updateQuote()" style="width:18px; height:18px; accent-color:#10b981;">
-                            Add Live Streaming (+$100)
-                        </label>
-                    </div>
-                    <div class="form-row-inline">
-                        <div class="form-row">
-                            <label class="form-label">ESTIMATED INVESTMENT</label>
-                            <input class="form-input" id="q-quote" readonly style="color:#8b5cf6; font-weight:700;">
-                        </div>
-                        <div class="form-row">
-                            <label class="form-label">RETAINER</label>
-                            <input class="form-input" id="q-deposit" placeholder="e.g. $100" oninput="updateQuote()">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="quote-preview" id="quote-preview" style="margin-top:20px;"></div>
-
-                <div class="btn-row">
-                    <button class="copy-btn" onclick="copyQuote()">📋 Copy to Clipboard</button>
-                    <a class="share-wa-btn" id="wa-share-btn" href="#" target="_blank" rel="noreferrer noopener" onclick="shareQuoteWA(event)">💬 Share via WhatsApp</a>
-                </div>
-
-                <div id="booking-confirmation" style="display:none; margin-top:20px; padding:20px; background:#1a2e1a; border:1px solid #2d4a2d; border-radius:12px; text-align:center;">
-                    <div style="font-size:24px; margin-bottom:8px;">&#10003;</div>
-                    <div style="font-size:16px; font-weight:600; color:#10b981; margin-bottom:6px;">Quote sent!</div>
-                    <div style="font-size:14px; color:#9ca3af; line-height:1.6;">I'll confirm availability and get back to you within 24 hours.<br>Feel free to message me on WhatsApp if you have any questions.</div>
-                </div>"""
-
-    # Workflow home inner HTML
-    internal_content["workflow-home"] = """
-                <div class="page-breadcrumb">Internal</div>
-                <h1 class="page-title">Workflow Dashboard</h1>
-                <div class="page-meta">Checklists, posing prompts, course notes &amp; workflow reference</div>
-
-                <div class="pipeline-row">
-                    <div class="pipeline-stage" style="background: #3b82f6;">Inquiry</div>
-                    <div class="pipeline-stage" style="background: #8b5cf6;">Booked</div>
-                    <div class="pipeline-stage" style="background: #f59e0b;">Shot</div>
-                    <div class="pipeline-stage" style="background: #ec4899;">Editing</div>
-                    <div class="pipeline-stage" style="background: #10b981;">Delivered</div>
-                </div>
-
-                <div class="wf-tile-grid">
-                    <div class="wf-tile" onclick="showSection('checklists')">
-                        <div class="wf-tile-icon">✅</div>
-                        <div class="wf-tile-label">Checklists</div>
-                    </div>
-                    <div class="wf-tile" onclick="showSection('workflow-ref')">
-                        <div class="wf-tile-icon">📖</div>
-                        <div class="wf-tile-label">Workflow Reference</div>
-                    </div>
-                    <div class="wf-tile" onclick="showSection('editing-projects')">
-                        <div class="wf-tile-icon">🎬</div>
-                        <div class="wf-tile-label">Editing Projects</div>
-                    </div>
-                    <div class="wf-tile" onclick="showSection('posing-couples')">
-                        <div class="wf-tile-icon">💑</div>
-                        <div class="wf-tile-label">Couple Poses</div>
-                    </div>
-                    <div class="wf-tile" onclick="showSection('posing-families')">
-                        <div class="wf-tile-icon">👨‍👩‍👧</div>
-                        <div class="wf-tile-label">Family Poses</div>
-                    </div>
-                    <div class="wf-tile" onclick="showSection('posing-weddings')">
-                        <div class="wf-tile-icon">💍</div>
-                        <div class="wf-tile-label">Wedding Poses</div>
-                    </div>
-                    <a class="wf-tile" href="https://literate-basketball-b5e.notion.site/PLAN-POSES-13e48bb472084196a825703d7e8a4d10" target="_blank" rel="noreferrer noopener" style="text-decoration:none;color:inherit;">
-                        <div class="wf-tile-icon">📸</div>
-                        <div class="wf-tile-label">Pose References</div>
-                    </a>
-                </div>"""
-
-    # Checklists inner HTML
-    internal_content["checklists"] = f"""
-                <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
-                <div class="page-breadcrumb">Workflow</div>
-                <h1 class="page-title">Shoot Checklists</h1>
-                <div class="page-meta">Check items off as you go &mdash; state is saved in your browser</div>
-
-                <div class="checklist-group">
-                    <div class="checklist-title">PRE-SHOOT</div>
-                    {pre_html}
-                </div>
-                <div class="checklist-group">
-                    <div class="checklist-title">DAY-OF GEAR</div>
-                    {dayof_html}
-                </div>
-                <div class="checklist-group">
-                    <div class="checklist-title">POST-SHOOT</div>
-                    {post_html}
-                </div>
-                <div style="margin-top: 20px;">
-                    <button class="pw-btn" onclick="resetChecklists()" style="background: #374151;">Reset All Checklists</button>
-                </div>"""
-
-    # Workflow reference inner HTML
-    internal_content["workflow-ref"] = f"""
-                <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
-                <div class="page-breadcrumb">Workflow</div>
-                <h1 class="page-title">Photo Workflow Reference</h1>
-                <div class="page-meta">Ingest &rarr; Sort &rarr; Cull &rarr; Edit &rarr; Export &rarr; Deliver</div>
-                <div class="wf-content">{workflow_html}</div>"""
+    # Workflow reference — raw markdown (rendered client-side)
+    internal_content["workflow-ref"] = {
+        "breadcrumb": "Workflow",
+        "title": "Photo Workflow Reference",
+        "subtitle": "Ingest \u2192 Sort \u2192 Cull \u2192 Edit \u2192 Export \u2192 Deliver",
+        "has_back": True,
+        "back_section": "workflow-home",
+        "markdown": workflow_md,
+    }
 
     # Editing projects tracker — read from Google Sheet, fall back to local JSON
-    editing_rows = ""
+    editing_rows_data = []
     editing_project_list = None
     try:
         from sheets_sync import read_projects as _read_sheet_projects
@@ -993,75 +904,46 @@ def generate_html():
             sent = datetime.strptime(p["date_sent"], "%Y-%m-%d")
             days_elapsed = (today - sent).days
             status = p["status"]
-            # Auto-flag overdue
             if status != "COMPLETED" and days_elapsed > p.get("expected_days", 14):
                 display_status = "OVERDUE"
-                badge_class = "badge-overdue"
             elif status == "COMPLETED":
                 display_status = "COMPLETED"
-                badge_class = "badge-completed"
             elif status == "SENT":
                 display_status = "SENT"
-                badge_class = "badge-sent"
             else:
                 display_status = status
-                badge_class = "badge-progress"
 
-            priority_badge = f'<span class="priority-badge priority-{p["priority"].lower()}">{p["priority"]}</span>'
-            completed_col = p.get("edit_completed", "") or "—"
-            link_html = ""
-            if p.get("delivery_link"):
-                link_html = f'<a href="{escape_html(p["delivery_link"])}" target="_blank" rel="noreferrer noopener" class="delivery-link">View</a>'
-            else:
-                link_html = '<span style="color:#6b7280;">—</span>'
+            editing_rows_data.append({
+                "task": p["task"],
+                "priority": p["priority"],
+                "date_sent": sent.strftime("%b %d, %Y"),
+                "days": days_elapsed,
+                "status": display_status,
+                "completed": p.get("edit_completed", "") or "\u2014",
+                "delivery_link": p.get("delivery_link", ""),
+            })
 
-            sent_display = sent.strftime("%b %d, %Y")
-            editing_rows += f"""
-                <tr>
-                    <td>{escape_html(p['task'])}</td>
-                    <td>{priority_badge}</td>
-                    <td>{sent_display}</td>
-                    <td>{days_elapsed}d</td>
-                    <td><span class="status-badge {badge_class}">{display_status}</span></td>
-                    <td>{completed_col}</td>
-                    <td>{link_html}</td>
-                </tr>"""
+    internal_content["editing-projects"] = {
+        "breadcrumb": "Workflow",
+        "title": "Editing Projects",
+        "subtitle": "Track outsourced editing \u2014 status, delivery links, and follow-ups",
+        "has_back": True,
+        "back_section": "workflow-home",
+        "columns": ["Project", "Priority", "Sent", "Days", "Status", "Completed", "Files"],
+        "rows": editing_rows_data,
+    }
 
-    internal_content["editing-projects"] = f"""
-                <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
-                <div class="page-breadcrumb">Workflow</div>
-                <h1 class="page-title">Editing Projects</h1>
-                <div class="page-meta">Track outsourced editing — status, delivery links, and follow-ups</div>
-
-                <div class="editing-table-wrap">
-                    <table class="editing-table">
-                        <thead>
-                            <tr>
-                                <th>Project</th>
-                                <th>Priority</th>
-                                <th>Sent</th>
-                                <th>Days</th>
-                                <th>Status</th>
-                                <th>Completed</th>
-                                <th>Files</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {editing_rows}
-                        </tbody>
-                    </table>
-                </div>"""
-
-    # Posing guide pages — each gets its own key
+    # Posing guide pages — each gets its own key with raw markdown
     posing_shells = ""
     for name, content in posing_guides.items():
         section_id = f"posing-{name.lower().replace(' ', '-')}"
-        converted = md_to_html_simple(content)
-        internal_content[section_id] = f"""
-                <a class="back-link" href="#" onclick="showSection('workflow-home'); return false;">&larr; Back to Workflow</a>
-                <div class="page-breadcrumb">Posing Guides</div>
-                <h1 class="page-title">{name} Prompts</h1>
-                <div class="wf-content">{converted}</div>"""
+        internal_content[section_id] = {
+            "breadcrumb": "Posing Guides",
+            "title": f"{name} Prompts",
+            "has_back": True,
+            "back_section": "workflow-home",
+            "markdown": content,
+        }
         posing_shells += f"""
             <div class="page" id="{section_id}">
                 <div class="encrypted-placeholder">This content is encrypted. Enter the password to view posing guides.</div>
@@ -1113,6 +995,7 @@ def generate_html():
     <meta property="og:url" content="https://portfolio.rsquarestudios.com/">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-{csp_nonce}'; style-src 'unsafe-inline'; img-src 'self' https://*.smugmug.com https://img.youtube.com data:; connect-src https://script.google.com; font-src 'none'; frame-src 'none'; base-uri 'none'; form-action https://script.google.com;">
     <title>Rsquare Studios — Dashboard</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
@@ -2800,8 +2683,8 @@ def generate_html():
     </style>
 </head>
 <body>
-    <button class="mobile-toggle" onclick="toggleSidebar()">&#9776;</button>
-    <div class="sidebar-overlay" id="sidebar-overlay" onclick="closeSidebar()"></div>
+    <button class="mobile-toggle" id="mobile-toggle">&#9776;</button>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
     <!-- WhatsApp floating button -->
     <a href="https://wa.me/***REDACTED_PHONE***?text=Hi%20Ram!%20I%27m%20interested%20in%20a%20photography%20session." class="wa-float" target="_blank" rel="noreferrer noopener" aria-label="Chat on WhatsApp">
@@ -2811,23 +2694,23 @@ def generate_html():
     <!-- Bottom nav (mobile) -->
     <nav class="bottom-nav">
         <div class="bottom-nav-inner">
-            <div class="bnav-item active" onclick="mobileNav('home')" id="bnav-home">
+            <div class="bnav-item active" data-nav="home" id="bnav-home">
                 <span class="bnav-icon">🏠</span>
                 Home
             </div>
-            <div class="bnav-item" onclick="mobileNav('portfolio-home')" id="bnav-portfolio">
+            <div class="bnav-item" data-nav="portfolio-home" id="bnav-portfolio">
                 <span class="bnav-icon">📸</span>
                 Portfolio
             </div>
-            <div class="bnav-item" onclick="mobileNavProtected('pricing')" id="bnav-pricing">
+            <div class="bnav-item" data-nav-protected="pricing" id="bnav-pricing">
                 <span class="bnav-icon">💰</span>
                 Pricing
             </div>
-            <div class="bnav-item" onclick="mobileNavProtected('booking')" id="bnav-booking">
+            <div class="bnav-item" data-nav-protected="booking" id="bnav-booking">
                 <span class="bnav-icon">📋</span>
                 Book
             </div>
-            <div class="bnav-item" onclick="mobileNav('contact')" id="bnav-contact">
+            <div class="bnav-item" data-nav="contact" id="bnav-contact">
                 <span class="bnav-icon">📞</span>
                 Contact
             </div>
@@ -2839,27 +2722,27 @@ def generate_html():
         <div class="sidebar" id="sidebar">
             <div class="sidebar-brand">📷 <span>Rsquare Studios</span></div>
 
-            <a class="sidebar-link" onclick="showSection('home')">🏠 Home</a>
+            <a class="sidebar-link" data-section="home">🏠 Home</a>
 
             <div class="sidebar-divider"></div>
             <div class="sidebar-section-label">PORTFOLIO</div>
-            <a class="sidebar-link" onclick="showSection('portfolio-home')">📸 All Categories</a>
-            <a class="sidebar-link" onclick="showSection('videos')">🎬 Videos</a>
+            <a class="sidebar-link" data-section="portfolio-home">📸 All Categories</a>
+            <a class="sidebar-link" data-section="videos">🎬 Videos</a>
             {gallery_sidebar}
 
             <div class="sidebar-divider"></div>
-            <a class="sidebar-link client-link" onclick="accessWorkflow('pricing')" style="display:none;">💰 Pricing</a>
-            <a class="sidebar-link client-link" onclick="accessWorkflow('booking')" style="display:none;">📋 Book / Get Quote</a>
+            <a class="sidebar-link client-link" data-access="pricing" style="display:none;">💰 Pricing</a>
+            <a class="sidebar-link client-link" data-access="booking" style="display:none;">📋 Book / Get Quote</a>
             <div id="wf-sidebar-block" style="display:none;">
                 <div class="sidebar-section-label" id="wf-section-label">WORKFLOW</div>
-                <a class="sidebar-link internal-link" onclick="accessWorkflow('workflow-home')">📋 Dashboard</a>
-                <a class="sidebar-link internal-link" onclick="accessWorkflow('checklists')">✅ Checklists</a>
-                <a class="sidebar-link internal-link" onclick="accessWorkflow('workflow-ref')">📖 Workflow Reference</a>
-                <a class="sidebar-link internal-link" onclick="accessWorkflow('editing-projects')">🎬 Editing Projects</a>
+                <a class="sidebar-link internal-link" data-access="workflow-home">📋 Dashboard</a>
+                <a class="sidebar-link internal-link" data-access="checklists">✅ Checklists</a>
+                <a class="sidebar-link internal-link" data-access="workflow-ref">📖 Workflow Reference</a>
+                <a class="sidebar-link internal-link" data-access="editing-projects">🎬 Editing Projects</a>
                 <div class="sidebar-section-label" style="padding-top:8px">POSING GUIDES</div>
-                {posing_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link internal-link"')}
+                {posing_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link internal-link"').replace('data-section=', 'data-access=')}
             </div>
-            <a class="sidebar-link" onclick="showPrivateGate()" style="margin-top:4px;">
+            <a class="sidebar-link" href="#" id="private-gate-link" style="margin-top:4px;">
                 <span class="lock-icon" id="lock-icon">🔒</span> Private
             </a>
 
@@ -2878,7 +2761,7 @@ def generate_html():
             <div class="page active" id="home">
                 <div class="hero">
                     <div class="hero-img-wrap">
-                        <img src="hero.jpg" alt="Rsquare Studios" class="hero-image">
+                        <img src="hero.jpg" alt="Rsquare Studios" class="hero-image" referrerpolicy="no-referrer">
                     </div>
                     <div class="hero-body">
                     <h1>Rsquare Studios</h1>
@@ -2897,7 +2780,7 @@ def generate_html():
                             <div class="label">WEDDINGS</div>
                         </div>
                     </div>
-                    <a href="#" class="hero-cta" onclick="showSection('portfolio-home'); return false;">View Portfolio</a>
+                    <a href="#" class="hero-cta" data-section="portfolio-home">View Portfolio</a>
                     </div>
                 </div>
 
@@ -2910,7 +2793,7 @@ def generate_html():
 
                     <div class="review-form-section">
                         <div class="review-form-header">Loved working with us? Share your experience</div>
-                        <form class="review-form" id="review-form" onsubmit="submitReview(event)">
+                        <form class="review-form" id="review-form">
                             <div class="form-row">
                                 <label class="form-label">YOUR NAME</label>
                                 <input class="form-input" id="rv-name" placeholder="Full name" required>
@@ -2989,7 +2872,7 @@ def generate_html():
 
                 <!-- My Gear -->
                 <div class="gear-section">
-                    <div class="gear-card" onclick="toggleGear()" id="gear-toggle">
+                    <div class="gear-card" id="gear-toggle">
                         <div class="gear-icon">🎥</div>
                         <div class="gear-info">
                             <div class="gear-title">My Gear</div>
@@ -3010,7 +2893,7 @@ def generate_html():
                 <div class="page-meta">{total_galleries} galleries &middot; Tap any category to browse</div>
                 <div class="cat-grid">
                     {"".join(f'''
-                    <div class="cat-tile" onclick="showSection('portfolio-{cat}')">
+                    <div class="cat-tile" data-section="portfolio-{cat}">
                         <div class="cat-tile-img" style="background-image:url('{info['cover']}');background-position:{info['cover_pos']}"></div>
                         <div class="cat-tile-content">
                             <div class="cat-name">{info['label']}</div>
@@ -3025,7 +2908,7 @@ def generate_html():
 
             <!-- VIDEOS -->
             <div class="page" id="videos">
-                <a class="back-link" href="#" onclick="showSection('portfolio-home'); return false;">&larr; Back to Portfolio</a>
+                <a class="back-link" href="#" data-section="portfolio-home">&larr; Back to Portfolio</a>
                 <div class="page-breadcrumb">Portfolio</div>
                 <h1 class="page-title">Videos</h1>
                 <div class="page-meta">Highlight reels and cinematic teasers from our events</div>
@@ -3194,7 +3077,7 @@ def generate_html():
             </div>
 
             <!-- LOGOUT BUTTON (visible when unlocked) -->
-            <button id="logout-btn" class="logout-btn" onclick="logout()">Log out</button>
+            <button id="logout-btn" class="logout-btn">Log out</button>
 
             <!-- PASSWORD GATE -->
             <div class="page" id="pw-gate">
@@ -3203,12 +3086,12 @@ def generate_html():
                     <p>This section is password-protected.</p>
                     <div>
                         <div class="pw-input-wrap">
-                            <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" autocomplete="off" inputmode="text" onkeydown="if(event.key==='Enter')checkPassword()">
-                            <button type="button" class="pw-eye-btn" onclick="togglePasswordVisibility()" aria-label="Toggle password visibility">
+                            <input type="password" class="pw-input" id="pw-input" placeholder="Enter password" autocomplete="off" inputmode="text">
+                            <button type="button" class="pw-eye-btn" id="pw-eye-btn" aria-label="Toggle password visibility">
                                 <span id="eye-icon">👁</span>
                             </button>
                         </div>
-                        <button class="pw-btn" id="pw-btn" onclick="checkPassword()">Enter</button>
+                        <button class="pw-btn" id="pw-btn">Enter</button>
                     </div>
                     <div class="pw-hint">Hint: shared via WhatsApp when you inquired</div>
                     <div class="pw-error" id="pw-error">Wrong password. Try again.</div>
@@ -3296,7 +3179,7 @@ def generate_html():
 
     <div class="toast" id="toast"></div>
 
-    <script>
+    <script nonce="{csp_nonce}">
         const ENCRYPTED_CLIENT = "{encrypted_client_blob}";
         const ENCRYPTED_CLIENT_OTP = "{encrypted_client_otp_blob}";
         const ENCRYPTED_INTERNAL = "{encrypted_internal_blob}";
@@ -3405,20 +3288,540 @@ def generate_html():
             return new TextDecoder().decode(decrypted);
         }}
 
+        /* ── DOM builder helpers (no innerHTML — all content set via textContent/createElement) ── */
+        function makeEl(tag, cls, text) {{
+            const el = document.createElement(tag);
+            if (cls) el.className = cls;
+            if (text !== undefined && text !== null) el.textContent = text;
+            return el;
+        }}
+        function makeLink(url, text, cls) {{
+            const a = document.createElement('a');
+            a.href = isAllowedUrl(url) ? url : '#';
+            a.target = '_blank';
+            a.rel = 'noreferrer noopener';
+            if (cls) a.className = cls;
+            if (text) a.textContent = text;
+            return a;
+        }}
+        function setStyle(el, styles) {{
+            Object.assign(el.style, styles);
+            return el;
+        }}
+
+        /* ── Safe markdown renderer (textContent only, no innerHTML) ── */
+        function renderMarkdown(md) {{
+            const container = document.createDocumentFragment();
+            const lines = (md || '').split('\\n');
+            let i = 0;
+            let currentList = null;
+
+            function flushList() {{
+                if (currentList) {{ container.appendChild(currentList); currentList = null; }}
+            }}
+
+            while (i < lines.length) {{
+                const line = lines[i];
+                const trimmed = line.trim();
+
+                // Code blocks
+                if (trimmed.startsWith('```')) {{
+                    flushList();
+                    const codeLines = [];
+                    i++;
+                    while (i < lines.length && !lines[i].trim().startsWith('```')) {{
+                        codeLines.push(lines[i]);
+                        i++;
+                    }}
+                    i++; // skip closing ```
+                    const wrapper = makeEl('div', 'wf-code');
+                    const pre = makeEl('pre', null, codeLines.join('\\n'));
+                    wrapper.appendChild(pre);
+                    container.appendChild(wrapper);
+                    continue;
+                }}
+
+                // Horizontal rule
+                if (['---', '***', '___'].includes(trimmed)) {{
+                    flushList();
+                    container.appendChild(document.createElement('hr'));
+                    i++; continue;
+                }}
+
+                // Headers
+                if (trimmed.startsWith('### ')) {{
+                    flushList();
+                    container.appendChild(makeEl('h4', 'wf-h4', trimmed.slice(4)));
+                    i++; continue;
+                }}
+                if (trimmed.startsWith('## ')) {{
+                    flushList();
+                    container.appendChild(makeEl('h3', 'wf-h3', trimmed.slice(3)));
+                    i++; continue;
+                }}
+                if (trimmed.startsWith('# ')) {{
+                    flushList();
+                    container.appendChild(makeEl('h2', 'wf-h2', trimmed.slice(2)));
+                    i++; continue;
+                }}
+
+                // Table rows
+                if (trimmed.startsWith('|') && trimmed.includes('|')) {{
+                    flushList();
+                    const tableRows = [];
+                    while (i < lines.length && lines[i].trim().startsWith('|')) {{
+                        const row = lines[i].trim();
+                        const cells = row.slice(1, -1).split('|').map(c => c.trim());
+                        // Skip separator rows (---|---)
+                        if (!cells.every(c => /^[-: ]+$/.test(c))) {{
+                            tableRows.push(cells);
+                        }}
+                        i++;
+                    }}
+                    if (tableRows.length > 0) {{
+                        const table = makeEl('table', 'wf-table');
+                        tableRows.forEach((cells, idx) => {{
+                            const tr = document.createElement('tr');
+                            cells.forEach(c => {{
+                                const cell = document.createElement(idx === 0 ? 'th' : 'td');
+                                cell.textContent = c;
+                                tr.appendChild(cell);
+                            }});
+                            table.appendChild(tr);
+                        }});
+                        container.appendChild(table);
+                    }}
+                    continue;
+                }}
+
+                // Numbered lists
+                if (/^\\d+\\.\\s/.test(trimmed)) {{
+                    flushList();
+                    container.appendChild(makeEl('p', 'wf-step', trimmed.replace(/^\\d+\\.\\s/, '')));
+                    i++; continue;
+                }}
+
+                // Unordered lists
+                if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {{
+                    if (!currentList) currentList = document.createElement('ul');
+                    const indent = line.search(/\\S/);
+                    const li = makeEl('li', null, trimmed.slice(2));
+                    if (indent >= 2) setStyle(li, {{ marginLeft: '20px' }});
+                    currentList.appendChild(li);
+                    i++; continue;
+                }}
+
+                // Empty line ends list
+                if (trimmed === '') {{
+                    flushList();
+                    i++; continue;
+                }}
+
+                // Paragraph
+                flushList();
+                container.appendChild(makeEl('p', null, trimmed));
+                i++;
+            }}
+            flushList();
+            return container;
+        }}
+
+        /* ── Section builders ── */
+        function buildSection(el, id, data) {{
+            // Common: back link
+            if (data.has_back) {{
+                const back = makeEl('a', 'back-link', '\u2190 Back to Workflow');
+                back.href = '#';
+                back.dataset.section = data.back_section || 'workflow-home';
+                el.appendChild(back);
+            }}
+            // Common: breadcrumb, title, subtitle
+            if (data.breadcrumb) el.appendChild(makeEl('div', 'page-breadcrumb', data.breadcrumb));
+            if (data.title) el.appendChild(makeEl('h1', 'page-title', data.title));
+            if (data.subtitle) el.appendChild(makeEl('div', 'page-meta', data.subtitle));
+
+            // Dispatch to specific builder
+            if (id === 'pricing') buildPricing(el, data);
+            else if (id === 'booking') buildBooking(el, data);
+            else if (id === 'workflow-home') buildWorkflowHome(el, data);
+            else if (id === 'checklists') buildChecklists(el, data);
+            else if (id === 'editing-projects') buildEditingProjects(el, data);
+            else if (data.markdown !== undefined) {{
+                const wfContent = makeEl('div', 'wf-content');
+                wfContent.appendChild(renderMarkdown(data.markdown));
+                el.appendChild(wfContent);
+            }}
+        }}
+
+        function buildPricing(el, data) {{
+            // Pricing cards grid
+            const grid = makeEl('div', 'pricing-grid');
+            (data.packages || []).forEach(pkg => {{
+                const card = makeEl('div', 'pricing-card');
+                card.style.setProperty('--accent', pkg.accent);
+
+                const header = makeEl('div', 'pricing-header');
+                header.appendChild(makeEl('span', 'pricing-icon', pkg.icon));
+                header.appendChild(makeEl('span', 'pricing-name', pkg.name));
+                card.appendChild(header);
+
+                if (pkg.desc) {{
+                    const desc = makeEl('div', 'tier-details', pkg.desc);
+                    desc.style.marginBottom = '12px';
+                    card.appendChild(desc);
+                }}
+
+                (pkg.tiers || []).forEach(tier => {{
+                    const tierDiv = makeEl('div', 'price-tier');
+                    const tierHeader = makeEl('div', 'tier-header');
+                    tierHeader.appendChild(makeEl('span', 'tier-name', tier.name));
+                    const priceSpan = makeEl('span', 'tier-price', tier.price);
+                    if (tier.price_sub) {{
+                        const sub = makeEl('span', null, tier.price_sub);
+                        Object.assign(sub.style, {{ fontSize: '13px', fontWeight: '400', color: '#6b7280' }});
+                        priceSpan.appendChild(sub);
+                    }}
+                    tierHeader.appendChild(priceSpan);
+                    tierDiv.appendChild(tierHeader);
+                    tierDiv.appendChild(makeEl('div', 'tier-details', tier.desc));
+                    card.appendChild(tierDiv);
+                }});
+
+                grid.appendChild(card);
+            }});
+            el.appendChild(grid);
+
+            // Includes box
+            const includesBox = makeEl('div', 'includes-box');
+            includesBox.appendChild(makeEl('h3', null, "What's Included"));
+            const includesList = makeEl('div', 'includes-list');
+            (data.includes || []).forEach(item => {{
+                includesList.appendChild(makeEl('span', null, '\u2713 ' + item));
+            }});
+            includesBox.appendChild(includesList);
+            el.appendChild(includesBox);
+
+            // Solo vs Dual comparison
+            if (data.comparison) {{
+                const compWrap = document.createElement('div');
+                compWrap.style.marginTop = '28px';
+                const compTitle = makeEl('h3', null, data.comparison.title);
+                Object.assign(compTitle.style, {{ fontSize: '16px', fontWeight: '700', color: '#fff', marginBottom: '4px' }});
+                compWrap.appendChild(compTitle);
+
+                const proscons = makeEl('div', 'proscons');
+                ['solo', 'dual'].forEach(key => {{
+                    const side = data.comparison[key];
+                    if (!side) return;
+                    const col = makeEl('div', 'proscons-col');
+                    col.style.border = '1px solid ' + side.border;
+                    const h4 = makeEl('h4', null, side.label);
+                    h4.style.color = side.color;
+                    col.appendChild(h4);
+                    const ul = document.createElement('ul');
+                    (side.pros || []).forEach(pro => {{
+                        const li = makeEl('li', null, '\u2713 ' + pro);
+                        ul.appendChild(li);
+                    }});
+                    if (side.note) {{
+                        const noteLi = makeEl('li', null, side.note);
+                        Object.assign(noteLi.style, {{ color: '#6b7280', fontStyle: 'italic', marginTop: '6px' }});
+                        ul.appendChild(noteLi);
+                    }}
+                    col.appendChild(ul);
+                    proscons.appendChild(col);
+                }});
+                compWrap.appendChild(proscons);
+                el.appendChild(compWrap);
+            }}
+
+            // Request a Quote button
+            const btnWrap = document.createElement('div');
+            Object.assign(btnWrap.style, {{ marginTop: '24px', textAlign: 'center' }});
+            const quoteBtn = makeEl('button', 'copy-btn', 'Request a Quote');
+            quoteBtn.dataset.section = 'booking';
+            quoteBtn.style.background = '#8b5cf6';
+            btnWrap.appendChild(quoteBtn);
+            el.appendChild(btnWrap);
+
+            // Testimonials near pricing
+            if (data.reviews && data.reviews.length) {{
+                const testWrap = document.createElement('div');
+                testWrap.style.marginTop = '32px';
+                testWrap.appendChild(makeEl('div', 'testimonials-title', 'What Clients Say'));
+                const testGrid = makeEl('div', 'testimonials-grid');
+                data.reviews.forEach(r => {{
+                    const card = makeEl('div', 'testimonial-card');
+                    const stars = '\u2605'.repeat(r.rating) + '\u2606'.repeat(5 - r.rating);
+                    card.appendChild(makeEl('div', 'testimonial-stars', stars));
+                    card.appendChild(makeEl('div', 'testimonial-quote', r.text));
+                    card.appendChild(makeEl('div', 'testimonial-name', r.name));
+                    card.appendChild(makeEl('div', 'testimonial-event', r.event_type));
+                    testGrid.appendChild(card);
+                }});
+                testWrap.appendChild(testGrid);
+                el.appendChild(testWrap);
+            }}
+        }}
+
+        function buildBooking(el, data) {{
+            const form = makeEl('div', 'book-form');
+            form.id = 'book-form';
+
+            function addFormRow(parent, label, inputEl) {{
+                const row = makeEl('div', 'form-row');
+                row.appendChild(makeEl('label', 'form-label', label));
+                row.appendChild(inputEl);
+                parent.appendChild(row);
+                return row;
+            }}
+            function makeInput(id, type, placeholder, attrs) {{
+                const inp = document.createElement('input');
+                inp.className = 'form-input';
+                inp.id = id;
+                inp.type = type || 'text';
+                if (placeholder) inp.placeholder = placeholder;
+                inp.dataset.quoteInput = '';
+                if (attrs) Object.entries(attrs).forEach(([k,v]) => inp.setAttribute(k, v));
+                return inp;
+            }}
+            function makeSelect(id, options, cls) {{
+                const sel = document.createElement('select');
+                sel.className = cls || 'form-select';
+                sel.id = id;
+                sel.dataset.quoteInput = '';
+                options.forEach(opt => {{
+                    const o = document.createElement('option');
+                    if (typeof opt === 'string') {{ o.value = opt; o.textContent = opt; }}
+                    else {{ o.value = opt.value; o.textContent = opt.label; }}
+                    sel.appendChild(o);
+                }});
+                return sel;
+            }}
+
+            // Name
+            addFormRow(form, 'CLIENT NAME', makeInput('q-name', 'text', 'Full name'));
+
+            // Event
+            const eventOpts = [{{ value: '', label: 'Select event type' }}, ...(data.event_types || []).map(e => ({{ value: e, label: e }}))];
+            addFormRow(form, 'EVENT', makeSelect('q-event', eventOpts));
+
+            // Location
+            addFormRow(form, 'LOCATION', makeInput('q-location', 'text', 'Venue name or city'));
+
+            // Date + Hours (inline)
+            const inline1 = makeEl('div', 'form-row-inline');
+            const dateRow = makeEl('div', 'form-row');
+            dateRow.appendChild(makeEl('label', 'form-label', 'DATE'));
+            dateRow.appendChild(makeInput('q-date', 'date', ''));
+            inline1.appendChild(dateRow);
+            const hoursRow = makeEl('div', 'form-row');
+            hoursRow.appendChild(makeEl('label', 'form-label', 'HOURS OF COVERAGE'));
+            hoursRow.appendChild(makeInput('q-hours', 'number', 'Hours', {{ min: '1' }}));
+            inline1.appendChild(hoursRow);
+            form.appendChild(inline1);
+
+            // Setting + Coverage (inline)
+            const inline2 = makeEl('div', 'form-row-inline');
+            const settingRow = makeEl('div', 'form-row');
+            settingRow.appendChild(makeEl('label', 'form-label', 'SETTING'));
+            settingRow.appendChild(makeSelect('q-shoottype', data.settings || []));
+            inline2.appendChild(settingRow);
+            const covRow = makeEl('div', 'form-row');
+            covRow.appendChild(makeEl('label', 'form-label', 'COVERAGE TYPE'));
+            covRow.appendChild(makeSelect('q-services', data.coverage_types || []));
+            inline2.appendChild(covRow);
+            form.appendChild(inline2);
+
+            // Live streaming checkbox
+            const liveRow = makeEl('div', 'form-row');
+            liveRow.style.marginTop = '4px';
+            const liveLabel = document.createElement('label');
+            Object.assign(liveLabel.style, {{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', fontSize: '14px', color: '#d1d5db' }});
+            const liveCb = document.createElement('input');
+            liveCb.type = 'checkbox';
+            liveCb.id = 'q-live';
+            liveCb.dataset.quoteInput = '';
+            Object.assign(liveCb.style, {{ width: '18px', height: '18px', accentColor: '#10b981' }});
+            liveLabel.appendChild(liveCb);
+            liveLabel.appendChild(document.createTextNode(data.live_streaming_label || 'Add Live Streaming (+$100)'));
+            liveRow.appendChild(liveLabel);
+            form.appendChild(liveRow);
+
+            // Estimate + Retainer (inline)
+            const inline3 = makeEl('div', 'form-row-inline');
+            const estRow = makeEl('div', 'form-row');
+            estRow.appendChild(makeEl('label', 'form-label', 'ESTIMATED INVESTMENT'));
+            const quoteInput = document.createElement('input');
+            quoteInput.className = 'form-input';
+            quoteInput.id = 'q-quote';
+            quoteInput.readOnly = true;
+            Object.assign(quoteInput.style, {{ color: '#8b5cf6', fontWeight: '700' }});
+            estRow.appendChild(quoteInput);
+            inline3.appendChild(estRow);
+            const retRow = makeEl('div', 'form-row');
+            retRow.appendChild(makeEl('label', 'form-label', 'RETAINER'));
+            retRow.appendChild(makeInput('q-deposit', 'text', 'e.g. $100'));
+            inline3.appendChild(retRow);
+            form.appendChild(inline3);
+
+            el.appendChild(form);
+
+            // Quote preview
+            const preview = makeEl('div', 'quote-preview');
+            preview.id = 'quote-preview';
+            preview.style.marginTop = '20px';
+            el.appendChild(preview);
+
+            // Buttons
+            const btnRow = makeEl('div', 'btn-row');
+            const copyBtn = makeEl('button', 'copy-btn', '\U0001f4cb Copy to Clipboard');
+            copyBtn.id = 'copy-quote-btn';
+            btnRow.appendChild(copyBtn);
+            const waBtn = makeEl('a', 'share-wa-btn', '\U0001f4ac Share via WhatsApp');
+            waBtn.id = 'wa-share-btn';
+            waBtn.href = '#';
+            waBtn.target = '_blank';
+            waBtn.rel = 'noreferrer noopener';
+            btnRow.appendChild(waBtn);
+            el.appendChild(btnRow);
+
+            // Confirmation
+            const conf = document.createElement('div');
+            conf.id = 'booking-confirmation';
+            Object.assign(conf.style, {{ display: 'none', marginTop: '20px', padding: '20px', background: '#1a2e1a', border: '1px solid #2d4a2d', borderRadius: '12px', textAlign: 'center' }});
+            conf.appendChild(setStyle(makeEl('div', null, '\u2713'), {{ fontSize: '24px', marginBottom: '8px' }}));
+            conf.appendChild(setStyle(makeEl('div', null, 'Quote sent!'), {{ fontSize: '16px', fontWeight: '600', color: '#10b981', marginBottom: '6px' }}));
+            const confMsg = makeEl('div');
+            Object.assign(confMsg.style, {{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.6' }});
+            confMsg.appendChild(document.createTextNode("I'll confirm availability and get back to you within 24 hours."));
+            confMsg.appendChild(document.createElement('br'));
+            confMsg.appendChild(document.createTextNode('Feel free to message me on WhatsApp if you have any questions.'));
+            conf.appendChild(confMsg);
+            el.appendChild(conf);
+        }}
+
+        function buildWorkflowHome(el, data) {{
+            // Pipeline row
+            const pipeRow = makeEl('div', 'pipeline-row');
+            (data.pipeline || []).forEach(stage => {{
+                const s = makeEl('div', 'pipeline-stage', stage.label);
+                s.style.background = stage.color;
+                pipeRow.appendChild(s);
+            }});
+            el.appendChild(pipeRow);
+
+            // Tile grid
+            const tileGrid = makeEl('div', 'wf-tile-grid');
+            (data.tiles || []).forEach(tile => {{
+                let tileEl;
+                if (tile.url) {{
+                    tileEl = document.createElement('a');
+                    tileEl.href = isAllowedUrl(tile.url) ? tile.url : '#';
+                    tileEl.target = '_blank';
+                    tileEl.rel = 'noreferrer noopener';
+                    tileEl.style.textDecoration = 'none';
+                    tileEl.style.color = 'inherit';
+                }} else {{
+                    tileEl = document.createElement('div');
+                    if (tile.section) tileEl.dataset.section = tile.section;
+                }}
+                tileEl.className = 'wf-tile';
+                tileEl.appendChild(makeEl('div', 'wf-tile-icon', tile.icon));
+                tileEl.appendChild(makeEl('div', 'wf-tile-label', tile.label));
+                tileGrid.appendChild(tileEl);
+            }});
+            el.appendChild(tileGrid);
+        }}
+
+        function buildChecklists(el, data) {{
+            (data.groups || []).forEach(group => {{
+                const grp = makeEl('div', 'checklist-group');
+                grp.appendChild(makeEl('div', 'checklist-title', group.title));
+                (group.items || []).forEach((item, idx) => {{
+                    const label = document.createElement('label');
+                    label.className = 'check-item';
+                    const cbId = group.prefix + '-' + idx;
+                    label.setAttribute('for', cbId);
+                    const cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.id = cbId;
+                    cb.dataset.checklist = '';
+                    label.appendChild(cb);
+                    label.appendChild(makeEl('span', null, item));
+                    grp.appendChild(label);
+                }});
+                el.appendChild(grp);
+            }});
+            const resetWrap = document.createElement('div');
+            resetWrap.style.marginTop = '20px';
+            const resetBtn = makeEl('button', 'pw-btn', 'Reset All Checklists');
+            resetBtn.id = 'reset-checklists-btn';
+            resetBtn.style.background = '#374151';
+            resetWrap.appendChild(resetBtn);
+            el.appendChild(resetWrap);
+        }}
+
+        function buildEditingProjects(el, data) {{
+            const wrap = makeEl('div', 'editing-table-wrap');
+            const table = makeEl('table', 'editing-table');
+            const thead = document.createElement('thead');
+            const headRow = document.createElement('tr');
+            (data.columns || []).forEach(col => {{
+                headRow.appendChild(makeEl('th', null, col));
+            }});
+            thead.appendChild(headRow);
+            table.appendChild(thead);
+            const tbody = document.createElement('tbody');
+            (data.rows || []).forEach(row => {{
+                const tr = document.createElement('tr');
+                // Project
+                tr.appendChild(makeEl('td', null, row.task));
+                // Priority
+                const priTd = document.createElement('td');
+                priTd.appendChild(makeEl('span', 'priority-badge priority-' + row.priority.toLowerCase(), row.priority));
+                tr.appendChild(priTd);
+                // Sent
+                tr.appendChild(makeEl('td', null, row.date_sent));
+                // Days
+                tr.appendChild(makeEl('td', null, row.days + 'd'));
+                // Status
+                const statusTd = document.createElement('td');
+                const badgeMap = {{ 'OVERDUE': 'badge-overdue', 'COMPLETED': 'badge-completed', 'SENT': 'badge-sent' }};
+                statusTd.appendChild(makeEl('span', 'status-badge ' + (badgeMap[row.status] || 'badge-progress'), row.status));
+                tr.appendChild(statusTd);
+                // Completed
+                tr.appendChild(makeEl('td', null, row.completed));
+                // Files (delivery link)
+                const filesTd = document.createElement('td');
+                if (row.delivery_link) {{
+                    filesTd.appendChild(makeLink(row.delivery_link, 'View', 'delivery-link'));
+                }} else {{
+                    const dash = makeEl('span', null, '\u2014');
+                    dash.style.color = '#6b7280';
+                    filesTd.appendChild(dash);
+                }}
+                tr.appendChild(filesTd);
+                tbody.appendChild(tr);
+            }});
+            table.appendChild(tbody);
+            wrap.appendChild(table);
+            el.appendChild(wrap);
+        }}
+
         function injectDecryptedContent(sections) {{
-            // Extract schema version and config before injecting HTML
             delete sections['v'];
             if (sections['__config__']) {{
                 _appConfig = sections['__config__'];
                 delete sections['__config__'];
             }}
-            for (const [id, html] of Object.entries(sections)) {{
+            for (const [id, data] of Object.entries(sections)) {{
                 const el = document.getElementById(id);
-                if (el) el.innerHTML = html;
+                if (!el) continue;
+                while (el.firstChild) el.removeChild(el.firstChild);
+                buildSection(el, id, data);
             }}
-            // Re-init checklists after injection
             loadChecklist();
-            // Re-init quote builder if booking was injected
             if (sections['booking'] && typeof updateQuote === 'function') {{
                 updateQuote();
             }}
@@ -3562,41 +3965,35 @@ def generate_html():
             }}
         }}
 
-        // Make all protected links go through accessWorkflow
-        document.querySelectorAll('.sidebar-link.client-link, .sidebar-link.internal-link').forEach(link => {{
-            const originalOnclick = link.getAttribute('onclick');
-            if (originalOnclick && originalOnclick.includes('showSection')) {{
-                const match = originalOnclick.match(/showSection\\('([^']+)'\\)/);
-                if (match) {{
-                    const sectionId = match[1];
-                    link.setAttribute('onclick', `accessWorkflow('${{sectionId}}')`);
-                }}
-            }}
-        }});
-
         // Checklists - save/load from localStorage
         function saveChecklist() {{
-            const checks = {{}};
-            document.querySelectorAll('#checklists input[type="checkbox"]').forEach(cb => {{
-                checks[cb.id] = cb.checked;
-            }});
-            localStorage.setItem('rsquare_checklists', JSON.stringify(checks));
+            try {{
+                const checks = {{}};
+                document.querySelectorAll('#checklists input[type="checkbox"]').forEach(cb => {{
+                    checks[cb.id] = cb.checked;
+                }});
+                localStorage.setItem('rsquare_checklists', JSON.stringify(checks));
+            }} catch(e) {{ /* localStorage unavailable */ }}
         }}
 
         function loadChecklist() {{
-            const saved = localStorage.getItem('rsquare_checklists');
-            if (saved) {{
-                const checks = JSON.parse(saved);
-                Object.entries(checks).forEach(([id, val]) => {{
-                    const cb = document.getElementById(id);
-                    if (cb) cb.checked = val;
-                }});
-            }}
+            try {{
+                const saved = localStorage.getItem('rsquare_checklists');
+                if (saved) {{
+                    const checks = JSON.parse(saved);
+                    Object.entries(checks).forEach(([id, val]) => {{
+                        const cb = document.getElementById(id);
+                        if (cb) cb.checked = val;
+                    }});
+                }}
+            }} catch(e) {{ /* localStorage unavailable */ }}
         }}
 
         function resetChecklists() {{
-            document.querySelectorAll('#checklists input[type="checkbox"]').forEach(cb => cb.checked = false);
-            localStorage.removeItem('rsquare_checklists');
+            try {{
+                document.querySelectorAll('#checklists input[type="checkbox"]').forEach(cb => cb.checked = false);
+                localStorage.removeItem('rsquare_checklists');
+            }} catch(e) {{ /* localStorage unavailable */ }}
             showToast('Checklists reset!');
         }}
 
@@ -3644,9 +4041,6 @@ def generate_html():
             const tabId = tabMap[sectionId];
             if (tabId) document.getElementById(tabId)?.classList.add('active');
         }}
-
-        // Load checklists on page load
-        loadChecklist();
 
         function updateQuote() {{
             const svcEl = document.getElementById('q-services');
@@ -3807,30 +4201,11 @@ Looking forward to it! 🙌
             e.preventDefault();
             const text = getQuoteText();
             const encoded = encodeURIComponent(text);
-            window.open('https://wa.me/?text=' + encoded, '_blank');
+            const waUrl = 'https://wa.me/?text=' + encoded;
+            if (isAllowedUrl(waUrl)) window.open(waUrl, '_blank');
             const conf = document.getElementById('booking-confirmation');
             if (conf) conf.style.display = 'block';
         }}
-
-        /* Star rating widget */
-        (function() {{
-            const container = document.getElementById('star-rating');
-            if (!container) return;
-            const stars = container.querySelectorAll('.star');
-            const input = document.getElementById('rv-rating');
-            function setRating(val) {{
-                input.value = val;
-                stars.forEach(function(s) {{
-                    s.classList.toggle('active', parseInt(s.dataset.value) === val);
-                }});
-            }}
-            stars.forEach(function(s) {{
-                s.addEventListener('click', function() {{
-                    setRating(parseInt(s.dataset.value));
-                }});
-            }});
-            setRating(5);
-        }})();
 
         /* Review form submission */
         function submitReview(e) {{
@@ -3873,6 +4248,124 @@ Looking forward to it! 🙌
                 btn.textContent = 'Submit Review';
             }});
         }}
+
+        /* ── Event listeners (CSP-compliant — no inline handlers) ── */
+        /* Registered BEFORE loadChecklist/star-rating to ensure clicks work
+           even if localStorage throws SecurityError in strict browsers */
+
+        // Group 1: Static buttons with IDs
+        document.getElementById('logout-btn').addEventListener('click', logout);
+        document.getElementById('pw-btn').addEventListener('click', checkPassword);
+        document.getElementById('pw-eye-btn').addEventListener('click', togglePasswordVisibility);
+        document.getElementById('mobile-toggle').addEventListener('click', toggleSidebar);
+        document.getElementById('sidebar-overlay').addEventListener('click', closeSidebar);
+        document.getElementById('gear-toggle').addEventListener('click', toggleGear);
+        document.getElementById('private-gate-link').addEventListener('click', function(e) {{
+            e.preventDefault();
+            showPrivateGate();
+        }});
+        document.getElementById('pw-input').addEventListener('keydown', function(e) {{
+            if (e.key === 'Enter') checkPassword();
+        }});
+
+        // Review form
+        var reviewForm = document.getElementById('review-form');
+        if (reviewForm) reviewForm.addEventListener('submit', submitReview);
+
+        // Reset checklists (inside encrypted content — bind after decryption too)
+        var resetBtn = document.getElementById('reset-checklists-btn');
+        if (resetBtn) resetBtn.addEventListener('click', resetChecklists);
+
+        // Group 2: Navigation via data-section (delegated)
+        document.addEventListener('click', function(e) {{
+            var target = e.target.closest('[data-section]');
+            if (target) {{
+                e.preventDefault();
+                showSection(target.getAttribute('data-section'));
+            }}
+        }});
+
+        // Group 3: Protected nav via data-access (delegated)
+        document.addEventListener('click', function(e) {{
+            var target = e.target.closest('[data-access]');
+            if (target) {{
+                e.preventDefault();
+                accessWorkflow(target.getAttribute('data-access'));
+            }}
+        }});
+
+        // Group 4: Bottom nav via data-nav / data-nav-protected (delegated)
+        document.addEventListener('click', function(e) {{
+            var target = e.target.closest('[data-nav]');
+            if (target) {{
+                mobileNav(target.getAttribute('data-nav'));
+                return;
+            }}
+            target = e.target.closest('[data-nav-protected]');
+            if (target) {{
+                mobileNavProtected(target.getAttribute('data-nav-protected'));
+            }}
+        }});
+
+        // Group 5: Quote builder inputs
+        document.querySelectorAll('[data-quote-input]').forEach(function(el) {{
+            var eventType = (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
+            el.addEventListener(eventType, updateQuote);
+        }});
+
+        // Group 6: Copy quote + Share WA (inside encrypted content — bind after decryption too)
+        var copyBtn = document.getElementById('copy-quote-btn');
+        if (copyBtn) copyBtn.addEventListener('click', copyQuote);
+        var waBtn = document.getElementById('wa-share-btn');
+        if (waBtn) waBtn.addEventListener('click', function(e) {{ shareQuoteWA(e); }});
+
+        // Group 7: Checklist checkboxes (delegated — works after decryption injects them)
+        document.addEventListener('change', function(e) {{
+            if (e.target.matches && e.target.matches('input[data-checklist]')) saveChecklist();
+        }});
+
+        // Re-bind listeners after encrypted content injection
+        var _origInject = injectDecryptedContent;
+        injectDecryptedContent = function(sections) {{
+            _origInject(sections);
+            // Re-bind elements that may have been injected
+            var resetBtn2 = document.getElementById('reset-checklists-btn');
+            if (resetBtn2) resetBtn2.addEventListener('click', resetChecklists);
+            var copyBtn2 = document.getElementById('copy-quote-btn');
+            if (copyBtn2) copyBtn2.addEventListener('click', copyQuote);
+            var waBtn2 = document.getElementById('wa-share-btn');
+            if (waBtn2) waBtn2.addEventListener('click', function(e) {{ shareQuoteWA(e); }});
+            // Re-bind quote builder inputs
+            document.querySelectorAll('[data-quote-input]').forEach(function(el) {{
+                var eventType = (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
+                el.addEventListener(eventType, updateQuote);
+            }});
+        }};
+
+        /* ── Post-listener initialization ── */
+
+        // Load checklists (after event listeners, safe if localStorage unavailable)
+        loadChecklist();
+
+        /* Star rating widget */
+        (function() {{
+            const container = document.getElementById('star-rating');
+            if (!container) return;
+            const stars = container.querySelectorAll('.star');
+            const input = document.getElementById('rv-rating');
+            function setRating(val) {{
+                input.value = val;
+                stars.forEach(function(s) {{
+                    s.classList.toggle('active', parseInt(s.dataset.value) === val);
+                }});
+            }}
+            stars.forEach(function(s) {{
+                s.addEventListener('click', function() {{
+                    setRating(parseInt(s.dataset.value));
+                }});
+            }});
+            setRating(5);
+        }})();
 
     </script>
 </body>
