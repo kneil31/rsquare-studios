@@ -116,6 +116,11 @@ python3 generate_otp.py --no-push    # Generate + rebuild only (no git push, no 
 # Type "otp" in #instagram-posts channel — generates, pushes, and sends password
 
 # Cache busting — tell user to add ?v=N or use incognito
+
+# Daily sync (runs automatically at 1 AM via LaunchAgent)
+python3 sync_dashboard.py           # Sync from Google Sheet + deploy if changed
+python3 sync_dashboard.py --force   # Regenerate + deploy even if unchanged
+python3 sync_dashboard.py --dry-run # Regenerate but don't push
 ```
 
 ## OTP (Rotating Client Password)
@@ -161,16 +166,19 @@ python3 generate_otp.py --no-push    # Generate + rebuild only (no git push, no 
 
 ## Editing Project Tracker
 
-- **Data:** Google Sheet is the single source of truth (Sheet ID: `***REDACTED_SHEET_ID***`)
+- **Data:** Google Sheet is the single source of truth (Sheet ID: `***REDACTED_SHEET_ID***`, "anyone with link")
 - **Fallback:** `editing_projects.json` (local) used when Google Sheet is unreachable
-- **Shared module:** `sheets_sync.py` — handles auth and read/write to Google Sheet via `gspread`
-- **Credentials:** `~/.config/rsquare/sheets_credentials.json` (GCP service account)
-- **Dashboard:** "Editing Projects" section behind `***REMOVED***`, shows table with status badges
-- **Status auto-detection:** SENT (blue), OVERDUE (red, >14 days), COMPLETED (green)
-- **Auto-detection:** `detect_new_projects.py` scans Lightroom catalogs → adds new projects to Google Sheet
+- **Shared module:** `sheets_sync.py` — reads via public CSV export (no credentials needed for reads)
+- **Sheet headers:** `Task`, `Neal Sent`, `Priority`, `Status`, `EDIT Completed`, `WeTransfer Link` — mapped generically
+- **Date format:** Sheet uses `M/D/YYYY`, normalized to `YYYY-MM-DD` by `_normalize_date()`
+- **Dashboard shows pending only:** Completed projects ("PROJECT Completed") filtered out — only SENT/OVERDUE shown
+- **Status auto-detection:** SENT (blue), OVERDUE (red, >14 days)
+- **Daily sync:** `sync_dashboard.py` runs at 1 AM via `com.rsquare.dashboard-sync.plist` — regenerates from Google Sheet + pushes if changed
 - **Daily reminder:** `editing_reminder.py` runs at 10 AM via `com.rsquare.editing-reminder.plist`
+- **Auto-detection:** `detect_new_projects.py` scans Lightroom catalogs → adds new projects to Google Sheet
 - **WhatsApp follow-up:** "Follow Up" button opens wa.me link with pre-filled message to editor
-- **Laxman updates status directly in Google Sheet** — scripts read his changes automatically
+- **Laxman updates status directly in Google Sheet** — daily sync picks up changes automatically
+- **Sync log:** `/tmp/dashboard-sync.log`
 
 ## Client Reviews
 
