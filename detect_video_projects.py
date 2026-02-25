@@ -74,8 +74,38 @@ def is_tracked(name, tracked_tasks):
     return False
 
 
+def get_mega_folder_link(remote_folder):
+    """Get a shareable MEGA link for a folder using mega-cmd."""
+    # mega-cmd uses paths without /Root prefix
+    mega_cmd_path = remote_folder.replace("/Root/", "/")
+
+    # Try to export (create share link)
+    result = subprocess.run(
+        ["mega-export", "-a", mega_cmd_path],
+        capture_output=True, text=True, timeout=30,
+    )
+    output = result.stdout.strip()
+    stderr = result.stderr.strip()
+
+    # If already exported, just list the existing link
+    if "already exported" in stderr:
+        result = subprocess.run(
+            ["mega-export", mega_cmd_path],
+            capture_output=True, text=True, timeout=30,
+        )
+        output = result.stdout.strip()
+
+    # Parse link from output like: "/path (folder, shared as exported permanent folder link: https://mega.nz/folder/...)"
+    if "https://mega.nz/" in output:
+        link = output.split("https://mega.nz/")[1].split(")")[0]
+        return f"https://mega.nz/{link}"
+
+    print(f"  Warning: could not get MEGA share link")
+    return ""
+
+
 def upload_to_mega(project_name, videos_dir):
-    """Upload MP4s from a local Videos/ dir to MEGA. Returns True on success."""
+    """Upload MP4s from a local Videos/ dir to MEGA. Returns the share link or empty string."""
     remote_folder = f"{MEGA_VIDEO_PATH}{project_name} Videos"
 
     # Create remote folder
@@ -89,7 +119,7 @@ def upload_to_mega(project_name, videos_dir):
         # Folder already exists is OK
         if "already exists" not in stderr.lower():
             print(f"  Error creating MEGA folder: {stderr}")
-            return False
+            return ""
 
     # Collect MP4 files (skip macOS ._ resource forks)
     mp4s = sorted(
@@ -99,7 +129,7 @@ def upload_to_mega(project_name, videos_dir):
 
     if not mp4s:
         print("  No MP4 files to upload.")
-        return False
+        return ""
 
     total = len(mp4s)
     print(f"  Uploading {total} MP4(s) to {remote_folder}...")
@@ -114,17 +144,23 @@ def upload_to_mega(project_name, videos_dir):
         if result.returncode != 0:
             stderr = result.stderr.strip()
             if "already exists" in stderr.lower():
-                print(f"    Already exists, skipping.")
+                print("    Already exists, skipping.")
             else:
                 print(f"    Upload failed: {stderr}")
                 failed.append(mp4.name)
 
     if failed:
         print(f"  {len(failed)} file(s) failed to upload: {', '.join(failed)}")
-        return len(failed) < total  # Partial success if some uploaded
+        if len(failed) >= total:
+            return ""
     else:
         print(f"  All {total} MP4(s) uploaded successfully.")
-        return True
+
+    # Get shareable link for the folder
+    link = get_mega_folder_link(remote_folder)
+    if link:
+        print(f"  MEGA link: {link}")
+    return link
 
 
 def scan_ssd():
@@ -308,8 +344,7 @@ def show_ssd_candidates_and_add(candidates):
 
         if choice == "Upload & Add":
             print(f"\n  Uploading {c['name']} to MEGA...")
-            success = upload_to_mega(c["name"], Path(c["videos_dir"]))
-            link = MEGA_FOLDER_URL if success else ""
+            link = upload_to_mega(c["name"], Path(c["videos_dir"]))
             entry = {
                 "task": c["name"],
                 "date_sent": c.get("date", today),
@@ -317,7 +352,7 @@ def show_ssd_candidates_and_add(candidates):
                 **DEFAULTS,
             }
             added.append(entry)
-            status = "uploaded + added" if success else "added (upload had errors)"
+            status = "uploaded + linked" if link else "added (upload had errors)"
             print(f"  ✓ {c['name']}: {status}")
 
         elif choice == "Add Only":
@@ -455,8 +490,7 @@ def auto_ssd(candidates):
 
     for c in untracked:
         print(f"\n  Uploading {c['name']} ({c['mp4_count']} MP4s) to MEGA...")
-        success = upload_to_mega(c["name"], Path(c["videos_dir"]))
-        link = MEGA_FOLDER_URL if success else ""
+        link = upload_to_mega(c["name"], Path(c["videos_dir"]))
         entry = {
             "task": c["name"],
             "date_sent": c.get("date", today),
@@ -465,7 +499,7 @@ def auto_ssd(candidates):
         }
         add_video_project(entry)
         added.append(entry)
-        status = "uploaded + added" if success else "added (upload had errors)"
+        status = "uploaded + linked" if link else "added (upload had errors)"
         print(f"  ✓ {c['name']}: {status}")
 
     print(f"\nAuto-added {len(added)} video project(s) to Google Sheet (tab 2)")
