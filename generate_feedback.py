@@ -50,9 +50,11 @@ RAM_PHONE = "***REDACTED_PHONE***"
 # To add a project:  add a new entry here, then run generate_feedback.py
 # ────────────────────────────────────────────────────────────────────
 PROJECTS = {
+    # ── Video Projects ──
     "sandhya": {
         "name": "***REDACTED_NAME***",
         "pin": "***REDACTED_PIN***",
+        "type": "video",  # video = full feedback page (songs, corrections)
         "editor": "Madhu",
         "editor_phone": "***REDACTED_PHONE***",
         "mega_link": "",
@@ -60,6 +62,19 @@ PROJECTS = {
         # Version links — editor shares YouTube/Drive links as cuts are ready
         # Add entries as versions are delivered: {"label": "V1", "url": "https://..."}
         "versions": [],
+    },
+    # ── Photo Projects ──
+    # type: "photo" = tracker-only view (no songs/corrections, just status + delivery link)
+    # To add a photo project: add entry here, set status, run generate_feedback.py
+    "sample-photo": {
+        "name": "***REDACTED_NAME***",
+        "pin": "***REDACTED_PIN***",
+        "type": "photo",
+        "editor": "Laxman",
+        "editor_phone": "***REDACTED_PHONE***",
+        "status": "editing",
+        "delivery_link": "",  # SmugMug/WeTransfer link when ready
+        "gallery_count": 0,   # Number of edited photos
     },
 }
 
@@ -79,10 +94,13 @@ def generate():
             slug: {
                 "name": escape(p["name"]),
                 "pin": p["pin"],
+                "type": p.get("type", "video"),
                 "editor": escape(p["editor"]),
                 "editor_phone": p["editor_phone"],
                 "mega_link": p.get("mega_link", ""),
                 "status": escape(p.get("status", "editing")),
+                "delivery_link": p.get("delivery_link", ""),
+                "gallery_count": p.get("gallery_count", 0),
                 "versions": [
                     {"label": escape(v["label"]), "url": v["url"]}
                     for v in p.get("versions", [])
@@ -101,7 +119,7 @@ def generate():
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
     <meta name="robots" content="noindex, nofollow, noarchive">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-{csp_nonce}'; style-src 'unsafe-inline'; img-src 'self' data: https://img.youtube.com; connect-src https://script.google.com https://script.googleusercontent.com https://docs.google.com; font-src 'none'; frame-src https://www.youtube.com https://youtube.com; base-uri 'none'; form-action https://script.google.com;">
-    <title>Rsquare Studios — Video Feedback</title>
+    <title>Rsquare Studios — Project Tracker</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
 
@@ -488,6 +506,73 @@ def generate():
             background: linear-gradient(90deg, #22c55e, #3b82f6);
             border-radius: 2px;
             transition: width 0.5s;
+        }}
+
+        /* ── Photo Tracker ── */
+        .photo-delivery {{
+            background: #232323;
+            border-radius: 12px;
+            padding: 20px 16px;
+            margin-bottom: 16px;
+            text-align: center;
+        }}
+        .photo-delivery h3 {{
+            font-size: 15px;
+            color: #fff;
+            margin-bottom: 12px;
+        }}
+        .delivery-link {{
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            background: #166534;
+            border-radius: 10px;
+            color: #86efac;
+            text-decoration: none;
+            font-size: 15px;
+            font-weight: 600;
+            transition: background 0.2s;
+        }}
+        .delivery-link:hover {{
+            background: #15803d;
+        }}
+        .delivery-pending {{
+            color: #999;
+            font-size: 13px;
+            font-style: italic;
+        }}
+        .photo-info {{
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 12px;
+        }}
+        .photo-info-item {{
+            text-align: center;
+        }}
+        .photo-info-value {{
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+        }}
+        .photo-info-label {{
+            font-size: 11px;
+            color: #999;
+            text-transform: uppercase;
+        }}
+        .photo-whatsapp {{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 16px;
+            padding: 10px 20px;
+            background: #25D366;
+            border-radius: 8px;
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
         }}
 
         /* ── Hidden ── */
@@ -900,7 +985,7 @@ def generate():
     <div class="container">
         <div class="header">
             <h1>Rsquare Studios</h1>
-            <div class="subtitle">Video Feedback</div>
+            <div class="subtitle" id="page-subtitle">Project Tracker</div>
         </div>
 
         <div id="pin-gate" class="pin-gate">
@@ -943,6 +1028,8 @@ def generate():
             'youtu.be',
             'drive.google.com',
             'docs.google.com',
+            'smugmug.com',
+            'wetransfer.com',
         ];
 
         function isAllowedUrl(url) {{
@@ -1062,6 +1149,9 @@ def generate():
                 currentProject.slug = slug;
                 document.getElementById('pin-gate').classList.add('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
+                // Update subtitle based on project type
+                var sub = document.getElementById('page-subtitle');
+                if (sub) sub.textContent = currentProject.type === 'photo' ? 'Photo Tracker' : 'Video Feedback';
                 buildMainContent();
             }} else {{
                 pinAttempts++;
@@ -1094,6 +1184,15 @@ def generate():
             // Progress tracker (Domino's style)
             main.appendChild(buildTracker(currentProject.status));
 
+            // Branch based on project type
+            if (currentProject.type === 'photo') {{
+                // Photo projects: tracker + delivery section only
+                main.appendChild(buildPhotoDelivery());
+                main.appendChild(el('div', {{className: 'privacy-note', textContent: 'Your edited photos will be shared here when ready.'}}));
+                return;
+            }}
+
+            // Video projects: full feedback page
             // Video versions section
             main.appendChild(buildVersionsSection());
 
@@ -1118,6 +1217,68 @@ def generate():
 
             // Load fixed status from Sheet (async)
             loadClientFixedStatus();
+        }}
+
+        // ── Photo Delivery Section ──
+        function buildPhotoDelivery() {{
+            var card = el('div', {{className: 'photo-delivery'}});
+            var heading = el('h3');
+            heading.appendChild(el('span', {{className: 'section-icon', textContent: '\\uD83D\\uDCF7'}}));
+            heading.appendChild(document.createTextNode(' Photo Delivery'));
+            card.appendChild(heading);
+
+            var infoGrid = el('div', {{className: 'photo-info'}});
+
+            // Editor info
+            var editorItem = el('div', {{className: 'photo-info-item'}});
+            editorItem.appendChild(el('div', {{className: 'photo-info-value', textContent: currentProject.editor}}));
+            editorItem.appendChild(el('div', {{className: 'photo-info-label', textContent: 'Editor'}}));
+            infoGrid.appendChild(editorItem);
+
+            // Gallery count (if available)
+            if (currentProject.gallery_count > 0) {{
+                var countItem = el('div', {{className: 'photo-info-item'}});
+                countItem.appendChild(el('div', {{className: 'photo-info-value', textContent: currentProject.gallery_count + ' photos'}}));
+                countItem.appendChild(el('div', {{className: 'photo-info-label', textContent: 'Edited'}}));
+                infoGrid.appendChild(countItem);
+            }}
+
+            card.appendChild(infoGrid);
+
+            // Delivery link (SmugMug/WeTransfer)
+            var deliveryLink = currentProject.delivery_link || '';
+            if (deliveryLink && isAllowedUrl(deliveryLink)) {{
+                var linkWrap = el('div', {{style: 'margin-top: 16px;'}});
+                var btn = el('a', {{
+                    className: 'delivery-link',
+                    textContent: '\\uD83D\\uDCE5 View Your Photos',
+                    href: deliveryLink,
+                    target: '_blank',
+                    rel: 'noreferrer noopener',
+                }});
+                linkWrap.appendChild(btn);
+                card.appendChild(linkWrap);
+            }} else {{
+                var pending = el('div', {{
+                    style: 'text-align: center; padding: 20px; color: #888; font-style: italic;',
+                    textContent: 'Your edited photos will appear here once ready.',
+                }});
+                card.appendChild(pending);
+            }}
+
+            // WhatsApp contact
+            var waWrap = el('div', {{className: 'photo-whatsapp'}});
+            var waLink = el('a', {{
+                className: 'btn',
+                textContent: '\\uD83D\\uDCDE Contact Editor',
+                href: 'https://wa.me/' + currentProject.editor_phone + '?text=Hi, checking on my photo edits for ' + encodeURIComponent(currentProject.name),
+                target: '_blank',
+                rel: 'noreferrer noopener',
+            }});
+            waWrap.appendChild(waLink);
+            card.appendChild(waWrap);
+
+            return card;
         }}
 
         // ── Progress Tracker ──
