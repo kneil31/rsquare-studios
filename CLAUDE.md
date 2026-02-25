@@ -171,7 +171,7 @@ python3 sync_dashboard.py --dry-run # Regenerate but don't push
 
 ## Editing Project Tracker
 
-- **Data:** Google Sheet is the single source of truth (Sheet ID: `***REDACTED_SHEET_ID***`, "anyone with link")
+- **Data:** Google Sheet is the single source of truth (Sheet ID in `sheets_sync.py`, "anyone with link")
 - **Fallback:** `editing_projects.json` (local) used when Google Sheet is unreachable
 - **Shared module:** `sheets_sync.py` — reads via public CSV export (no credentials needed for reads)
 - **Sheet headers:** `Task`, `Neal Sent`, `Priority`, `Status`, `EDIT Completed`, `WeTransfer Link` — mapped generically
@@ -184,7 +184,7 @@ python3 sync_dashboard.py --dry-run # Regenerate but don't push
 - **Auto-detection (video):** `detect_video_projects.py` scans SSD `Videos/` folders and MEGA → adds to Google Sheet (tab 2)
 - **Video write access:** Apps Script POST (shared with reviews handler, `type=video_project` param) — no GCP/gspread needed
 - **MEGA upload:** `detect_video_projects.py --scan-ssd` uploads MP4s to `/Root/Video RAW Data/{name} Videos/` via `megatools put`
-- **MEGA account:** `***REDACTED_EMAIL***`, auth via `~/.megarc`
+- **MEGA account:** See `~/.megarc` for credentials
 - **MEGA shared folder:** `https://***REMOVED***`
 - **Video detect LaunchAgent:** `com.rsquare.video-detect.plist` — runs daily at 10 PM (`--scan-ssd --auto`), log: `/tmp/video-detect.log`
 - **Aliases:** `megaup` (scan SSD + upload to MEGA), `megadet` (scan MEGA folders for untracked)
@@ -212,25 +212,13 @@ Client-facing page for submitting song choices and timestamped video corrections
 - **Client URL:** `portfolio.rsquarestudios.com/feedback/?p={project_slug}`
 - **Editor URL:** `portfolio.rsquarestudios.com/feedback/?role=editor`
 - **Generator:** `generate_feedback.py` → `feedback/index.html` (same file, role-switched via URL param)
-- **Client access:** Project-specific 4-digit PIN (not the dashboard password)
-- **Editor access:** Password `***REMOVED***` (sees all projects)
-- **No encryption:** Feedback page is separate from dashboard internals; PIN/password gate only
+- **Client access:** Project-specific passphrase (in `.feedback_secrets.json`, not the dashboard password)
+- **Editor/Admin access:** Role passwords (in `.feedback_secrets.json`)
+- **Encryption:** AES-256-GCM, same pattern as main dashboard — all secrets in `.feedback_secrets.json` (gitignored)
 
 ### Project Registry
 
-`PROJECTS` dict in `generate_feedback.py` maps slugs to config:
-```python
-PROJECTS = {
-    "sandhya": {
-        "name": "***REDACTED_NAME***",
-        "pin": "***REDACTED_PIN***",
-        "editor": "Madhu",
-        "editor_phone": "***REDACTED_PHONE***",
-        "mega_link": "https://mega.nz/folder/...",
-        "status": "editing",  # pending_song / editing / review / done
-    },
-}
-```
+Project config stored in `.feedback_secrets.json` (gitignored). Each project has slug, name, passphrase, editor info, phone numbers. All sensitive data encrypted into per-project and per-role blobs at build time.
 
 ### Forms
 

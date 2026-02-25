@@ -22,7 +22,7 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-SHEET_ID = "***REDACTED_SHEET_ID***"
+SHEET_ID = "***REMOVED***"
 CREDENTIALS_PATH = Path.home() / ".config" / "rsquare" / "sheets_credentials.json"
 
 # GID for each tab (from the sheet URL ?gid=...)
@@ -33,7 +33,7 @@ GID_VIDEO_PROJECTS = "1513492429"
 
 # Client reviews are in a separate Google Sheet (Rsquare_Review_Sheet)
 # accessed via the same sheet ID but different tab — see CLAUDE.md
-REVIEW_SHEET_ID = "***REDACTED_SHEET_ID***"
+REVIEW_SHEET_ID = "***REMOVED***"
 
 
 def _fetch_public_csv(sheet_id, gid):
@@ -98,7 +98,7 @@ def _row_to_dict(headers, row):
         "delivery_link": find(["link"]) or find(["transfer"]),
         # Defaults not in Sheet — kept for compatibility with dashboard/reminder
         "editor": "Laxman",
-        "editor_phone": "***REDACTED_PHONE***",
+        "editor_phone": "***REMOVED***",
         "expected_days": 14,
     }
 
@@ -188,7 +188,7 @@ def read_video_projects():
     return projects
 
 
-VIDEO_PROJECT_SCRIPT_URL = "https://script.google.com/macros/s/***REDACTED_SCRIPT_ID***/exec"
+VIDEO_PROJECT_SCRIPT_URL = "https://script.google.com/macros/s/***REMOVED***/exec"
 
 
 def add_video_project(data):
@@ -210,7 +210,7 @@ def add_video_project(data):
 
 
 # GID for Feedback tab — update after creating the tab in Google Sheets
-GID_FEEDBACK = "***REDACTED_GID***"
+GID_FEEDBACK = "***REMOVED***"
 
 
 def read_feedback(project=None):

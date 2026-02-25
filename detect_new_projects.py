@@ -21,7 +21,7 @@ LOOKBACK_DAYS = 60
 # Defaults for new editing project entries
 DEFAULTS = {
     "editor": "Laxman",
-    "editor_phone": "***REDACTED_PHONE***",
+    "editor_phone": "***REMOVED***",
     "priority": "P1",
     "status": "SENT",
     "edit_completed": None,

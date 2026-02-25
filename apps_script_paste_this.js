@@ -1,4 +1,4 @@
-var FEEDBACK_EMAIL_RAM = "***REDACTED_EMAIL***";
+var FEEDBACK_EMAIL_RAM = "***REMOVED***";
 var FEEDBACK_EMAIL_EDITOR = "editor@example.com";
 
 function doGet(e) {

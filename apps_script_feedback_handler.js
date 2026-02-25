@@ -15,7 +15,7 @@
 //   - When editor marks as fixed → email Ram
 //   UPDATE these email addresses before deploying:
 
-var FEEDBACK_EMAIL_RAM = "***REDACTED_EMAIL***";       // Ram's email
+var FEEDBACK_EMAIL_RAM = "***REMOVED***";       // Ram's email
 var FEEDBACK_EMAIL_EDITOR = "editor@example.com";           // TODO: Replace with Madhu's actual email
 
 // ── Inside doPost(e) — add this block: ──
