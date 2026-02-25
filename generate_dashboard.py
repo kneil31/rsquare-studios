@@ -902,13 +902,15 @@ def generate_html():
     if editing_project_list:
         today = datetime.now()
         for p in editing_project_list:
+            status = p["status"].strip().upper()
+            # Skip completed projects — only show pending/active
+            if "COMPLETED" in status or "DONE" in status:
+                continue
+
             sent = datetime.strptime(p["date_sent"], "%Y-%m-%d")
             days_elapsed = (today - sent).days
-            status = p["status"]
-            if status != "COMPLETED" and days_elapsed > p.get("expected_days", 14):
+            if days_elapsed > p.get("expected_days", 14):
                 display_status = "OVERDUE"
-            elif status == "COMPLETED":
-                display_status = "COMPLETED"
             elif status == "SENT":
                 display_status = "SENT"
             else:
