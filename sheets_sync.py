@@ -5,7 +5,10 @@ Shared Google Sheets helper for editing project tracking.
 Reads/writes to the Google Sheet that Laxman uses to track editing status.
 The Sheet is the single source of truth — scripts read from it and append to it.
 
-Setup:
+Read access uses public CSV export (no credentials needed — sheet is "anyone with link").
+Write access (add_project) requires gspread + service account credentials.
+
+Setup (only needed for write access):
   1. Enable Google Sheets API in GCP console
   2. Create service account, download JSON key
   3. Save key to ~/.config/rsquare/sheets_credentials.json
@@ -13,41 +16,83 @@ Setup:
   5. pip3 install gspread --break-system-packages
 """
 
-import gspread
+import csv
+import io
+import urllib.request
 from pathlib import Path
 
 SHEET_ID = "***REDACTED_SHEET_ID***"
 CREDENTIALS_PATH = Path.home() / ".config" / "rsquare" / "sheets_credentials.json"
 
-# Expected column headers (row 1 of the Sheet)
-EXPECTED_HEADERS = ["Task", "Date Sent", "Priority", "Status", "Edit Completed", "Delivery Link"]
+# GID for each tab (from the sheet URL ?gid=...)
+GID_PROJECTS = "0"
+
+# Client reviews are in a separate Google Sheet (Rsquare_Review_Sheet)
+# accessed via the same sheet ID but different tab — see CLAUDE.md
+REVIEW_SHEET_ID = "***REDACTED_SHEET_ID***"
+GID_REVIEWS = "1513492429"
+
+
+def _fetch_public_csv(sheet_id, gid):
+    """Fetch a public Google Sheet tab as CSV and return list of rows."""
+    url = f"https://docs.google.com/spreadsheets/d/{sheet_id}/export?format=csv&gid={gid}"
+    req = urllib.request.Request(url, headers={"User-Agent": "rsquare-sync/1.0"})
+    resp = urllib.request.urlopen(req, timeout=15)
+    text = resp.read().decode("utf-8")
+    reader = csv.reader(io.StringIO(text))
+    return list(reader)
 
 
 def get_sheet():
-    """Authenticate and return the first worksheet of the editing tracker Sheet."""
+    """Authenticate and return the first worksheet (for write operations)."""
+    import gspread
     if not CREDENTIALS_PATH.exists():
         raise FileNotFoundError(
             f"Google Sheets credentials not found at {CREDENTIALS_PATH}\n"
-            "Follow setup instructions in sheets_sync.py to configure."
+            "Credentials are only needed for write operations (add_project)."
         )
     gc = gspread.service_account(filename=str(CREDENTIALS_PATH))
     spreadsheet = gc.open_by_key(SHEET_ID)
     return spreadsheet.sheet1
 
 
+def _normalize_date(date_str):
+    """Normalize date from M/D/YYYY (Google Sheets) to YYYY-MM-DD."""
+    if not date_str or not date_str.strip():
+        return ""
+    date_str = date_str.strip()
+    # Already in YYYY-MM-DD format
+    if len(date_str) >= 8 and date_str[4] == "-":
+        return date_str
+    # M/D/YYYY or MM/DD/YYYY
+    from datetime import datetime
+    try:
+        dt = datetime.strptime(date_str, "%m/%d/%Y")
+        return dt.strftime("%Y-%m-%d")
+    except ValueError:
+        return date_str
+
+
 def _row_to_dict(headers, row):
-    """Convert a Sheet row (list of values) to a project dict matching the JSON format."""
-    # Pad row with empty strings if shorter than headers
+    """Convert a Sheet row to a project dict. Matches headers generically."""
     padded = row + [""] * (len(headers) - len(row))
     raw = dict(zip(headers, padded))
 
+    # Map actual sheet headers to internal keys (case-insensitive partial match)
+    def find(keywords):
+        for h in headers:
+            hl = h.lower().strip()
+            if all(k in hl for k in keywords):
+                return raw.get(h, "")
+        return ""
+
     return {
-        "task": raw.get("Task", ""),
-        "date_sent": raw.get("Date Sent", ""),
-        "priority": raw.get("Priority", "P1"),
-        "status": raw.get("Status", "SENT"),
-        "edit_completed": raw.get("Edit Completed", "") or None,
-        "delivery_link": raw.get("Delivery Link", ""),
+        "task": find(["task"]),
+        "date_sent": _normalize_date(find(["sent"])),
+        "priority": find(["priority"]) or "P1",
+        "status": find(["status"]) or "SENT",
+        "edit_completed": _normalize_date(find(["completed"])) or None,
+        "delivery_link": find(["link"]) or find(["transfer"]),
         # Defaults not in Sheet — kept for compatibility with dashboard/reminder
         "editor": "Laxman",
         "editor_phone": "***REDACTED_PHONE***",
@@ -57,8 +102,7 @@ def _row_to_dict(headers, row):
 
 def read_projects():
     """Read all rows from the Sheet and return as a list of project dicts."""
-    sheet = get_sheet()
-    records = sheet.get_all_values()
+    records = _fetch_public_csv(SHEET_ID, GID_PROJECTS)
 
     if not records:
         return []
@@ -66,20 +110,19 @@ def read_projects():
     headers = records[0]
     projects = []
     for row in records[1:]:
-        # Skip completely empty rows
         if not any(cell.strip() for cell in row):
             continue
-        projects.append(_row_to_dict(headers, row))
+        proj = _row_to_dict(headers, row)
+        # Skip rows with no task name or no date
+        if not proj["task"].strip() or not proj["date_sent"]:
+            continue
+        projects.append(proj)
 
     return projects
 
 
 def add_project(data):
-    """Append a new project row to the Sheet.
-
-    Args:
-        data: dict with keys matching the JSON format (task, date_sent, priority, etc.)
-    """
+    """Append a new project row to the Sheet (requires credentials)."""
     sheet = get_sheet()
     row = [
         data.get("task", ""),
@@ -104,19 +147,8 @@ def read_reviews():
     Returns list of dicts: {name, event_type, rating, review, date}
     Only returns rows where Status == 'approved'.
     """
-    if not CREDENTIALS_PATH.exists():
-        raise FileNotFoundError(
-            f"Google Sheets credentials not found at {CREDENTIALS_PATH}"
-        )
-    gc = gspread.service_account(filename=str(CREDENTIALS_PATH))
-    spreadsheet = gc.open_by_key(SHEET_ID)
+    records = _fetch_public_csv(REVIEW_SHEET_ID, GID_REVIEWS)
 
-    try:
-        ws = spreadsheet.worksheet("Reviews")
-    except gspread.exceptions.WorksheetNotFound:
-        return []
-
-    records = ws.get_all_values()
     if not records or len(records) < 2:
         return []
 

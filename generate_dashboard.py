@@ -858,6 +858,7 @@ def generate_html():
             {"icon": "\U0001f468\u200d\U0001f469\u200d\U0001f467", "label": "Family Poses", "section": "posing-families"},
             {"icon": "\U0001f48d", "label": "Wedding Poses", "section": "posing-weddings"},
             {"icon": "\U0001f4f8", "label": "Pose References", "url": "https://literate-basketball-b5e.notion.site/PLAN-POSES-13e48bb472084196a825703d7e8a4d10"},
+            {"icon": "\U0001f4cb", "label": "Booking Confirm", "section": "booking-confirm"},
         ],
     }
 
@@ -931,6 +932,25 @@ def generate_html():
         "back_section": "workflow-home",
         "columns": ["Project", "Priority", "Sent", "Days", "Status", "Completed", "Files"],
         "rows": editing_rows_data,
+    }
+
+    # Booking confirmation tool — WhatsApp message builder
+    internal_content["booking-confirm"] = {
+        "breadcrumb": "Workflow",
+        "title": "Send Booking Confirmation",
+        "subtitle": "Fill in details and send confirmation to client via WhatsApp",
+        "has_back": True,
+        "back_section": "workflow-home",
+        "event_types": ["Wedding", "Maternity", "Newborn", "Birthday", "Cradle Ceremony", "Family"],
+        "quick_fills": [
+            {"label": "Wedding", "event": "Wedding Photography", "location": "Dallas, TX"},
+            {"label": "Maternity", "event": "Maternity Photography", "location": "Dallas, TX"},
+            {"label": "Newborn", "event": "Newborn Photography", "location": "Dallas, TX"},
+            {"label": "Birthday", "event": "Birthday Photography", "location": "Dallas, TX"},
+        ],
+        "defaults": {"start_time": "18:00", "end_time": "22:00"},
+        "phone": "***REDACTED_PHONE***",
+        "photographer_name": "Ram",
     }
 
     # Posing guide pages — each gets its own key with raw markdown
@@ -1620,6 +1640,69 @@ def generate_html():
             grid-template-columns: 1fr 1fr;
             gap: 12px;
         }}
+        /* Booking confirmation tool */
+        .bc-quickfill {{ margin-bottom: 16px; }}
+        .bc-qf-grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }}
+        .bc-qf-btn {{
+            padding: 10px 12px;
+            background: #202020;
+            border: 1px solid #2d2d2d;
+            border-radius: 8px;
+            color: #d1d5db;
+            font-size: 13px;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
+        }}
+        .bc-qf-btn:hover {{ border-color: #8b5cf6; background: rgba(139,92,246,0.1); }}
+        .bc-form {{ display: flex; flex-direction: column; gap: 12px; }}
+        .bc-actions {{ display: flex; gap: 10px; margin-top: 16px; }}
+        .bc-send-btn {{
+            flex: 1;
+            padding: 14px;
+            background: #25d366;
+            color: #fff;
+            font-weight: 600;
+            font-size: 15px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: opacity .2s;
+        }}
+        .bc-send-btn:hover {{ opacity: .9; }}
+        .bc-copy-btn {{
+            flex: 1;
+            padding: 14px;
+            background: transparent;
+            color: #8b5cf6;
+            font-weight: 600;
+            font-size: 15px;
+            border: 1px solid #8b5cf6;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background .2s;
+        }}
+        .bc-copy-btn:hover {{ background: rgba(139,92,246,0.1); }}
+        .bc-preview {{
+            background: #111;
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 16px;
+        }}
+        .bc-preview-label {{
+            font-size: 11px;
+            font-weight: 700;
+            color: #525252;
+            letter-spacing: 0.05em;
+            margin-bottom: 10px;
+        }}
+        .bc-preview-label.bc-error {{ color: #ef4444; font-size: 13px; }}
+        .bc-preview-text {{
+            font-size: 14px;
+            line-height: 1.6;
+            color: #d1d5db;
+        }}
+
         .quote-preview {{
             background: #111;
             border: 1px solid rgba(255,255,255,0.08);
@@ -2302,6 +2385,7 @@ def generate_html():
             /* Booking form mobile */
             .form-row-inline {{ grid-template-columns: 1fr; }}
             .btn-row {{ flex-direction: column; }}
+            .bc-actions {{ flex-direction: column; }}
             .copy-btn, .share-wa-btn {{ width: 100%; justify-content: center; padding: 14px; }}
             .proscons {{ grid-template-columns: 1fr; }}
 
@@ -3120,6 +3204,11 @@ def generate_html():
                 <div class="encrypted-placeholder">This content is encrypted. Enter the password to view editing projects.</div>
             </div>
 
+            <!-- BOOKING CONFIRM (encrypted) -->
+            <div class="page" id="booking-confirm">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view booking confirmation.</div>
+            </div>
+
             <!-- POSING GUIDES (encrypted — shells injected dynamically) -->
             {posing_shells}
 
@@ -3197,6 +3286,7 @@ def generate_html():
             'www.instagram.com', 'instagram.com',
             'we.tl', 'mega.nz',
             'cal.com', 'app.cal.com',
+            'calendar.google.com', 'outlook.live.com',
             'literate-basketball-b5e.notion.site',
         ];
         function isAllowedUrl(url) {{
@@ -3230,7 +3320,7 @@ def generate_html():
 
         // Client sections need client password; internal sections need internal password
         const CLIENT_SECTIONS = ['pricing', 'booking'];
-        const INTERNAL_SECTIONS = ['workflow-home', 'checklists', 'workflow-ref', 'editing-projects', 'posing-couples', 'posing-families', 'posing-weddings'];
+        const INTERNAL_SECTIONS = ['workflow-home', 'checklists', 'workflow-ref', 'editing-projects', 'booking-confirm', 'posing-couples', 'posing-families', 'posing-weddings'];
 
         function showPrivateGate() {{
             // If both unlocked, go to pricing (client) or workflow (internal)
@@ -3446,6 +3536,7 @@ def generate_html():
             else if (id === 'workflow-home') buildWorkflowHome(el, data);
             else if (id === 'checklists') buildChecklists(el, data);
             else if (id === 'editing-projects') buildEditingProjects(el, data);
+            else if (id === 'booking-confirm') buildBookingConfirm(el, data);
             else if (data.markdown !== undefined) {{
                 const wfContent = makeEl('div', 'wf-content');
                 wfContent.appendChild(renderMarkdown(data.markdown));
@@ -3807,6 +3898,224 @@ def generate_html():
             table.appendChild(tbody);
             wrap.appendChild(table);
             el.appendChild(wrap);
+        }}
+
+        function buildBookingConfirm(el, data) {{
+            // Quick-fill buttons
+            const qfWrap = makeEl('div', 'bc-quickfill');
+            const qfLabel = makeEl('div', 'form-label', 'QUICK FILL');
+            qfLabel.style.marginBottom = '8px';
+            qfWrap.appendChild(qfLabel);
+            const qfGrid = makeEl('div', 'bc-qf-grid');
+            (data.quick_fills || []).forEach(qf => {{
+                const btn = makeEl('button', 'bc-qf-btn', qf.label);
+                btn.addEventListener('click', () => {{
+                    const evSel = document.getElementById('bc-event');
+                    if (evSel) evSel.value = qf.event;
+                    const locInp = document.getElementById('bc-location');
+                    if (locInp) locInp.value = qf.location;
+                }});
+                qfGrid.appendChild(btn);
+            }});
+            qfWrap.appendChild(qfGrid);
+            el.appendChild(qfWrap);
+
+            // Form
+            const form = makeEl('div', 'bc-form');
+
+            function addRow(parent, label, inputEl) {{
+                const row = makeEl('div', 'form-row');
+                row.appendChild(makeEl('label', 'form-label', label));
+                row.appendChild(inputEl);
+                parent.appendChild(row);
+            }}
+            function mkInput(id, type, placeholder, attrs) {{
+                const inp = document.createElement('input');
+                inp.className = 'form-input';
+                inp.id = id;
+                inp.type = type || 'text';
+                if (placeholder) inp.placeholder = placeholder;
+                if (attrs) Object.entries(attrs).forEach(([k,v]) => inp.setAttribute(k, v));
+                return inp;
+            }}
+            function mkSelect(id, options) {{
+                const sel = document.createElement('select');
+                sel.className = 'form-select';
+                sel.id = id;
+                options.forEach(opt => {{
+                    const o = document.createElement('option');
+                    if (typeof opt === 'string') {{ o.value = opt; o.textContent = opt; }}
+                    else {{ o.value = opt.value; o.textContent = opt.label; }}
+                    sel.appendChild(o);
+                }});
+                return sel;
+            }}
+
+            // Client Name
+            addRow(form, 'CLIENT NAME', mkInput('bc-name', 'text', 'Full name'));
+
+            // Client Phone
+            addRow(form, 'CLIENT PHONE', mkInput('bc-phone', 'tel', '10-digit phone number'));
+
+            // Event Type dropdown
+            const evOpts = [{{ value: '', label: 'Select event type' }}, ...(data.event_types || []).map(e => ({{ value: e + ' Photography', label: e }}))];
+            addRow(form, 'EVENT TYPE', mkSelect('bc-event', evOpts));
+
+            // Date
+            addRow(form, 'DATE', mkInput('bc-date', 'date', ''));
+
+            // Start / End time inline
+            const timeRow = makeEl('div', 'form-row-inline');
+            const startDiv = makeEl('div', 'form-row');
+            startDiv.appendChild(makeEl('label', 'form-label', 'START TIME'));
+            const startInp = mkInput('bc-start', 'time', '');
+            startInp.value = (data.defaults || {{}}).start_time || '18:00';
+            startDiv.appendChild(startInp);
+            timeRow.appendChild(startDiv);
+            const endDiv = makeEl('div', 'form-row');
+            endDiv.appendChild(makeEl('label', 'form-label', 'END TIME'));
+            const endInp = mkInput('bc-end', 'time', '');
+            endInp.value = (data.defaults || {{}}).end_time || '22:00';
+            endDiv.appendChild(endInp);
+            timeRow.appendChild(endDiv);
+            form.appendChild(timeRow);
+
+            // Location
+            addRow(form, 'LOCATION', mkInput('bc-location', 'text', 'Venue name or city'));
+
+            el.appendChild(form);
+
+            // Action buttons
+            const actions = makeEl('div', 'bc-actions');
+            const sendBtn = makeEl('button', 'bc-send-btn', 'Send via WhatsApp');
+            const copyBtn = makeEl('button', 'bc-copy-btn', 'Copy Message');
+            actions.appendChild(sendBtn);
+            actions.appendChild(copyBtn);
+            el.appendChild(actions);
+
+            // Preview area
+            const preview = makeEl('div', 'bc-preview');
+            preview.id = 'bc-preview';
+            preview.style.display = 'none';
+            el.appendChild(preview);
+
+            // Helper: build the message text
+            function buildMessage() {{
+                const name = (document.getElementById('bc-name') || {{}}).value || '';
+                const phone = (document.getElementById('bc-phone') || {{}}).value || '';
+                const event = (document.getElementById('bc-event') || {{}}).value || '';
+                const dateVal = (document.getElementById('bc-date') || {{}}).value || '';
+                const start = (document.getElementById('bc-start') || {{}}).value || '';
+                const end = (document.getElementById('bc-end') || {{}}).value || '';
+                const location = (document.getElementById('bc-location') || {{}}).value || '';
+
+                if (!name || !phone || !event || !dateVal || !start || !end || !location) {{
+                    return null;
+                }}
+
+                // Format date nicely
+                const dObj = new Date(dateVal + 'T00:00:00');
+                const dateStr = dObj.toLocaleDateString('en-US', {{ weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }});
+
+                // Format times
+                function fmtTime(t) {{
+                    const [h, m] = t.split(':').map(Number);
+                    const suffix = h >= 12 ? 'PM' : 'AM';
+                    const h12 = h % 12 || 12;
+                    return h12 + ':' + String(m).padStart(2, '0') + ' ' + suffix;
+                }}
+                const startStr = fmtTime(start);
+                const endStr = fmtTime(end);
+
+                // Calendar links
+                const calStart = dateVal.replace(/-/g, '') + 'T' + start.replace(':', '') + '00';
+                const calEnd = dateVal.replace(/-/g, '') + 'T' + end.replace(':', '') + '00';
+                const calTitle = encodeURIComponent(event + ' - ' + name);
+                const calLoc = encodeURIComponent(location);
+                const calDetails = encodeURIComponent('Photography session with Rsquare Photography');
+
+                const googleUrl = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + calTitle + '&dates=' + calStart + '/' + calEnd + '&location=' + calLoc + '&details=' + calDetails;
+
+                // Outlook — ISO format
+                const olStart = dateVal + 'T' + start + ':00';
+                const olEnd = dateVal + 'T' + end + ':00';
+                const outlookUrl = 'https://outlook.live.com/calendar/0/deeplink/compose?subject=' + calTitle + '&startdt=' + encodeURIComponent(olStart) + '&enddt=' + encodeURIComponent(olEnd) + '&location=' + calLoc + '&body=' + calDetails;
+
+                const msg = [
+                    '🎉 *Booking Confirmed!*',
+                    '',
+                    event,
+                    name,
+                    '',
+                    '📅 ' + dateStr,
+                    '⏰ ' + startStr + ' - ' + endStr,
+                    '📍 ' + location,
+                    '',
+                    'Looking forward to capturing your special moments!',
+                    '- ' + (data.photographer_name || 'Ram') + ', Rsquare Photography',
+                    '',
+                    '📅 *Add to your calendar:*',
+                    'iPhone/Apple Calendar:',
+                    googleUrl,
+                    '',
+                    'Outlook Calendar:',
+                    outlookUrl,
+                ].join('\\n');
+
+                return {{ msg, phone, googleUrl, outlookUrl }};
+            }}
+
+            // Show preview
+            function showPreview(msgObj) {{
+                const prev = document.getElementById('bc-preview');
+                if (!prev) return;
+                while (prev.firstChild) prev.removeChild(prev.firstChild);
+                prev.appendChild(makeEl('div', 'bc-preview-label', 'MESSAGE PREVIEW'));
+                const pre = makeEl('div', 'bc-preview-text', msgObj.msg);
+                pre.style.whiteSpace = 'pre-wrap';
+                prev.appendChild(pre);
+                prev.style.display = 'block';
+            }}
+
+            // Send button
+            sendBtn.addEventListener('click', () => {{
+                const result = buildMessage();
+                if (!result) {{
+                    const prev = document.getElementById('bc-preview');
+                    if (prev) {{
+                        while (prev.firstChild) prev.removeChild(prev.firstChild);
+                        prev.appendChild(makeEl('div', 'bc-preview-label bc-error', 'Please fill in all fields'));
+                        prev.style.display = 'block';
+                    }}
+                    return;
+                }}
+                showPreview(result);
+                const waUrl = 'https://wa.me/' + result.phone + '?text=' + encodeURIComponent(result.msg);
+                if (isAllowedUrl(waUrl)) {{
+                    window.open(waUrl, '_blank', 'noopener,noreferrer');
+                }}
+            }});
+
+            // Copy button
+            copyBtn.addEventListener('click', () => {{
+                const result = buildMessage();
+                if (!result) {{
+                    const prev = document.getElementById('bc-preview');
+                    if (prev) {{
+                        while (prev.firstChild) prev.removeChild(prev.firstChild);
+                        prev.appendChild(makeEl('div', 'bc-preview-label bc-error', 'Please fill in all fields'));
+                        prev.style.display = 'block';
+                    }}
+                    return;
+                }}
+                showPreview(result);
+                if (navigator.clipboard) {{
+                    navigator.clipboard.writeText(result.msg).then(() => {{
+                        copyBtn.textContent = 'Copied!';
+                        setTimeout(() => {{ copyBtn.textContent = 'Copy Message'; }}, 2000);
+                    }});
+                }}
+            }});
         }}
 
         function injectDecryptedContent(sections) {{
