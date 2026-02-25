@@ -4,4 +4,13 @@ editing_projects.json
 .dashboard_secrets.json
 .feedback_secrets.json
 .otp_log.json
+.DS_Store
+
+# Gallery/album data files contain client PII (names, locations, dates)
+# Used only at build time — never needed on the public repo
+album_stats.json
+new_galleries.json
+new_galleries_clean.json
+corrected_galleries.json
+
 krithin-neel/

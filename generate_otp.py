@@ -10,7 +10,7 @@ Usage:
     python3 generate_otp.py --no-push    # Generate + rebuild only (no git push, no Slack)
     python3 generate_otp.py --no-slack   # Generate + rebuild + push (no Slack)
 
-The internal password (***REMOVED***) stays permanent.
+The internal password (stored in .secret) stays permanent.
 Client OTP auto-expires when this script runs again (every 48h via LaunchAgent).
 """
 

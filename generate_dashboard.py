@@ -3301,7 +3301,7 @@ def generate_html():
                     <a id="contact-phone" class="gallery-card" style="display:none">
                         <div class="gallery-icon" style="font-size:28px;">📞</div>
                         <div class="gallery-info">
-                            <div class="gallery-name">***REMOVED***</div>
+                            <div class="gallery-name" id="contact-phone-number"></div>
                             <div class="gallery-meta">Call or text</div>
                         </div>
                         <div class="gallery-arrow">&#8599;</div>
@@ -4251,7 +4251,15 @@ def generate_html():
                     var contactWa = document.getElementById('contact-wa');
                     if (contactWa) {{ contactWa.href = waUrl; contactWa.style.display = ''; }}
                     var contactPhone = document.getElementById('contact-phone');
-                    if (contactPhone) {{ contactPhone.href = 'tel:+' + _appConfig.ramPhone; contactPhone.style.display = ''; }}
+                    if (contactPhone) {{
+                        contactPhone.href = 'tel:+' + _appConfig.ramPhone;
+                        contactPhone.style.display = '';
+                        var phoneLabel = document.getElementById('contact-phone-number');
+                        if (phoneLabel) {{
+                            var p = _appConfig.ramPhone;
+                            phoneLabel.textContent = '(' + p.slice(0,3) + ') ' + p.slice(3,6) + '-' + p.slice(6);
+                        }}
+                    }}
                 }}
             }}
             for (const [id, data] of Object.entries(sections)) {{

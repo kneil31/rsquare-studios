@@ -26,7 +26,7 @@ SCRIPT_DIR = Path(__file__).parent
 GENERATOR = SCRIPT_DIR / "generate_dashboard.py"
 
 SSD_BASE = Path("/Volumes/CLIENT 2026/2026")
-MEGA_FOLDER_URL = "https://***REMOVED***"
+MEGA_FOLDER_URL = _secrets.get("mega_folder_url", "")
 MEGA_VIDEO_PATH = "/Root/Video RAW Data/"
 
 # Shoot folder pattern: YYYY-MM-DD | Name | Location
