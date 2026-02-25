@@ -12,20 +12,18 @@ from pathlib import Path
 from requests_oauthlib import OAuth1Session
 
 # --- Config ---
-API_KEY = "***REDACTED_API_KEY***"
-API_SECRET = "***REDACTED_API_SECRET***"
 ROOT_NODE = "sh9H2R"
 BASE_URL = "https://api.smugmug.com"
 TARGET_YEARS = {"2024", "2025", "2026"}
 OUTPUT_PATH = Path("/Users/ram/Documents/2025 - Rsquare/Rsquare-Scripts/Photography/rsquarestudios/rsquare-studios-dashboard/album_stats.json")
 
-# Load OAuth tokens
+# Load OAuth tokens + API credentials
 with open(Path.home() / ".smugmug_config.json") as f:
     config = json.load(f)
 
 session = OAuth1Session(
-    client_key=API_KEY,
-    client_secret=API_SECRET,
+    client_key=config["api_key"],
+    client_secret=config["api_secret"],
     resource_owner_key=config["access_token"],
     resource_owner_secret=config["access_token_secret"],
 )

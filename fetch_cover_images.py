@@ -4,15 +4,12 @@
 import json
 from requests_oauthlib import OAuth1Session
 
-API_KEY = "***REDACTED_API_KEY***"
-API_SECRET = "***REDACTED_API_SECRET***"
-
 with open("/Users/ram/.smugmug_config.json") as f:
     config = json.load(f)
 
 sm = OAuth1Session(
-    API_KEY,
-    client_secret=API_SECRET,
+    config["api_key"],
+    client_secret=config["api_secret"],
     resource_owner_key=config["access_token"],
     resource_owner_secret=config["access_token_secret"],
 )

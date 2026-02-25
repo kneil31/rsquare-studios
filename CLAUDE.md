@@ -93,8 +93,7 @@ Spare image (not yet used): `i-6trRsbK`
 
 ## SmugMug API Auth
 
-- **API Key:** `***REDACTED_API_KEY***`
-- **Config:** `~/.smugmug_config.json` (OAuth1 tokens)
+- **Credentials:** `~/.smugmug_config.json` (API key, API secret, OAuth1 tokens — never hardcode in source)
 - **Helper scripts:** `fetch_cover_images.py`, `fetch_smugmug_sizes.py`, `fetch_album_stats.py`, `detect_cover_faces.py`
 
 ## Workflow

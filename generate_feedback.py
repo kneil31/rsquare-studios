@@ -15,68 +15,52 @@ Output:
   portfolio.rsquarestudios.com/feedback/?p={project_slug}
 """
 
+import base64
 import html
 import json
 import os
 import secrets
 from pathlib import Path
 
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = SCRIPT_DIR / "feedback"
 OUTPUT_FILE = OUTPUT_DIR / "index.html"
+SECRETS_FILE = SCRIPT_DIR / ".feedback_secrets.json"
 
-# Google Apps Script URL (shared with reviews + video projects)
-# The same doPost() handles type=feedback and type=feedback_update
-FEEDBACK_SCRIPT_URL = (
-    "https://script.google.com/macros/s/"
-    "***REDACTED_SCRIPT_ID***"
-    "/exec"
-)
-
-# Google Sheet for live feedback reads (editor + client views)
-FEEDBACK_SHEET_ID = "***REDACTED_SHEET_ID***"
-FEEDBACK_GID = "***REDACTED_GID***"
-
-# Editor password — embedded in JS (not sensitive business data, just gates editor view)
-EDITOR_PASSWORD = "***REMOVED***"
-
-# Ram's WhatsApp number (editor can notify Ram when corrections are fixed)
-RAM_PHONE = "***REDACTED_PHONE***"
-
-# ── Project Registry ────────────────────────────────────────────────
-# Each project gets a slug (URL param), display name, 4-digit PIN,
-# editor info, and optional MEGA link.
+# ── Load secrets from gitignored config file ──────────────────────
+# All sensitive data (PINs, passwords, phone numbers, API URLs, Sheet IDs)
+# lives in .feedback_secrets.json (gitignored, never committed).
 #
-# To add a project:  add a new entry here, then run generate_feedback.py
-# ────────────────────────────────────────────────────────────────────
-PROJECTS = {
-    # ── Video Projects ──
-    "sandhya": {
-        "name": "***REDACTED_NAME***",
-        "pin": "***REDACTED_PIN***",
-        "type": "video",  # video = full feedback page (songs, corrections)
-        "editor": "Madhu",
-        "editor_phone": "***REDACTED_PHONE***",
-        "mega_link": "",
-        "status": "editing",  # shoot_done / sent / editing / review / delivered
-        # Version links — editor shares YouTube/Drive links as cuts are ready
-        # Add entries as versions are delivered: {"label": "V1", "url": "https://..."}
-        "versions": [],
-    },
-    # ── Photo Projects ──
-    # type: "photo" = tracker-only view (no songs/corrections, just status + delivery link)
-    # To add a photo project: add entry here, set status, run generate_feedback.py
-    "sample-photo": {
-        "name": "***REDACTED_NAME***",
-        "pin": "***REDACTED_PIN***",
-        "type": "photo",
-        "editor": "Laxman",
-        "editor_phone": "***REDACTED_PHONE***",
-        "status": "editing",
-        "delivery_link": "",  # SmugMug/WeTransfer link when ready
-        "gallery_count": 0,   # Number of edited photos
-    },
-}
+# To add a project: edit .feedback_secrets.json, then run generate_feedback.py
+# ──────────────────────────────────────────────────────────────────
+
+
+def _load_secrets():
+    """Load secrets from .feedback_secrets.json. Exits if file missing."""
+    if not SECRETS_FILE.exists():
+        print(f"ERROR: {SECRETS_FILE} not found.")
+        print("This file contains all sensitive config (PINs, passwords, API URLs).")
+        print("It is gitignored and must be created locally. See CLAUDE.md.")
+        raise SystemExit(1)
+    with open(SECRETS_FILE, encoding="utf-8") as f:
+        return json.load(f)
+
+
+_secrets = _load_secrets()
+
+FEEDBACK_SCRIPT_URL = _secrets["feedback_script_url"]
+FEEDBACK_SHEET_ID = _secrets["feedback_sheet_id"]
+FEEDBACK_GID = _secrets["feedback_gid"]
+RAM_PHONE = _secrets["ram_phone"]
+ROLE_CREDENTIALS = _secrets["role_credentials"]
+PROJECTS = _secrets["projects"]
+
+
+PBKDF2_ITERATIONS = 400_000
 
 
 def escape(text):
@@ -84,31 +68,98 @@ def escape(text):
     return html.escape(str(text), quote=True)
 
 
+def encrypt_content(plaintext, password):
+    """AES-256-GCM encrypt plaintext using password via PBKDF2 key derivation.
+    Returns base64-encoded salt(16) + iv(12) + ciphertext."""
+    salt = os.urandom(16)
+    iv = os.urandom(12)
+    kdf = PBKDF2HMAC(
+        algorithm=hashes.SHA256(),
+        length=32,
+        salt=salt,
+        iterations=PBKDF2_ITERATIONS,
+    )
+    key = kdf.derive(password.encode("utf-8"))
+    ciphertext = AESGCM(key).encrypt(iv, plaintext.encode("utf-8"), None)
+    return base64.b64encode(salt + iv + ciphertext).decode("ascii")
+
+
 def generate():
     """Generate feedback/index.html."""
     csp_nonce = secrets.token_hex(16)
 
-    # Build project data as JSON (embedded in JS, no innerHTML)
-    projects_json = json.dumps(
-        {
-            slug: {
-                "name": escape(p["name"]),
-                "pin": p["pin"],
-                "type": p.get("type", "video"),
-                "editor": escape(p["editor"]),
-                "editor_phone": p["editor_phone"],
-                "mega_link": p.get("mega_link", ""),
-                "status": escape(p.get("status", "editing")),
-                "delivery_link": p.get("delivery_link", ""),
-                "gallery_count": p.get("gallery_count", 0),
-                "versions": [
-                    {"label": escape(v["label"]), "url": v["url"]}
-                    for v in p.get("versions", [])
-                ],
-            }
-            for slug, p in PROJECTS.items()
+    # Sensitive config shared across all encrypted blobs
+    shared_config = {
+        "script_url": FEEDBACK_SCRIPT_URL,
+        "sheet_id": FEEDBACK_SHEET_ID,
+        "gid_feedback": FEEDBACK_GID,
+        "ram_phone": RAM_PHONE,
+    }
+
+    def build_project_data(p):
+        """Build project data dict for encryption payload."""
+        return {
+            "name": escape(p["name"]),
+            "type": p.get("type", "video"),
+            "editor": escape(p["editor"]),
+            "editor_phone": p["editor_phone"],
+            "photo_editor": escape(p["photo_editor"]) if p.get("photo_editor") else "",
+            "photo_editor_phone": p.get("photo_editor_phone", ""),
+            "mega_link": p.get("mega_link", ""),
+            "status": escape(p.get("status", "editing")),
+            "photo_status": escape(p.get("photo_status", "")),
+            "video_status": escape(p.get("video_status", "")),
+            "delivery_link": p.get("delivery_link", ""),
+            "gallery_count": p.get("gallery_count", 0),
+            "versions": [
+                {"label": escape(v["label"]), "url": v["url"]}
+                for v in p.get("versions", [])
+            ],
         }
-    )
+
+    # Per-project encrypted blobs (each encrypted with its PIN)
+    encrypted_projects = {}
+    for slug, p in PROJECTS.items():
+        payload = {"v": 1, **build_project_data(p), **shared_config}
+        encrypted_projects[slug] = encrypt_content(json.dumps(payload), p["pin"])
+
+    # Role encrypted blobs (each encrypted with role password)
+    encrypted_roles = {}
+    for role, cred in ROLE_CREDENTIALS.items():
+        editor_name = cred["editor_name"] or ""
+        is_photo_editor = role == "photo-editor"
+        is_video_editor = role == "video-editor"
+
+        # Filter projects by role
+        role_projects = {}
+        for slug, p in PROJECTS.items():
+            proj_data = build_project_data(p)
+            if role == "admin":
+                # Admin sees everything
+                role_projects[slug] = proj_data
+            elif is_photo_editor:
+                photo_ed = p.get("photo_editor") or p["editor"]
+                if photo_ed == editor_name and p.get("type", "video") in ("photo", "both"):
+                    role_projects[slug] = proj_data
+            elif is_video_editor:
+                if p["editor"] == editor_name and p.get("type", "video") in ("video", "both"):
+                    role_projects[slug] = proj_data
+
+        payload = {
+            "v": 1,
+            "projects": role_projects,
+            "label": cred["label"],
+            "editor_name": editor_name,
+            **shared_config,
+        }
+        encrypted_roles[role] = encrypt_content(
+            json.dumps(payload), cred["password"]
+        )
+
+    # JSON strings for embedding in HTML
+    encrypted_projects_json = json.dumps(encrypted_projects)
+    encrypted_roles_json = json.dumps(encrypted_roles)
+    project_slugs_json = json.dumps(list(PROJECTS.keys()))
 
     page_html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -979,6 +1030,51 @@ def generate():
         .btn-approve:hover:not(:disabled) {{
             background: #15803d;
         }}
+
+        /* ── Admin Filter Tabs ── */
+        .admin-tabs {{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 16px;
+            padding: 0 2px;
+        }}
+        .admin-tab {{
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: #999;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }}
+        .admin-tab:hover {{
+            border-color: #8b5cf6;
+            color: #c4b5fd;
+        }}
+        .admin-tab.active {{
+            background: #8b5cf6;
+            border-color: #8b5cf6;
+            color: #fff;
+        }}
+
+        /* ── Section Divider (type=both projects) ── */
+        .section-divider {{
+            border: none;
+            border-top: 1px solid #333;
+            margin: 16px 0;
+        }}
+        .section-divider-label {{
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+            margin: 12px 0 8px;
+        }}
     </style>
 </head>
 <body>
@@ -989,8 +1085,8 @@ def generate():
         </div>
 
         <div id="pin-gate" class="pin-gate">
-            <p>Enter your project PIN to continue</p>
-            <div class="pin-input" id="pin-input"></div>
+            <p>Enter your project passphrase to continue</p>
+            <div class="editor-pw-input" id="pin-input"></div>
             <div class="pin-error" id="pin-error"></div>
         </div>
 
@@ -1002,6 +1098,7 @@ def generate():
 
         <div id="main-content" class="hidden"></div>
         <div id="editor-content" class="hidden"></div>
+        <div id="admin-content" class="hidden"></div>
 
         <div class="toast" id="toast"></div>
     </div>
@@ -1010,13 +1107,15 @@ def generate():
     (function() {{
         'use strict';
 
-        // ── Data (embedded at build time) ──
-        var PROJECTS = {projects_json};
-        var SCRIPT_URL = '{FEEDBACK_SCRIPT_URL}';
-        var EDITOR_PW = '{EDITOR_PASSWORD}';
-        var SHEET_ID = '{FEEDBACK_SHEET_ID}';
-        var GID_FEEDBACK = '{FEEDBACK_GID}';
-        var RAM_PHONE = '{RAM_PHONE}';
+        // ── Encrypted Data (embedded at build time) ──
+        var ENCRYPTED_PROJECTS = {encrypted_projects_json};
+        var ENCRYPTED_ROLES = {encrypted_roles_json};
+        var PROJECT_SLUGS = {project_slugs_json};
+        var PBKDF2_ITERATIONS = {PBKDF2_ITERATIONS};
+
+        // ── Decrypted state (memory-only, never persisted) ──
+        var _config = null;  // script_url, sheet_id, gid_feedback, ram_phone
+        var _roleData = null;  // decrypted role blob (projects dict + config)
 
         // ── URL Allowlist ──
         var ALLOWED_HOSTS = [
@@ -1071,6 +1170,33 @@ def generate():
             setTimeout(function() {{ t.className = 'toast'; }}, 3500);
         }}
 
+        // ── AES-256-GCM Decryption (Web Crypto API) ──
+        async function deriveKey(password, salt) {{
+            var enc = new TextEncoder();
+            var keyMaterial = await crypto.subtle.importKey(
+                'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+            );
+            return crypto.subtle.deriveKey(
+                {{name: 'PBKDF2', salt: salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256'}},
+                keyMaterial,
+                {{name: 'AES-GCM', length: 256}},
+                false,
+                ['decrypt']
+            );
+        }}
+
+        async function decryptContent(password, blob) {{
+            var raw = Uint8Array.from(atob(blob), function(c) {{ return c.charCodeAt(0); }});
+            var salt = raw.slice(0, 16);
+            var iv = raw.slice(16, 28);
+            var ciphertext = raw.slice(28);
+            var key = await deriveKey(password, salt);
+            var decrypted = await crypto.subtle.decrypt(
+                {{name: 'AES-GCM', iv: iv}}, key, ciphertext
+            );
+            return new TextDecoder().decode(decrypted);
+        }}
+
         // ── PIN Gate ──
         var pinAttempts = 0;
         var pinLockUntil = 0;
@@ -1083,7 +1209,7 @@ def generate():
 
         function initPinGate() {{
             var slug = getProjectSlug();
-            if (!slug || !PROJECTS[slug]) {{
+            if (!slug || !ENCRYPTED_PROJECTS[slug]) {{
                 var gate = document.getElementById('pin-gate');
                 gate.textContent = '';
                 gate.appendChild(el('p', {{textContent: 'Invalid project link. Please check the URL you received.', style: 'color: #ef4444;'}}));
@@ -1091,84 +1217,71 @@ def generate():
             }}
 
             var container = document.getElementById('pin-input');
-            // Build 4 PIN input boxes
-            for (var i = 0; i < 4; i++) {{
-                var inp = el('input', {{
-                    type: 'text',
-                    inputmode: 'numeric',
-                    maxlength: '1',
-                    autocomplete: 'off',
-                    'data-idx': String(i),
-                }});
-                container.appendChild(inp);
-            }}
-
-            // Event listeners for PIN inputs
-            var inputs = container.querySelectorAll('input');
-            inputs.forEach(function(inp, idx) {{
-                inp.addEventListener('input', function(e) {{
-                    var val = e.target.value.replace(/[^0-9]/g, '');
-                    e.target.value = val;
-                    if (val && idx < 3) inputs[idx + 1].focus();
-                    if (idx === 3 && val) checkPin(inputs, slug);
-                }});
-                inp.addEventListener('keydown', function(e) {{
-                    if (e.key === 'Backspace' && !e.target.value && idx > 0) {{
-                        inputs[idx - 1].focus();
-                    }}
-                }});
-                // Prevent paste of non-numeric
-                inp.addEventListener('paste', function(e) {{
-                    e.preventDefault();
-                    var paste = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
-                    for (var j = 0; j < 4 && j < paste.length; j++) {{
-                        inputs[j].value = paste[j];
-                    }}
-                    if (paste.length >= 4) checkPin(inputs, slug);
-                    else if (paste.length > 0) inputs[Math.min(paste.length, 3)].focus();
-                }});
+            var inp = el('input', {{type: 'password', placeholder: 'Passphrase', autocomplete: 'off'}});
+            var btn = el('button', {{textContent: 'Unlock'}});
+            container.appendChild(inp);
+            container.appendChild(btn);
+            btn.addEventListener('click', function() {{ checkPin(inp, slug); }});
+            inp.addEventListener('keydown', function(e) {{
+                if (e.key === 'Enter') checkPin(inp, slug);
             }});
-
-            inputs[0].focus();
+            inp.focus();
         }}
 
-        function checkPin(inputs, slug) {{
+        async function checkPin(inp, slug) {{
             var now = Date.now();
             if (now < pinLockUntil) {{
                 var secs = Math.ceil((pinLockUntil - now) / 1000);
                 document.getElementById('pin-error').textContent = 'Too many attempts. Wait ' + secs + 's';
-                clearPinInputs(inputs);
                 return;
             }}
 
-            var entered = '';
-            inputs.forEach(function(inp) {{ entered += inp.value; }});
+            var entered = inp.value;
+            if (!entered) return;
 
-            if (entered === PROJECTS[slug].pin) {{
-                currentProject = PROJECTS[slug];
+            try {{
+                var plaintext = await decryptContent(entered, ENCRYPTED_PROJECTS[slug]);
+                var data = JSON.parse(plaintext);
+                currentProject = data;
                 currentProject.slug = slug;
+                currentProject.pin = entered;  // Store for feedback submissions
+                _config = {{
+                    script_url: data.script_url,
+                    sheet_id: data.sheet_id,
+                    gid_feedback: data.gid_feedback,
+                    ram_phone: data.ram_phone,
+                }};
                 document.getElementById('pin-gate').classList.add('hidden');
                 document.getElementById('main-content').classList.remove('hidden');
                 // Update subtitle based on project type
                 var sub = document.getElementById('page-subtitle');
-                if (sub) sub.textContent = currentProject.type === 'photo' ? 'Photo Tracker' : 'Video Feedback';
+                if (sub) {{
+                    var subtitles = {{'photo': 'Photo Tracker', 'video': 'Video Feedback', 'both': 'Photo & Video Tracker'}};
+                    sub.textContent = subtitles[currentProject.type] || 'Project Tracker';
+                }}
                 buildMainContent();
-            }} else {{
+            }} catch(e) {{
+                // GCM auth failure = wrong passphrase
                 pinAttempts++;
                 if (pinAttempts >= 3) {{
                     pinLockUntil = now + 15000;
                     document.getElementById('pin-error').textContent = 'Too many attempts. Wait 15s';
                     pinAttempts = 0;
                 }} else {{
-                    document.getElementById('pin-error').textContent = 'Incorrect PIN. Try again.';
+                    document.getElementById('pin-error').textContent = 'Incorrect passphrase. Try again.';
                 }}
-                clearPinInputs(inputs);
+                inp.value = '';
+                inp.focus();
             }}
         }}
 
-        function clearPinInputs(inputs) {{
-            inputs.forEach(function(inp) {{ inp.value = ''; }});
-            inputs[0].focus();
+        // ── Helper: get effective status for a project side ──
+        function getStatus(proj, side) {{
+            if (proj.type === 'both') {{
+                if (side === 'photo') return proj.photo_status || 'editing';
+                if (side === 'video') return proj.video_status || 'editing';
+            }}
+            return proj.status || 'editing';
         }}
 
         // ── Main Content Builder ──
@@ -1181,32 +1294,48 @@ def generate():
             info.appendChild(el('h2', {{textContent: currentProject.name}}));
             main.appendChild(info);
 
-            // Progress tracker (Domino's style)
-            main.appendChild(buildTracker(currentProject.status));
+            var pType = currentProject.type;
 
-            // Branch based on project type
-            if (currentProject.type === 'photo') {{
-                // Photo projects: tracker + delivery section only
+            // Photo side (for photo or both)
+            if (pType === 'photo' || pType === 'both') {{
+                if (pType === 'both') {{
+                    main.appendChild(el('div', {{className: 'section-divider-label', textContent: 'Photo Tracker'}}));
+                }}
+                main.appendChild(buildTracker(getStatus(currentProject, 'photo')));
                 main.appendChild(buildPhotoDelivery());
-                main.appendChild(el('div', {{className: 'privacy-note', textContent: 'Your edited photos will be shared here when ready.'}}));
-                return;
             }}
 
-            // Video projects: full feedback page
-            // Video versions section
-            main.appendChild(buildVersionsSection());
+            // Divider for combo projects
+            if (pType === 'both') {{
+                main.appendChild(el('hr', {{className: 'section-divider'}}));
+                main.appendChild(el('div', {{className: 'section-divider-label', textContent: 'Video Feedback'}}));
+            }}
 
-            // Song choice section
-            main.appendChild(buildSongSection());
+            // Video side (for video or both)
+            if (pType === 'video' || pType === 'both') {{
+                main.appendChild(buildTracker(getStatus(currentProject, 'video')));
 
-            // Corrections section
-            main.appendChild(buildCorrectionsSection());
+                // Video versions section
+                main.appendChild(buildVersionsSection());
 
-            // Approve final button (only in review status)
-            if (currentProject.status === 'review') {{
-                var approveBtn = el('button', {{className: 'btn btn-approve', textContent: '\\u2714 Approve Final Cut'}});
-                approveBtn.addEventListener('click', approveFinal);
-                main.appendChild(approveBtn);
+                // Song choice section
+                main.appendChild(buildSongSection());
+
+                // Corrections section
+                main.appendChild(buildCorrectionsSection());
+
+                // Approve final button (only in review status)
+                var vStatus = getStatus(currentProject, 'video');
+                if (vStatus === 'review') {{
+                    var approveBtn = el('button', {{className: 'btn btn-approve', textContent: '\\u2714 Approve Final Cut'}});
+                    approveBtn.addEventListener('click', approveFinal);
+                    main.appendChild(approveBtn);
+                }}
+            }}
+
+            if (pType === 'photo') {{
+                main.appendChild(el('div', {{className: 'privacy-note', textContent: 'Your edited photos will be shared here when ready.'}}));
+                return;
             }}
 
             // Submission history
@@ -1227,23 +1356,15 @@ def generate():
             heading.appendChild(document.createTextNode(' Photo Delivery'));
             card.appendChild(heading);
 
-            var infoGrid = el('div', {{className: 'photo-info'}});
-
-            // Editor info
-            var editorItem = el('div', {{className: 'photo-info-item'}});
-            editorItem.appendChild(el('div', {{className: 'photo-info-value', textContent: currentProject.editor}}));
-            editorItem.appendChild(el('div', {{className: 'photo-info-label', textContent: 'Editor'}}));
-            infoGrid.appendChild(editorItem);
-
             // Gallery count (if available)
             if (currentProject.gallery_count > 0) {{
+                var infoGrid = el('div', {{className: 'photo-info'}});
                 var countItem = el('div', {{className: 'photo-info-item'}});
                 countItem.appendChild(el('div', {{className: 'photo-info-value', textContent: currentProject.gallery_count + ' photos'}}));
                 countItem.appendChild(el('div', {{className: 'photo-info-label', textContent: 'Edited'}}));
                 infoGrid.appendChild(countItem);
+                card.appendChild(infoGrid);
             }}
-
-            card.appendChild(infoGrid);
 
             // Delivery link (SmugMug/WeTransfer)
             var deliveryLink = currentProject.delivery_link || '';
@@ -1266,15 +1387,16 @@ def generate():
                 card.appendChild(pending);
             }}
 
-            // WhatsApp contact
+            // WhatsApp contact — clients contact Ram, not editors
             var waWrap = el('div', {{className: 'photo-whatsapp'}});
+            var waUrl = 'https://wa.me/' + _config.ram_phone + '?text=Hi Ram, checking on my photo edits for ' + encodeURIComponent(currentProject.name);
             var waLink = el('a', {{
                 className: 'btn',
-                textContent: '\\uD83D\\uDCDE Contact Editor',
-                href: 'https://wa.me/' + currentProject.editor_phone + '?text=Hi, checking on my photo edits for ' + encodeURIComponent(currentProject.name),
+                textContent: '\\uD83D\\uDCDE Contact Ram',
                 target: '_blank',
                 rel: 'noreferrer noopener',
             }});
+            if (isAllowedUrl(waUrl)) waLink.setAttribute('href', waUrl);
             waWrap.appendChild(waLink);
             card.appendChild(waWrap);
 
@@ -1392,7 +1514,7 @@ def generate():
                 priority: '',
                 pin: currentProject.pin,
             }}, function() {{
-                var msg = 'Hi bro\\n\\n' + currentProject.name + ' — client has APPROVED the final cut! Ready for delivery.';
+                var msg = 'Hi Ram\\n\\n' + currentProject.name + ' — I approve the final cut!';
                 openWhatsApp(msg);
                 addToHistory({{type: 'approval', content: 'Final cut approved', time: new Date().toLocaleString()}});
             }});
@@ -1448,7 +1570,7 @@ def generate():
 
             postFeedback(payload, function() {{
                 // Build WhatsApp message
-                var msg = 'Hi bro\\n\\n' + currentProject.name + ' song choice:\\n\\n';
+                var msg = 'Hi Ram\\n\\n' + currentProject.name + ' song choice:\\n\\n';
                 msg += 'Song: ' + name;
                 if (link) msg += '\\nLink: ' + link;
                 if (notes) msg += '\\nNotes: ' + notes;
@@ -1627,7 +1749,7 @@ def generate():
 
             function onAllCorrectionsPosted() {{
                 // Build WhatsApp message
-                var msg = 'Hi bro\\n\\n' + currentProject.name + ' corrections:\\n\\n';
+                var msg = 'Hi Ram\\n\\n' + currentProject.name + ' corrections:\\n\\n';
                 corrections.forEach(function(c) {{
                     msg += '[' + c.ts + '] ' + c.desc + '\\n';
                 }});
@@ -1654,7 +1776,7 @@ def generate():
             var params = new URLSearchParams();
             Object.keys(data).forEach(function(k) {{ params.append(k, data[k]); }});
 
-            fetch(SCRIPT_URL, {{
+            fetch(_config.script_url, {{
                 method: 'POST',
                 body: params,
             }}).then(function() {{
@@ -1666,9 +1788,9 @@ def generate():
             }});
         }}
 
-        // ── WhatsApp ──
+        // ── WhatsApp (client → Ram, not editor) ──
         function openWhatsApp(message) {{
-            var url = 'https://wa.me/' + currentProject.editor_phone + '?text=' + encodeURIComponent(message);
+            var url = 'https://wa.me/' + _config.ram_phone + '?text=' + encodeURIComponent(message);
             if (isAllowedUrl(url)) {{
                 var a = el('a', {{href: url, target: '_blank', rel: 'noreferrer noopener'}});
                 a.click();
@@ -1777,7 +1899,7 @@ def generate():
         }}
 
         function fetchFeedbackCSV(callback) {{
-            var url = SCRIPT_URL + '?action=feedback_read';
+            var url = _config.script_url + '?action=feedback_read';
             fetch(url).then(function(r) {{ return r.json(); }}).then(function(data) {{
                 callback(data.entries || []);
             }}).catch(function() {{
@@ -1785,43 +1907,69 @@ def generate():
             }});
         }}
 
-        // ── Editor Password Gate ──
-        var editorAttempts = 0;
-        var editorLockUntil = 0;
+        // ── Role Password Gate ──
+        var roleAttempts = 0;
+        var roleLockUntil = 0;
+        var activeRole = '';
 
-        function initEditorGate() {{
+        // Role label lookup (non-sensitive — just UI labels for the password prompt)
+        var ROLE_LABELS = {{'photo-editor': 'Photo Editor', 'video-editor': 'Video Editor', 'admin': 'Admin Dashboard'}};
+
+        function initRoleGate(role) {{
+            activeRole = role;
+            if (!ENCRYPTED_ROLES[role]) return;
+
             var gate = document.getElementById('editor-gate');
             gate.classList.remove('hidden');
+            // Update prompt text
+            var roleLabel = ROLE_LABELS[role] || 'Editor';
+            gate.querySelector('p').textContent = 'Enter ' + roleLabel.toLowerCase() + ' password';
             var container = document.getElementById('editor-pw-input');
             var inp = el('input', {{type: 'password', placeholder: 'Password', autocomplete: 'off'}});
             var btn = el('button', {{textContent: 'Unlock'}});
             container.appendChild(inp);
             container.appendChild(btn);
-            btn.addEventListener('click', function() {{ checkEditorPw(inp); }});
+            btn.addEventListener('click', function() {{ checkRolePw(inp, role); }});
             inp.addEventListener('keydown', function(e) {{
-                if (e.key === 'Enter') checkEditorPw(inp);
+                if (e.key === 'Enter') checkRolePw(inp, role);
             }});
             inp.focus();
         }}
 
-        function checkEditorPw(inp) {{
+        async function checkRolePw(inp, role) {{
             var now = Date.now();
             var errEl = document.getElementById('editor-error');
-            if (now < editorLockUntil) {{
-                var secs = Math.ceil((editorLockUntil - now) / 1000);
+            if (now < roleLockUntil) {{
+                var secs = Math.ceil((roleLockUntil - now) / 1000);
                 errEl.textContent = 'Too many attempts. Wait ' + secs + 's';
                 return;
             }}
-            if (inp.value === EDITOR_PW) {{
+
+            try {{
+                var plaintext = await decryptContent(inp.value, ENCRYPTED_ROLES[role]);
+                var data = JSON.parse(plaintext);
+                _config = {{
+                    script_url: data.script_url,
+                    sheet_id: data.sheet_id,
+                    gid_feedback: data.gid_feedback,
+                    ram_phone: data.ram_phone,
+                }};
+                _roleData = data;
                 document.getElementById('editor-gate').classList.add('hidden');
-                document.getElementById('editor-content').classList.remove('hidden');
-                buildEditorDashboard();
-            }} else {{
-                editorAttempts++;
-                if (editorAttempts >= 3) {{
-                    editorLockUntil = now + 15000;
+                if (role === 'admin') {{
+                    document.getElementById('admin-content').classList.remove('hidden');
+                    buildAdminDashboard(data);
+                }} else {{
+                    document.getElementById('editor-content').classList.remove('hidden');
+                    buildEditorDashboard(role, data);
+                }}
+            }} catch(e) {{
+                // GCM auth failure = wrong password
+                roleAttempts++;
+                if (roleAttempts >= 3) {{
+                    roleLockUntil = now + 15000;
                     errEl.textContent = 'Too many attempts. Wait 15s';
-                    editorAttempts = 0;
+                    roleAttempts = 0;
                 }} else {{
                     errEl.textContent = 'Incorrect password.';
                 }}
@@ -1830,284 +1978,476 @@ def generate():
             }}
         }}
 
-        // ── Editor Dashboard ──
-        function buildEditorDashboard() {{
+        // ── Build Project Card (reusable for editor + admin dashboards) ──
+        // viewType: 'photo' | 'video' | 'both' — controls what sections to render
+        // showActions: true for editors/admin (fix buttons), false for read-only
+        function buildProjectCard(slug, proj, projEntries, viewType, showActions) {{
+            var card = el('div', {{className: 'editor-project-card'}});
+
+            // Project name + type badge
+            var titleRow = el('div', {{style: 'display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 4px;'}});
+            titleRow.appendChild(el('h3', {{textContent: proj.name, style: 'margin: 0;'}}));
+
+            var typeLabels = {{'photo': '\\uD83D\\uDCF7 Photo', 'video': '\\uD83C\\uDFAC Video', 'both': '\\uD83D\\uDCF7\\uD83C\\uDFAC Both'}};
+            var typeColors = {{'photo': ['#2563eb33', '#60a5fa'], 'video': ['#8b5cf633', '#a78bfa'], 'both': ['#6d28d933', '#c4b5fd']}};
+            var colors = typeColors[proj.type] || typeColors.video;
+            titleRow.appendChild(el('span', {{
+                textContent: typeLabels[proj.type] || proj.type,
+                style: 'font-size: 11px; background: ' + colors[0] + '; color: ' + colors[1] + '; padding: 2px 8px; border-radius: 10px;',
+            }}));
+
+            // Editor name badges
+            if (proj.photo_editor) {{
+                titleRow.appendChild(el('span', {{
+                    textContent: '\\uD83D\\uDCF7 ' + proj.photo_editor,
+                    style: 'font-size: 10px; color: #60a5fa; background: #1e3a5f; padding: 2px 6px; border-radius: 8px;',
+                }}));
+            }}
+            titleRow.appendChild(el('span', {{
+                textContent: (proj.type === 'both' ? '\\uD83C\\uDFAC ' : '') + proj.editor,
+                style: 'font-size: 10px; color: #a78bfa; background: #2e1065; padding: 2px 6px; border-radius: 8px;',
+            }}));
+
+            card.appendChild(titleRow);
+
+            // Photo side
+            if (viewType === 'photo' || viewType === 'both') {{
+                if (viewType === 'both') {{
+                    card.appendChild(el('div', {{className: 'section-divider-label', textContent: 'Photo Tracker'}}));
+                }}
+                card.appendChild(buildTracker(getStatus(proj, 'photo')));
+
+                var infoGrid = el('div', {{className: 'photo-info', style: 'margin-top: 8px;'}});
+                var edName = proj.photo_editor || proj.editor;
+                var editorItem = el('div', {{className: 'photo-info-item'}});
+                editorItem.appendChild(el('div', {{className: 'photo-info-value', textContent: edName}}));
+                editorItem.appendChild(el('div', {{className: 'photo-info-label', textContent: 'Photo Editor'}}));
+                infoGrid.appendChild(editorItem);
+                if (proj.gallery_count > 0) {{
+                    var countItem = el('div', {{className: 'photo-info-item'}});
+                    countItem.appendChild(el('div', {{className: 'photo-info-value', textContent: proj.gallery_count + ' photos'}}));
+                    countItem.appendChild(el('div', {{className: 'photo-info-label', textContent: 'Edited'}}));
+                    infoGrid.appendChild(countItem);
+                }}
+                card.appendChild(infoGrid);
+                if (proj.delivery_link && isAllowedUrl(proj.delivery_link)) {{
+                    var dlWrap = el('div', {{style: 'margin-top: 12px;'}});
+                    dlWrap.appendChild(el('a', {{
+                        className: 'delivery-link',
+                        textContent: '\\uD83D\\uDCE5 View Photos',
+                        href: proj.delivery_link,
+                        target: '_blank',
+                        rel: 'noreferrer noopener',
+                    }}));
+                    card.appendChild(dlWrap);
+                }} else {{
+                    card.appendChild(el('div', {{
+                        style: 'text-align: center; padding: 12px; color: #888; font-style: italic;',
+                        textContent: 'Delivery link not set yet.',
+                    }}));
+                }}
+            }}
+
+            // Divider for both
+            if (viewType === 'both') {{
+                card.appendChild(el('hr', {{className: 'section-divider'}}));
+            }}
+
+            // Video side
+            if (viewType === 'video' || viewType === 'both') {{
+                if (viewType === 'both') {{
+                    card.appendChild(el('div', {{className: 'section-divider-label', textContent: 'Video Tracker'}}));
+                }}
+                card.appendChild(buildTracker(getStatus(proj, 'video')));
+
+                // Version links
+                var versions = proj.versions || [];
+                if (versions.length > 0) {{
+                    var vList = el('div', {{className: 'version-list', style: 'margin-top: 10px;'}});
+                    versions.forEach(function(v, idx) {{
+                        var isCurrent = idx === versions.length - 1;
+                        var link = el('a', {{
+                            className: 'version-link' + (isCurrent ? ' version-current' : ''),
+                            target: '_blank',
+                            rel: 'noreferrer noopener',
+                        }});
+                        if (isAllowedUrl(v.url)) link.setAttribute('href', v.url);
+                        link.appendChild(el('span', {{className: 'v-badge', textContent: v.label}}));
+                        link.appendChild(document.createTextNode(isCurrent ? 'Latest' : 'Watch'));
+                        vList.appendChild(link);
+                    }});
+                    card.appendChild(vList);
+                }}
+
+                // Song choices
+                var songs = projEntries.filter(function(e) {{ return e.type === 'song'; }});
+                if (songs.length > 0) {{
+                    card.appendChild(el('div', {{className: 'editor-section-label', textContent: 'Song Choices'}}));
+                    songs.forEach(function(s) {{
+                        var songDiv = el('div', {{className: 'editor-song'}});
+                        songDiv.appendChild(el('div', {{className: 'song-label', textContent: '\\u266B Song'}}));
+                        songDiv.appendChild(el('div', {{textContent: s.content}}));
+                        if (s.submitted) {{
+                            songDiv.appendChild(el('div', {{
+                                style: 'font-size: 11px; color: #777; margin-top: 4px;',
+                                textContent: 'Submitted: ' + s.submitted,
+                            }}));
+                        }}
+                        card.appendChild(songDiv);
+                    }});
+                }}
+
+                // Corrections
+                var corrections = projEntries.filter(function(e) {{ return e.type === 'correction'; }});
+                if (corrections.length > 0) {{
+                    var fixedCount = corrections.filter(function(c) {{ return c.fixed === 'yes'; }}).length;
+                    var cantCount = corrections.filter(function(c) {{ return c.fixed === 'cant_fix'; }}).length;
+                    var counterText = 'Corrections (' + fixedCount + '/' + corrections.length + ' fixed';
+                    if (cantCount > 0) counterText += ', ' + cantCount + ' can\\u2019t fix';
+                    counterText += ')';
+                    card.appendChild(el('div', {{
+                        className: 'editor-section-label',
+                        textContent: counterText,
+                    }}));
+                    corrections.forEach(function(c) {{
+                        var rowClass = 'editor-correction';
+                        if (c.fixed === 'yes') rowClass += ' is-fixed';
+                        else if (c.fixed === 'cant_fix') rowClass += ' is-cant-fix';
+                        var row = el('div', {{className: rowClass}});
+                        var body = el('div', {{className: 'correction-body'}});
+
+                        if (c.timestamp) {{
+                            body.appendChild(el('span', {{className: 'ts-badge', textContent: '[' + c.timestamp + ']'}}));
+                        }}
+                        body.appendChild(el('div', {{className: 'correction-text', textContent: c.content}}));
+
+                        if (c.priority) {{
+                            var pClass = c.priority.toLowerCase().indexOf('must') >= 0 ? 'priority-must' : 'priority-nice';
+                            body.appendChild(el('span', {{className: pClass, textContent: c.priority}}));
+                        }}
+                        if (c.fixed === 'cant_fix' && c.fixedNote) {{
+                            body.appendChild(el('div', {{className: 'cant-fix-note', textContent: 'Note: ' + c.fixedNote}}));
+                        }}
+                        if (c.submitted) {{
+                            body.appendChild(el('div', {{className: 'correction-meta', textContent: 'Submitted: ' + c.submitted}}));
+                        }}
+
+                        row.appendChild(body);
+
+                        if (showActions) {{
+                            // Action buttons container
+                            var actions = el('div', {{className: 'correction-actions'}});
+
+                            var fixBtn = el('button', {{
+                                className: 'fix-btn' + (c.fixed === 'yes' ? ' fixed' : ''),
+                                textContent: c.fixed === 'yes' ? '\\u2714 Fixed' : 'Fix',
+                            }});
+
+                            var cantBtn = el('button', {{
+                                className: 'fix-btn' + (c.fixed === 'cant_fix' ? ' cant-fix' : ''),
+                                textContent: c.fixed === 'cant_fix' ? '\\u2718 Can\\u2019t' : 'Can\\u2019t',
+                            }});
+
+                            (function(correction, fb, cb, rowEl, bodyEl, projData, allProjEntries, cardEl) {{
+                                function updateStatus(newStatus, note) {{
+                                    fb.disabled = true;
+                                    cb.disabled = true;
+                                    var params = new URLSearchParams();
+                                    params.append('type', 'feedback_update');
+                                    params.append('project', projData.name);
+                                    params.append('timestamp', correction.timestamp);
+                                    params.append('content', correction.content);
+                                    params.append('fixed', newStatus);
+                                    if (note) params.append('note', note);
+                                    fetch(_config.script_url, {{method: 'POST', body: params}}).then(function() {{
+                                        correction.fixed = newStatus;
+                                        correction.fixedNote = note || '';
+                                        fb.disabled = false;
+                                        cb.disabled = false;
+                                        fb.textContent = newStatus === 'yes' ? '\\u2714 Fixed' : 'Fix';
+                                        fb.className = 'fix-btn' + (newStatus === 'yes' ? ' fixed' : '');
+                                        cb.textContent = newStatus === 'cant_fix' ? '\\u2718 Can\\u2019t' : 'Can\\u2019t';
+                                        cb.className = 'fix-btn' + (newStatus === 'cant_fix' ? ' cant-fix' : '');
+                                        rowEl.className = 'editor-correction';
+                                        if (newStatus === 'yes') rowEl.classList.add('is-fixed');
+                                        else if (newStatus === 'cant_fix') rowEl.classList.add('is-cant-fix');
+                                        var oldNote = rowEl.querySelector('.cant-fix-note');
+                                        if (oldNote) oldNote.remove();
+                                        if (newStatus === 'cant_fix' && note) {{
+                                            var noteEl = el('div', {{className: 'cant-fix-note', textContent: 'Note: ' + note}});
+                                            bodyEl.insertBefore(noteEl, bodyEl.querySelector('.correction-meta'));
+                                        }}
+                                        // Update counter label
+                                        var allCorr = allProjEntries.filter(function(e) {{ return e.type === 'correction'; }});
+                                        var fc = allCorr.filter(function(cc) {{ return cc.fixed === 'yes'; }}).length;
+                                        var cf = allCorr.filter(function(cc) {{ return cc.fixed === 'cant_fix'; }}).length;
+                                        var labels = cardEl.querySelectorAll('.editor-section-label');
+                                        labels.forEach(function(lbl) {{
+                                            if (lbl.textContent.indexOf('Corrections') === 0) {{
+                                                var text = 'Corrections (' + fc + '/' + allCorr.length + ' fixed';
+                                                if (cf > 0) text += ', ' + cf + ' can\\u2019t fix';
+                                                text += ')';
+                                                lbl.textContent = text;
+                                            }}
+                                        }});
+                                        showToast(newStatus === 'yes' ? 'Marked as fixed' : newStatus === 'cant_fix' ? 'Marked as can\\u2019t fix' : 'Unmarked', 'success');
+                                    }}).catch(function() {{
+                                        fb.disabled = false;
+                                        cb.disabled = false;
+                                        showToast('Failed to update. Try again.', 'error');
+                                    }});
+                                }}
+
+                                fb.addEventListener('click', function() {{
+                                    updateStatus(correction.fixed === 'yes' ? '' : 'yes', '');
+                                }});
+                                cb.addEventListener('click', function() {{
+                                    if (correction.fixed === 'cant_fix') {{
+                                        updateStatus('', '');
+                                        return;
+                                    }}
+                                    var note = prompt('Why can\\u2019t this be fixed?');
+                                    if (note === null) return;
+                                    updateStatus('cant_fix', note);
+                                }});
+                            }})(c, fixBtn, cantBtn, row, body, proj, projEntries, card);
+
+                            actions.appendChild(fixBtn);
+                            actions.appendChild(cantBtn);
+                            row.appendChild(actions);
+                        }}
+
+                        card.appendChild(row);
+                    }});
+                }}
+
+                // No entries at all
+                if (projEntries.length === 0 && viewType !== 'both') {{
+                    card.appendChild(el('div', {{className: 'editor-empty', textContent: 'No feedback submitted yet.'}}));
+                }}
+
+                // Notify Ram button (editors only, not admin since Ram IS admin)
+                if (showActions && corrections.length > 0 && activeRole !== 'admin') {{
+                    var notifyBtn = el('button', {{className: 'btn-notify', textContent: '\\uD83D\\uDCE9 Notify Ram'}});
+                    notifyBtn.addEventListener('click', (function(projData, projCorrections) {{
+                        return function() {{
+                            var fixed = projCorrections.filter(function(c) {{ return c.fixed === 'yes'; }});
+                            var cantFix = projCorrections.filter(function(c) {{ return c.fixed === 'cant_fix'; }});
+                            var pendingC = projCorrections.filter(function(c) {{ return !c.fixed; }});
+
+                            var summary = 'Project: ' + projData.name + '\\n\\n';
+                            if (fixed.length > 0) {{
+                                summary += 'FIXED (' + fixed.length + '):\\n';
+                                fixed.forEach(function(c) {{
+                                    summary += '  [' + (c.timestamp || '-') + '] ' + c.content + '\\n';
+                                }});
+                                summary += '\\n';
+                            }}
+                            if (cantFix.length > 0) {{
+                                summary += 'CAN\\u2019T FIX (' + cantFix.length + '):\\n';
+                                cantFix.forEach(function(c) {{
+                                    summary += '  [' + (c.timestamp || '-') + '] ' + c.content;
+                                    if (c.fixedNote) summary += ' - ' + c.fixedNote;
+                                    summary += '\\n';
+                                }});
+                                summary += '\\n';
+                            }}
+                            if (pendingC.length > 0) {{
+                                summary += 'PENDING (' + pendingC.length + '):\\n';
+                                pendingC.forEach(function(c) {{
+                                    summary += '  [' + (c.timestamp || '-') + '] ' + c.content + '\\n';
+                                }});
+                            }}
+
+                            notifyBtn.disabled = true;
+                            notifyBtn.textContent = 'Sending...';
+                            var params = new URLSearchParams();
+                            params.append('type', 'feedback_notify');
+                            params.append('project', projData.name);
+                            params.append('summary', summary);
+                            fetch(_config.script_url, {{method: 'POST', body: params}}).then(function() {{
+                                notifyBtn.disabled = false;
+                                notifyBtn.textContent = '\\u2714 Ram notified';
+                                showToast('Email sent to Ram', 'success');
+                                var waMsg = 'Hi Ram\\n\\n' + projData.name + ' update:\\n\\n';
+                                waMsg += fixed.length + ' fixed, ' + cantFix.length + ' can\\u2019t fix, ' + pendingC.length + ' pending';
+                                var waUrl = 'https://wa.me/' + _config.ram_phone + '?text=' + encodeURIComponent(waMsg);
+                                if (isAllowedUrl(waUrl)) {{
+                                    var a = el('a', {{href: waUrl, target: '_blank', rel: 'noreferrer noopener'}});
+                                    a.click();
+                                }}
+                            }}).catch(function() {{
+                                notifyBtn.disabled = false;
+                                notifyBtn.textContent = '\\uD83D\\uDCE9 Notify Ram';
+                                showToast('Failed to send. Try again.', 'error');
+                            }});
+                        }};
+                    }})(proj, corrections));
+                    card.appendChild(notifyBtn);
+                }}
+            }}
+
+            return card;
+        }}
+
+        // ── Editor Dashboard (role-filtered) ──
+        function buildEditorDashboard(role, data) {{
             var container = document.getElementById('editor-content');
             container.textContent = '';
             container.appendChild(el('div', {{className: 'editor-loading', textContent: 'Loading corrections...'}}));
+
             fetchFeedbackCSV(function(entries) {{
                 container.textContent = '';
 
                 // Refresh button
                 var refreshDiv = el('div', {{className: 'editor-refresh'}});
                 var refreshBtn = el('button', {{textContent: '\\u21BB Refresh'}});
-                refreshBtn.addEventListener('click', buildEditorDashboard);
+                refreshBtn.addEventListener('click', function() {{ buildEditorDashboard(role, data); }});
                 refreshDiv.appendChild(refreshBtn);
                 container.appendChild(refreshDiv);
 
-                // Group entries by project
-                var projectSlugs = Object.keys(PROJECTS);
+                // Projects come pre-filtered from decrypted blob
+                var projectSlugs = Object.keys(data.projects);
+                var isPhotoEditor = role === 'photo-editor';
                 var hasAny = false;
                 projectSlugs.forEach(function(slug) {{
-                    var proj = PROJECTS[slug];
+                    var proj = data.projects[slug];
+
                     var projEntries = entries.filter(function(e) {{
                         return e.project.toLowerCase() === proj.name.toLowerCase();
                     }});
-                    if (projEntries.length === 0 && proj.status === 'done') return;
+
+                    // Skip done projects with no entries
+                    var effectiveStatus = proj.status || getStatus(proj, isPhotoEditor ? 'photo' : 'video');
+                    if (projEntries.length === 0 && effectiveStatus === 'done') return;
 
                     hasAny = true;
-                    var card = el('div', {{className: 'editor-project-card'}});
 
-                    // Project name + tracker
-                    card.appendChild(el('h3', {{textContent: proj.name}}));
-                    card.appendChild(buildTracker(proj.status));
-
-                    // Version links
-                    var versions = proj.versions || [];
-                    if (versions.length > 0) {{
-                        var vList = el('div', {{className: 'version-list', style: 'margin-top: 10px;'}});
-                        versions.forEach(function(v, idx) {{
-                            var isCurrent = idx === versions.length - 1;
-                            var link = el('a', {{
-                                className: 'version-link' + (isCurrent ? ' version-current' : ''),
-                                target: '_blank',
-                                rel: 'noreferrer noopener',
-                            }});
-                            if (isAllowedUrl(v.url)) link.setAttribute('href', v.url);
-                            link.appendChild(el('span', {{className: 'v-badge', textContent: v.label}}));
-                            link.appendChild(document.createTextNode(isCurrent ? 'Latest' : 'Watch'));
-                            vList.appendChild(link);
-                        }});
-                        card.appendChild(vList);
+                    // For type=both, photo editor sees photo side only, video editor sees video side only
+                    var viewType = proj.type;
+                    if (proj.type === 'both') {{
+                        viewType = isPhotoEditor ? 'photo' : 'video';
                     }}
 
-                    // Song choices
-                    var songs = projEntries.filter(function(e) {{ return e.type === 'song'; }});
-                    if (songs.length > 0) {{
-                        card.appendChild(el('div', {{className: 'editor-section-label', textContent: 'Song Choices'}}));
-                        songs.forEach(function(s) {{
-                            var songDiv = el('div', {{className: 'editor-song'}});
-                            songDiv.appendChild(el('div', {{className: 'song-label', textContent: '\\u266B Song'}}));
-                            songDiv.appendChild(el('div', {{textContent: s.content}}));
-                            if (s.submitted) {{
-                                songDiv.appendChild(el('div', {{
-                                    style: 'font-size: 11px; color: #777; margin-top: 4px;',
-                                    textContent: 'Submitted: ' + s.submitted,
-                                }}));
-                            }}
-                            card.appendChild(songDiv);
-                        }});
-                    }}
-
-                    // Corrections
-                    var corrections = projEntries.filter(function(e) {{ return e.type === 'correction'; }});
-                    if (corrections.length > 0) {{
-                        var fixedCount = corrections.filter(function(c) {{ return c.fixed === 'yes'; }}).length;
-                        var cantCount = corrections.filter(function(c) {{ return c.fixed === 'cant_fix'; }}).length;
-                        var counterText = 'Corrections (' + fixedCount + '/' + corrections.length + ' fixed';
-                        if (cantCount > 0) counterText += ', ' + cantCount + ' can\\u2019t fix';
-                        counterText += ')';
-                        card.appendChild(el('div', {{
-                            className: 'editor-section-label',
-                            textContent: counterText,
-                        }}));
-                        corrections.forEach(function(c) {{
-                            var rowClass = 'editor-correction';
-                            if (c.fixed === 'yes') rowClass += ' is-fixed';
-                            else if (c.fixed === 'cant_fix') rowClass += ' is-cant-fix';
-                            var row = el('div', {{className: rowClass}});
-                            var body = el('div', {{className: 'correction-body'}});
-
-                            if (c.timestamp) {{
-                                body.appendChild(el('span', {{className: 'ts-badge', textContent: '[' + c.timestamp + ']'}}));
-                            }}
-                            body.appendChild(el('div', {{className: 'correction-text', textContent: c.content}}));
-
-                            if (c.priority) {{
-                                var pClass = c.priority.toLowerCase().indexOf('must') >= 0 ? 'priority-must' : 'priority-nice';
-                                body.appendChild(el('span', {{className: pClass, textContent: c.priority}}));
-                            }}
-                            if (c.fixed === 'cant_fix' && c.fixedNote) {{
-                                body.appendChild(el('div', {{className: 'cant-fix-note', textContent: 'Note: ' + c.fixedNote}}));
-                            }}
-                            if (c.submitted) {{
-                                body.appendChild(el('div', {{className: 'correction-meta', textContent: 'Submitted: ' + c.submitted}}));
-                            }}
-
-                            row.appendChild(body);
-
-                            // Action buttons container
-                            var actions = el('div', {{className: 'correction-actions'}});
-
-                            // Fixed button
-                            var fixBtn = el('button', {{
-                                className: 'fix-btn' + (c.fixed === 'yes' ? ' fixed' : ''),
-                                textContent: c.fixed === 'yes' ? '\\u2714 Fixed' : 'Fix',
-                            }});
-
-                            // Can't Fix button
-                            var cantBtn = el('button', {{
-                                className: 'fix-btn' + (c.fixed === 'cant_fix' ? ' cant-fix' : ''),
-                                textContent: c.fixed === 'cant_fix' ? '\\u2718 Can\\u2019t' : 'Can\\u2019t',
-                            }});
-
-                            function updateCorrectionStatus(correction, fixButton, cantButton, rowEl, newStatus, note) {{
-                                fixButton.disabled = true;
-                                cantButton.disabled = true;
-                                var params = new URLSearchParams();
-                                params.append('type', 'feedback_update');
-                                params.append('project', proj.name);
-                                params.append('timestamp', correction.timestamp);
-                                params.append('content', correction.content);
-                                params.append('fixed', newStatus);
-                                if (note) params.append('note', note);
-                                fetch(SCRIPT_URL, {{method: 'POST', body: params}}).then(function() {{
-                                    correction.fixed = newStatus;
-                                    correction.fixedNote = note || '';
-                                    fixButton.disabled = false;
-                                    cantButton.disabled = false;
-                                    fixButton.textContent = newStatus === 'yes' ? '\\u2714 Fixed' : 'Fix';
-                                    fixButton.className = 'fix-btn' + (newStatus === 'yes' ? ' fixed' : '');
-                                    cantButton.textContent = newStatus === 'cant_fix' ? '\\u2718 Can\\u2019t' : 'Can\\u2019t';
-                                    cantButton.className = 'fix-btn' + (newStatus === 'cant_fix' ? ' cant-fix' : '');
-                                    rowEl.className = 'editor-correction';
-                                    if (newStatus === 'yes') rowEl.classList.add('is-fixed');
-                                    else if (newStatus === 'cant_fix') rowEl.classList.add('is-cant-fix');
-                                    // Remove old note, add new if cant_fix
-                                    var oldNote = rowEl.querySelector('.cant-fix-note');
-                                    if (oldNote) oldNote.remove();
-                                    if (newStatus === 'cant_fix' && note) {{
-                                        var noteEl = el('div', {{className: 'cant-fix-note', textContent: 'Note: ' + note}});
-                                        body.insertBefore(noteEl, body.querySelector('.correction-meta'));
-                                    }}
-                                    updateCounter();
-                                    showToast(newStatus === 'yes' ? 'Marked as fixed' : newStatus === 'cant_fix' ? 'Marked as can\\u2019t fix' : 'Unmarked', 'success');
-                                }}).catch(function() {{
-                                    fixButton.disabled = false;
-                                    cantButton.disabled = false;
-                                    showToast('Failed to update. Try again.', 'error');
-                                }});
-                            }}
-
-                            function updateCounter() {{
-                                var allCorr = projEntries.filter(function(e) {{ return e.type === 'correction'; }});
-                                var fc = allCorr.filter(function(cc) {{ return cc.fixed === 'yes'; }}).length;
-                                var cf = allCorr.filter(function(cc) {{ return cc.fixed === 'cant_fix'; }}).length;
-                                var label = card.querySelector('.editor-section-label');
-                                if (label && label.textContent.indexOf('Corrections') === 0) {{
-                                    var text = 'Corrections (' + fc + '/' + allCorr.length + ' fixed';
-                                    if (cf > 0) text += ', ' + cf + ' can\\u2019t fix';
-                                    text += ')';
-                                    label.textContent = text;
-                                }}
-                            }}
-
-                            fixBtn.addEventListener('click', (function(correction, fb, cb, rowEl) {{
-                                return function() {{
-                                    var newStatus = correction.fixed === 'yes' ? '' : 'yes';
-                                    updateCorrectionStatus(correction, fb, cb, rowEl, newStatus, '');
-                                }};
-                            }})(c, fixBtn, cantBtn, row));
-
-                            cantBtn.addEventListener('click', (function(correction, fb, cb, rowEl) {{
-                                return function() {{
-                                    if (correction.fixed === 'cant_fix') {{
-                                        updateCorrectionStatus(correction, fb, cb, rowEl, '', '');
-                                        return;
-                                    }}
-                                    var note = prompt('Why can\\u2019t this be fixed?');
-                                    if (note === null) return;
-                                    updateCorrectionStatus(correction, fb, cb, rowEl, 'cant_fix', note);
-                                }};
-                            }})(c, fixBtn, cantBtn, row));
-
-                            actions.appendChild(fixBtn);
-                            actions.appendChild(cantBtn);
-                            row.appendChild(actions);
-
-                            card.appendChild(row);
-                        }});
-                    }}
-
-                    // No entries at all
-                    if (projEntries.length === 0) {{
-                        card.appendChild(el('div', {{className: 'editor-empty', textContent: 'No feedback submitted yet.'}}));
-                    }}
-
-                    // Notify Ram button (one per project, sends summary)
-                    if (corrections.length > 0) {{
-                        var notifyBtn = el('button', {{className: 'btn-notify', textContent: '\\uD83D\\uDCE9 Notify Ram'}});
-                        notifyBtn.addEventListener('click', (function(projData, projCorrections) {{
-                            return function() {{
-                                var fixed = projCorrections.filter(function(c) {{ return c.fixed === 'yes'; }});
-                                var cantFix = projCorrections.filter(function(c) {{ return c.fixed === 'cant_fix'; }});
-                                var pending = projCorrections.filter(function(c) {{ return !c.fixed; }});
-
-                                var summary = 'Project: ' + projData.name + '\\n\\n';
-                                if (fixed.length > 0) {{
-                                    summary += 'FIXED (' + fixed.length + '):\\n';
-                                    fixed.forEach(function(c) {{
-                                        summary += '  [' + (c.timestamp || '-') + '] ' + c.content + '\\n';
-                                    }});
-                                    summary += '\\n';
-                                }}
-                                if (cantFix.length > 0) {{
-                                    summary += 'CAN\\u2019T FIX (' + cantFix.length + '):\\n';
-                                    cantFix.forEach(function(c) {{
-                                        summary += '  [' + (c.timestamp || '-') + '] ' + c.content;
-                                        if (c.fixedNote) summary += ' - ' + c.fixedNote;
-                                        summary += '\\n';
-                                    }});
-                                    summary += '\\n';
-                                }}
-                                if (pending.length > 0) {{
-                                    summary += 'PENDING (' + pending.length + '):\\n';
-                                    pending.forEach(function(c) {{
-                                        summary += '  [' + (c.timestamp || '-') + '] ' + c.content + '\\n';
-                                    }});
-                                }}
-
-                                // Send email via Apps Script
-                                notifyBtn.disabled = true;
-                                notifyBtn.textContent = 'Sending...';
-                                var params = new URLSearchParams();
-                                params.append('type', 'feedback_notify');
-                                params.append('project', projData.name);
-                                params.append('summary', summary);
-                                fetch(SCRIPT_URL, {{method: 'POST', body: params}}).then(function() {{
-                                    notifyBtn.disabled = false;
-                                    notifyBtn.textContent = '\\u2714 Ram notified';
-                                    showToast('Email sent to Ram', 'success');
-                                    // Also open WhatsApp
-                                    var waMsg = 'Hi Ram\\n\\n' + projData.name + ' update:\\n\\n';
-                                    waMsg += fixed.length + ' fixed, ' + cantFix.length + ' can\\u2019t fix, ' + pending.length + ' pending';
-                                    var waUrl = 'https://wa.me/' + RAM_PHONE + '?text=' + encodeURIComponent(waMsg);
-                                    if (isAllowedUrl(waUrl)) {{
-                                        var a = el('a', {{href: waUrl, target: '_blank', rel: 'noreferrer noopener'}});
-                                        a.click();
-                                    }}
-                                }}).catch(function() {{
-                                    notifyBtn.disabled = false;
-                                    notifyBtn.textContent = '\\uD83D\\uDCE9 Notify Ram';
-                                    showToast('Failed to send. Try again.', 'error');
-                                }});
-                            }};
-                        }})(proj, corrections));
-                        card.appendChild(notifyBtn);
-                    }}
-
-                    container.appendChild(card);
+                    container.appendChild(buildProjectCard(slug, proj, projEntries, viewType, true));
                 }});
 
                 if (!hasAny) {{
-                    container.appendChild(el('div', {{className: 'editor-empty', textContent: 'No projects found.'}}));
+                    container.appendChild(el('div', {{className: 'editor-empty', textContent: 'No projects assigned to you.'}}));
                 }}
+            }});
+        }}
+
+        // ── Admin Dashboard (Ram sees everything) ──
+        function buildAdminDashboard(data) {{
+            var container = document.getElementById('admin-content');
+            container.textContent = '';
+            container.appendChild(el('div', {{className: 'editor-loading', textContent: 'Loading all projects...'}}));
+
+            fetchFeedbackCSV(function(entries) {{
+                container.textContent = '';
+
+                // Refresh button
+                var refreshDiv = el('div', {{className: 'editor-refresh'}});
+                var refreshBtn = el('button', {{textContent: '\\u21BB Refresh'}});
+                refreshBtn.addEventListener('click', function() {{ buildAdminDashboard(data); }});
+                refreshDiv.appendChild(refreshBtn);
+                container.appendChild(refreshDiv);
+
+                // Collect unique editor names and status values for filters
+                var editorNames = {{}};
+                var projectSlugs = Object.keys(data.projects);
+                projectSlugs.forEach(function(slug) {{
+                    var proj = data.projects[slug];
+                    editorNames[proj.editor] = true;
+                    if (proj.photo_editor) editorNames[proj.photo_editor] = true;
+                }});
+
+                // Build filter tabs
+                var tabs = el('div', {{className: 'admin-tabs'}});
+                var filters = [
+                    {{key: 'all', label: 'All'}},
+                    {{key: 'type:photo', label: '\\uD83D\\uDCF7 Photo'}},
+                    {{key: 'type:video', label: '\\uD83C\\uDFAC Video'}},
+                ];
+                Object.keys(editorNames).forEach(function(name) {{
+                    filters.push({{key: 'editor:' + name, label: name}});
+                }});
+                filters.push({{key: 'status:editing', label: 'Editing'}});
+                filters.push({{key: 'status:review', label: 'Review'}});
+                filters.push({{key: 'status:delivered', label: 'Delivered'}});
+
+                var activeFilter = 'all';
+                var projectsContainer = el('div', {{id: 'admin-projects'}});
+
+                function renderFiltered() {{
+                    projectsContainer.textContent = '';
+                    var hasAny = false;
+
+                    projectSlugs.forEach(function(slug) {{
+                        var proj = data.projects[slug];
+                        var projEntries = entries.filter(function(e) {{
+                            return e.project.toLowerCase() === proj.name.toLowerCase();
+                        }});
+
+                        // Apply filter
+                        if (activeFilter !== 'all') {{
+                            var parts = activeFilter.split(':');
+                            var filterType = parts[0];
+                            var filterVal = parts[1];
+
+                            if (filterType === 'type') {{
+                                if (filterVal === 'photo' && proj.type !== 'photo' && proj.type !== 'both') return;
+                                if (filterVal === 'video' && proj.type !== 'video' && proj.type !== 'both') return;
+                            }} else if (filterType === 'editor') {{
+                                if (proj.editor !== filterVal && proj.photo_editor !== filterVal) return;
+                            }} else if (filterType === 'status') {{
+                                var projStatuses = [];
+                                if (proj.type === 'both') {{
+                                    projStatuses.push(proj.photo_status || 'editing');
+                                    projStatuses.push(proj.video_status || 'editing');
+                                }} else {{
+                                    projStatuses.push(proj.status || 'editing');
+                                }}
+                                if (projStatuses.indexOf(filterVal) < 0) return;
+                            }}
+                        }}
+
+                        hasAny = true;
+                        projectsContainer.appendChild(buildProjectCard(slug, proj, projEntries, proj.type, true));
+                    }});
+
+                    if (!hasAny) {{
+                        projectsContainer.appendChild(el('div', {{className: 'editor-empty', textContent: 'No projects match this filter.'}}));
+                    }}
+                }}
+
+                filters.forEach(function(f) {{
+                    var tab = el('button', {{
+                        className: 'admin-tab' + (f.key === 'all' ? ' active' : ''),
+                        textContent: f.label,
+                        'data-filter': f.key,
+                    }});
+                    tab.addEventListener('click', function() {{
+                        activeFilter = f.key;
+                        tabs.querySelectorAll('.admin-tab').forEach(function(t) {{
+                            t.classList.remove('active');
+                        }});
+                        tab.classList.add('active');
+                        renderFiltered();
+                    }});
+                    tabs.appendChild(tab);
+                }});
+
+                container.appendChild(tabs);
+                container.appendChild(projectsContainer);
+                renderFiltered();
             }});
         }}
 
         // ── Client View: Show Fixed Status ──
         function loadClientFixedStatus() {{
-            if (!GID_FEEDBACK || !currentProject) return;
+            if (!_config || !_config.gid_feedback || !currentProject) return;
             fetchFeedbackCSV(function(entries) {{
                 var corrections = entries.filter(function(e) {{
                     return e.project.toLowerCase() === currentProject.name.toLowerCase() && e.type === 'correction';
@@ -2165,10 +2505,16 @@ def generate():
         // ── Init ──
         var params = new URLSearchParams(window.location.search);
         var role = params.get('role') || '';
-        if (role === 'editor') {{
+        if (role === 'admin' || role === 'photo-editor' || role === 'video-editor') {{
             document.getElementById('pin-gate').classList.add('hidden');
-            document.querySelector('.subtitle').textContent = 'Editor Dashboard';
-            initEditorGate();
+            var roleLabel = ROLE_LABELS[role] || 'Dashboard';
+            document.querySelector('.subtitle').textContent = roleLabel;
+            initRoleGate(role);
+        }} else if (role === 'editor') {{
+            // Backward compat: old ?role=editor URL → redirect to video-editor
+            document.getElementById('pin-gate').classList.add('hidden');
+            document.querySelector('.subtitle').textContent = 'Video Editor';
+            initRoleGate('video-editor');
         }} else {{
             initPinGate();
         }}
@@ -2183,7 +2529,13 @@ def generate():
     print(f"Generated: {OUTPUT_FILE}")
     print(f"Projects: {len(PROJECTS)}")
     for slug, p in PROJECTS.items():
-        print(f"  /{slug} — {p['name']} (PIN: {p['pin']}, Editor: {p['editor']})")
+        editors = p["editor"]
+        if p.get("photo_editor"):
+            editors = f"{p['photo_editor']} (photo) + {p['editor']} (video)"
+        print(f"  /{slug} — {p['name']} (PIN: {p['pin']}, Type: {p.get('type', 'video')}, Editor: {editors})")
+    print(f"\nRoles:")
+    for role, cred in ROLE_CREDENTIALS.items():
+        print(f"  ?role={role} — {cred['label']} (pw: {cred['password']})")
 
 
 if __name__ == "__main__":
