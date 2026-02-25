@@ -1603,17 +1603,6 @@ def generate():
                                             label.textContent = 'Corrections (' + fc + '/' + allCorr.length + ' fixed)';
                                         }}
                                         showToast(newFixed ? 'Marked as fixed' : 'Unmarked', 'success');
-                                        // Offer WhatsApp notify to Ram when fixed
-                                        if (newFixed) {{
-                                            var waMsg = 'Hi Ram\\n\\n' + proj.name + ' — fixed correction:\\n';
-                                            if (correction.timestamp) waMsg += '[' + correction.timestamp + '] ';
-                                            waMsg += correction.content;
-                                            var waUrl = 'https://wa.me/' + RAM_PHONE + '?text=' + encodeURIComponent(waMsg);
-                                            if (isAllowedUrl(waUrl)) {{
-                                                var waLink = el('a', {{href: waUrl, target: '_blank', rel: 'noreferrer noopener'}});
-                                                waLink.click();
-                                            }}
-                                        }}
                                     }}).catch(function() {{
                                         button.disabled = false;
                                         button.textContent = correction.fixed ? '\\u2714 Fixed' : 'Fix';

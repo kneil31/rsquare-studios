@@ -6,7 +6,7 @@
     <meta name="referrer" content="no-referrer">
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
     <meta name="robots" content="noindex, nofollow, noarchive">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-8adb41040e8f71d3643793cfe6c2d41c'; style-src 'unsafe-inline'; img-src 'self' data: https://img.youtube.com; connect-src https://script.google.com https://script.googleusercontent.com https://docs.google.com; font-src 'none'; frame-src https://www.youtube.com https://youtube.com; base-uri 'none'; form-action https://script.google.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-deda612b67e78a26e48ccc9f9ead0d4c'; style-src 'unsafe-inline'; img-src 'self' data: https://img.youtube.com; connect-src https://script.google.com https://script.googleusercontent.com https://docs.google.com; font-src 'none'; frame-src https://www.youtube.com https://youtube.com; base-uri 'none'; form-action https://script.google.com;">
     <title>Rsquare Studios — Video Feedback</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -676,7 +676,7 @@
         <div class="toast" id="toast"></div>
     </div>
 
-    <script nonce="8adb41040e8f71d3643793cfe6c2d41c">
+    <script nonce="deda612b67e78a26e48ccc9f9ead0d4c">
     (function() {
         'use strict';
 
@@ -1509,17 +1509,6 @@
                                             label.textContent = 'Corrections (' + fc + '/' + allCorr.length + ' fixed)';
                                         }
                                         showToast(newFixed ? 'Marked as fixed' : 'Unmarked', 'success');
-                                        // Offer WhatsApp notify to Ram when fixed
-                                        if (newFixed) {
-                                            var waMsg = 'Hi Ram\n\n' + proj.name + ' — fixed correction:\n';
-                                            if (correction.timestamp) waMsg += '[' + correction.timestamp + '] ';
-                                            waMsg += correction.content;
-                                            var waUrl = 'https://wa.me/' + RAM_PHONE + '?text=' + encodeURIComponent(waMsg);
-                                            if (isAllowedUrl(waUrl)) {
-                                                var waLink = el('a', {href: waUrl, target: '_blank', rel: 'noreferrer noopener'});
-                                                waLink.click();
-                                            }
-                                        }
                                     }).catch(function() {
                                         button.disabled = false;
                                         button.textContent = correction.fixed ? '\u2714 Fixed' : 'Fix';
