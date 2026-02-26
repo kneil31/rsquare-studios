@@ -3339,6 +3339,9 @@ def generate_html():
     <div class="toast" id="toast"></div>
 
     <script nonce="{csp_nonce}">
+        // Frame-buster: prevent clickjacking (can't set X-Frame-Options on GitHub Pages)
+        if (top !== self) {{ top.location = self.location; }}
+
         const ENCRYPTED_CLIENT = "{encrypted_client_blob}";
         const ENCRYPTED_CLIENT_OTP = "{encrypted_client_otp_blob}";
         const ENCRYPTED_INTERNAL = "{encrypted_internal_blob}";
