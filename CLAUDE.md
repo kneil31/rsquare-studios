@@ -74,36 +74,31 @@ git add index.html generate_dashboard.py
 git commit -m "description"
 git push
 
-# Generate new client OTP (from terminal)
-python3 generate_otp.py              # Generate + rebuild + push + Slack notify
-python3 generate_otp.py --no-push    # Generate + rebuild only
-
 # Daily sync (runs automatically at 1 AM via LaunchAgent)
 python3 sync_dashboard.py           # Sync from Google Sheet + deploy if changed
 python3 sync_dashboard.py --force   # Regenerate + deploy even if unchanged
 python3 sync_dashboard.py --dry-run # Regenerate but don't push
 ```
 
-## OTP (Rotating Client Password)
-
-- **Script:** `generate_otp.py` — generates random password, updates `.secret`, rebuilds, pushes
-- **Expiry:** 48 hours (logged in `.otp_log.json`)
-- Internal password is permanent — OTP only rotates the client password
-
 ## Security
 
-- **Two-level AES-256-GCM** encryption at build time (Python `cryptography` package)
+- **Three AES-256-GCM blobs** at build time (Python `cryptography` package):
+  - `ENCRYPTED_CLIENT` — pricing, booking, `__config__` (client password)
+  - `ENCRYPTED_INTERNAL` — workflow, checklists, posing guides, editing projects (internal password)
+  - `ENCRYPTED_CLIENT_ADMIN` — same client content, encrypted with internal password (admin access)
+- **Internal password unlocks everything** — decrypts both internal and client sections in one go
+- **Client password** unlocks only client sections (pricing, booking)
+- **No OTP system** — removed Feb 2026 (was confusing for users). Single client password, single internal/admin password.
 - **Passwords:** Stored in `.secret` (gitignored) — never in source code or docs
 - **Data-driven DOM building (no innerHTML):** All decrypted content rendered via `createElement`/`textContent`
 - **Safe markdown renderer:** Markdown-to-DOM converter via `createElement`/`textContent`
-- **URL allowlist enforced:** `isAllowedUrl()` validates all dynamic URLs
+- **URL allowlist enforced:** `isAllowedUrl()` validates all dynamic URLs (HTTPS-only, no HTTP)
 - **Referrer protection:** `referrerpolicy="no-referrer"` + `rel="noreferrer noopener"`
 - **Web Crypto API** decryption at runtime (PBKDF2, 400k iterations, SHA-256)
 - Random 16-byte salt + 12-byte IV per build
 - No sessionStorage/localStorage — decrypted content is memory-only
 - 3-strike lockout with 15s cooldown
 - Git history cleaned with `filter-repo`
-- Client password cannot decrypt internal sections
 - **Contact info (phone, WhatsApp):** Inside encrypted blob, populated via JS after decryption — not in plaintext HTML
 
 ## Secrets Architecture
@@ -137,9 +132,12 @@ All secrets stored in gitignored local files:
 
 - **Client URL:** `portfolio.rsquarestudios.com/feedback/?p={slug}` (passphrase-gated)
 - **Editor/Admin URL:** `portfolio.rsquarestudios.com/feedback/?role={role}`
+- **Bare URL landing page:** `portfolio.rsquarestudios.com/feedback/` shows a welcome page explaining how to access projects (instead of an error)
 - **Generator:** `generate_feedback.py` → `feedback/index.html`
-- **Encryption:** AES-256-GCM, all secrets in `.feedback_secrets.json` (gitignored)
+- **Encryption:** AES-256-GCM with PBKDF2 (400k iterations), same pattern as dashboard. Per-project blobs (PIN-encrypted) + per-role blobs (password-encrypted). Slug hashing via SHA-256. All secrets in `.feedback_secrets.json` (gitignored).
 - **Config:** Project registry, passphrases, editor info all in `.feedback_secrets.json`
+- **Server-side PIN validation:** `feedback_update` and `feedback_notify` require valid project PIN (verified by Apps Script)
+- **POST rate limiting:** 5-second cooldown on all form submissions (client-side)
 
 ## Subprojects
 

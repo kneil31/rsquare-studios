@@ -110,6 +110,15 @@ def _load_dashboard_secrets():
         return json.load(f)
 _dashboard_secrets = _load_dashboard_secrets()
 
+# Load feedback secrets (optional — feedback section only shown if file exists)
+_FEEDBACK_SECRETS_FILE = SCRIPT_DIR / ".feedback_secrets.json"
+def _load_feedback_secrets():
+    if not _FEEDBACK_SECRETS_FILE.exists():
+        return None
+    with open(_FEEDBACK_SECRETS_FILE) as f:
+        return json.load(f)
+_feedback_secrets = _load_feedback_secrets()
+
 REVIEW_FORM_URL = _dashboard_secrets["review_form_url"]
 RAM_PHONE = _dashboard_secrets["ram_phone"]
 
@@ -853,6 +862,7 @@ def generate_html():
             {"icon": "\U0001f4d6", "label": "Workflow Reference", "section": "workflow-ref"},
             {"icon": "\U0001f3ac", "label": "Photo Editing", "section": "editing-projects"},
             {"icon": "\U0001f3a5", "label": "Video Editing", "section": "video-projects"},
+            {"icon": "\U0001f4ac", "label": "Client Feedback", "section": "client-feedback"},
             {"icon": "\U0001f491", "label": "Couple Poses", "section": "posing-couples"},
             {"icon": "\U0001f468\u200d\U0001f469\u200d\U0001f467", "label": "Family Poses", "section": "posing-families"},
             {"icon": "\U0001f48d", "label": "Wedding Poses", "section": "posing-weddings"},
@@ -987,6 +997,41 @@ def generate_html():
         "rows": video_rows_data,
     }
 
+    # Client feedback — live corrections/song choices from clients (data from .feedback_secrets.json)
+    if _feedback_secrets:
+        import html as _html
+        fb_projects = {}
+        fb_project_pins = {}
+        for slug, p in _feedback_secrets["projects"].items():
+            fb_projects[slug] = {
+                "name": _html.escape(p["name"]),
+                "type": p.get("type", "video"),
+                "editor": _html.escape(p["editor"]),
+                "editor_phone": p["editor_phone"],
+                "photo_editor": _html.escape(p.get("photo_editor", "") or ""),
+                "photo_editor_phone": p.get("photo_editor_phone", ""),
+                "status": p.get("status", "editing"),
+                "photo_status": p.get("photo_status", ""),
+                "video_status": p.get("video_status", ""),
+                "delivery_link": p.get("delivery_link", ""),
+                "gallery_count": p.get("gallery_count", 0),
+                "versions": [{"label": _html.escape(v["label"]), "url": v["url"]} for v in p.get("versions", [])],
+            }
+            fb_project_pins[p["name"]] = p["pin"]
+
+        internal_content["client-feedback"] = {
+            "breadcrumb": "Workflow",
+            "title": "Client Feedback",
+            "subtitle": "Live corrections and song choices from clients",
+            "has_back": True,
+            "back_section": "workflow-home",
+            "type": "feedback-admin",
+            "projects": fb_projects,
+            "project_pins": fb_project_pins,
+            "script_url": _feedback_secrets["feedback_script_url"],
+            "ram_phone": RAM_PHONE,
+        }
+
     # Booking confirmation tool — WhatsApp message builder
     internal_content["booking-confirm"] = {
         "breadcrumb": "Workflow",
@@ -1063,7 +1108,7 @@ def generate_html():
     <meta property="og:url" content="https://portfolio.rsquarestudios.com/">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary_large_image">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-{csp_nonce}'; style-src 'unsafe-inline'; img-src 'self' https://*.smugmug.com https://img.youtube.com data:; connect-src https://script.google.com; font-src 'none'; frame-src 'none'; base-uri 'none'; form-action https://script.google.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-{csp_nonce}'; style-src 'unsafe-inline'; img-src 'self' https://*.smugmug.com https://img.youtube.com data:; connect-src https://script.google.com https://script.googleusercontent.com; font-src 'none'; frame-src 'none'; base-uri 'none'; form-action https://script.google.com;">
     <title>Rsquare Studios — Dashboard</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
@@ -2812,6 +2857,259 @@ def generate_html():
             pointer-events: none;
         }}
         .toast.show {{ opacity: 1; transform: translateY(0); }}
+
+        /* ── Client Feedback ── */
+        .fb-toolbar {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }}
+        .fb-refresh {{
+            background: #374151;
+            color: #e5e7eb;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 13px;
+            cursor: pointer;
+        }}
+        .fb-refresh:hover {{ background: #4b5563; }}
+        .fb-filter-tabs {{
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }}
+        .fb-filter-tab {{
+            background: #1f2937;
+            color: #9ca3af;
+            border: 1px solid #374151;
+            border-radius: 16px;
+            padding: 4px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            white-space: nowrap;
+        }}
+        .fb-filter-tab.active {{
+            background: #7c3aed;
+            color: #fff;
+            border-color: #7c3aed;
+        }}
+        .fb-project-card {{
+            background: #1f2937;
+            border-radius: 10px;
+            border-left: 4px solid #7c3aed;
+            padding: 16px;
+            margin-bottom: 14px;
+        }}
+        .fb-project-header {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }}
+        .fb-project-name {{
+            font-size: 16px;
+            font-weight: 600;
+            color: #f3f4f6;
+        }}
+        .fb-type-badge {{
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: 500;
+        }}
+        .fb-type-video {{ background: #312e81; color: #a5b4fc; }}
+        .fb-type-photo {{ background: #064e3b; color: #6ee7b7; }}
+        .fb-type-both {{ background: #78350f; color: #fbbf24; }}
+        .fb-editor-badge {{
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: #374151;
+            color: #9ca3af;
+        }}
+        .fb-tracker {{
+            margin: 12px 0;
+            overflow-x: auto;
+        }}
+        .fb-tracker-steps {{
+            display: flex;
+            align-items: center;
+            gap: 0;
+            min-width: 360px;
+        }}
+        .fb-tracker-step {{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            position: relative;
+        }}
+        .fb-tracker-step:not(:last-child)::after {{
+            content: '';
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background: #374151;
+            z-index: 0;
+        }}
+        .fb-tracker-step.completed:not(:last-child)::after {{
+            background: #7c3aed;
+        }}
+        .fb-tracker-dot {{
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #374151;
+            color: #6b7280;
+            font-size: 11px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1;
+        }}
+        .fb-tracker-step.completed .fb-tracker-dot {{
+            background: #7c3aed;
+            color: #fff;
+        }}
+        .fb-tracker-step.active .fb-tracker-dot {{
+            background: #7c3aed;
+            color: #fff;
+            box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.3);
+            animation: fbPulse 2s ease-in-out infinite;
+        }}
+        @keyframes fbPulse {{
+            0%, 100% {{ box-shadow: 0 0 0 4px rgba(124, 58, 237, 0.3); }}
+            50% {{ box-shadow: 0 0 0 8px rgba(124, 58, 237, 0.1); }}
+        }}
+        .fb-tracker-label {{
+            font-size: 10px;
+            color: #6b7280;
+            margin-top: 4px;
+            text-align: center;
+            white-space: nowrap;
+        }}
+        .fb-tracker-step.completed .fb-tracker-label,
+        .fb-tracker-step.active .fb-tracker-label {{
+            color: #c4b5fd;
+        }}
+        .fb-section-title {{
+            font-size: 13px;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin: 14px 0 8px;
+        }}
+        .fb-song {{
+            background: #111827;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+        .fb-song-icon {{ font-size: 16px; }}
+        .fb-song-text {{
+            font-size: 14px;
+            color: #e5e7eb;
+            flex: 1;
+        }}
+        .fb-correction {{
+            background: #111827;
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin-bottom: 6px;
+        }}
+        .fb-correction-header {{
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }}
+        .fb-correction-ts {{
+            font-size: 12px;
+            color: #7c3aed;
+            font-weight: 600;
+        }}
+        .fb-correction-pri {{
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 8px;
+        }}
+        .fb-pri-high {{ background: #7f1d1d; color: #fca5a5; }}
+        .fb-pri-medium {{ background: #78350f; color: #fbbf24; }}
+        .fb-pri-low {{ background: #1e3a5f; color: #93c5fd; }}
+        .fb-correction-text {{
+            font-size: 13px;
+            color: #d1d5db;
+        }}
+        .fb-correction-actions {{
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+        }}
+        .fb-fix-btn {{
+            font-size: 11px;
+            padding: 3px 10px;
+            border-radius: 6px;
+            border: 1px solid #374151;
+            background: #1f2937;
+            color: #9ca3af;
+            cursor: pointer;
+        }}
+        .fb-fix-btn:hover {{ background: #374151; }}
+        .fb-fix-btn.fixed {{
+            background: #065f46;
+            color: #6ee7b7;
+            border-color: #065f46;
+        }}
+        .fb-fix-btn.cant-fix {{
+            background: #7f1d1d;
+            color: #fca5a5;
+            border-color: #7f1d1d;
+        }}
+        .fb-fix-btn:disabled {{
+            opacity: 0.5;
+            cursor: not-allowed;
+        }}
+        .fb-notify-btn {{
+            background: #25D366;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 10px;
+        }}
+        .fb-notify-btn:hover {{ background: #20bd5a; }}
+        .fb-notify-btn:disabled {{ opacity: 0.5; cursor: not-allowed; }}
+        .fb-loading, .fb-empty {{
+            text-align: center;
+            color: #6b7280;
+            padding: 40px 0;
+            font-size: 14px;
+        }}
+        .fb-status-icon {{
+            display: inline-block;
+            width: 16px;
+            text-align: center;
+            margin-right: 4px;
+        }}
+        .fb-version-link {{
+            font-size: 12px;
+            color: #818cf8;
+            margin-right: 10px;
+        }}
     </style>
 </head>
 <body>
@@ -2872,6 +3170,7 @@ def generate_html():
                 <a class="sidebar-link internal-link" data-access="workflow-ref">📖 Workflow Reference</a>
                 <a class="sidebar-link internal-link" data-access="editing-projects">🎬 Photo Editing</a>
                 <a class="sidebar-link internal-link" data-access="video-projects">🎥 Video Editing</a>
+                <a class="sidebar-link internal-link" data-access="client-feedback">💬 Client Feedback</a>
                 <div class="sidebar-section-label" style="padding-top:8px">POSING GUIDES</div>
                 {posing_sidebar.replace('class="sidebar-link sub-link"', 'class="sidebar-link sub-link internal-link"').replace('data-section=', 'data-access=')}
             </div>
@@ -3258,6 +3557,11 @@ def generate_html():
                 <div class="encrypted-placeholder">This content is encrypted. Enter the password to view video projects.</div>
             </div>
 
+            <!-- CLIENT FEEDBACK (encrypted, live data) -->
+            <div class="page" id="client-feedback">
+                <div class="encrypted-placeholder">This content is encrypted. Enter the password to view client feedback.</div>
+            </div>
+
             <!-- BOOKING CONFIRM (encrypted) -->
             <div class="page" id="booking-confirm">
                 <div class="encrypted-placeholder">This content is encrypted. Enter the password to view booking confirmation.</div>
@@ -3345,6 +3649,7 @@ def generate_html():
             'cal.com', 'app.cal.com',
             'calendar.google.com', 'outlook.live.com',
             'literate-basketball-b5e.notion.site',
+            'script.google.com', 'script.googleusercontent.com',
         ];
         function isAllowedUrl(url) {{
             try {{
@@ -3377,7 +3682,7 @@ def generate_html():
 
         // Client sections need client password; internal sections need internal password
         const CLIENT_SECTIONS = ['pricing', 'booking'];
-        const INTERNAL_SECTIONS = ['workflow-home', 'checklists', 'workflow-ref', 'editing-projects', 'video-projects', 'booking-confirm', 'posing-couples', 'posing-families', 'posing-weddings'];
+        const INTERNAL_SECTIONS = ['workflow-home', 'checklists', 'workflow-ref', 'editing-projects', 'video-projects', 'client-feedback', 'booking-confirm', 'posing-couples', 'posing-families', 'posing-weddings'];
 
         function showPrivateGate() {{
             // If both unlocked, go to pricing (client) or workflow (internal)
@@ -3594,6 +3899,7 @@ def generate_html():
             else if (id === 'checklists') buildChecklists(el, data);
             else if (id === 'editing-projects') buildEditingProjects(el, data);
             else if (id === 'video-projects') buildVideoProjects(el, data);
+            else if (id === 'client-feedback') buildClientFeedback(el, data);
             else if (id === 'booking-confirm') buildBookingConfirm(el, data);
             else if (data.markdown !== undefined) {{
                 const wfContent = makeEl('div', 'wf-content');
@@ -4005,6 +4311,326 @@ def generate_html():
             table.appendChild(tbody);
             wrap.appendChild(table);
             el.appendChild(wrap);
+        }}
+
+        /* ── Client Feedback Admin ── */
+        var _fbConfig = null;
+        var _fbLastCooldown = 0;
+
+        function fbGetStatus(proj, side) {{
+            if (proj.type === 'both') {{
+                if (side === 'photo') return proj.photo_status || 'editing';
+                if (side === 'video') return proj.video_status || 'editing';
+            }}
+            return proj.status || 'editing';
+        }}
+
+        function fbBuildTracker(status) {{
+            var stages = [
+                {{key: 'shoot_done', label: 'Shoot Done'}},
+                {{key: 'sent', label: 'Sent'}},
+                {{key: 'editing', label: 'Editing'}},
+                {{key: 'review', label: 'Edits Done'}},
+                {{key: 'delivered', label: 'Delivered'}}
+            ];
+            var wrap = makeEl('div', 'fb-tracker');
+            var steps = makeEl('div', 'fb-tracker-steps');
+            var reached = false;
+            stages.forEach(function(stage, idx) {{
+                var step = makeEl('div', 'fb-tracker-step');
+                if (!reached) {{
+                    if (stage.key === status) {{
+                        step.className += ' active completed';
+                        reached = true;
+                    }} else {{
+                        step.className += ' completed';
+                    }}
+                }}
+                var dot = makeEl('div', 'fb-tracker-dot', String(idx + 1));
+                step.appendChild(dot);
+                step.appendChild(makeEl('div', 'fb-tracker-label', stage.label));
+                steps.appendChild(step);
+            }});
+            wrap.appendChild(steps);
+            return wrap;
+        }}
+
+        function fbPostUpdate(action, body) {{
+            var now = Date.now();
+            if (now - _fbLastCooldown < 5000) return Promise.resolve(null);
+            _fbLastCooldown = now;
+            if (!_fbConfig || !_fbConfig.script_url) return Promise.resolve(null);
+            return fetch(_fbConfig.script_url, {{
+                method: 'POST',
+                headers: {{'Content-Type': 'application/x-www-form-urlencoded'}},
+                body: new URLSearchParams(Object.assign({{type: action}}, body)).toString(),
+                redirect: 'follow'
+            }}).then(function(r) {{ return r.json(); }}).catch(function() {{ return null; }});
+        }}
+
+        function fbRenderProjects(container, projects, entries) {{
+            // Clear container
+            while (container.firstChild) container.removeChild(container.firstChild);
+
+            var slugs = Object.keys(projects);
+            if (slugs.length === 0) {{
+                container.appendChild(makeEl('div', 'fb-empty', 'No feedback projects configured.'));
+                return;
+            }}
+
+            // Filter tabs
+            var filterWrap = makeEl('div', 'fb-filter-tabs');
+            var filters = [{{'key': 'all', 'label': 'All'}}, {{'key': 'photo', 'label': '\\uD83D\\uDCF7 Photo'}}, {{'key': 'video', 'label': '\\uD83C\\uDFAC Video'}}];
+            var editors = [];
+            slugs.forEach(function(s) {{
+                var p = projects[s];
+                if (p.editor && editors.indexOf(p.editor) === -1) editors.push(p.editor);
+                if (p.photo_editor && editors.indexOf(p.photo_editor) === -1) editors.push(p.photo_editor);
+            }});
+            editors.forEach(function(e) {{ filters.push({{key: 'editor:' + e, label: e}}); }});
+            var activeFilter = 'all';
+
+            function renderFiltered() {{
+                // Remove existing cards
+                var cards = container.querySelectorAll('.fb-project-card, .fb-empty');
+                cards.forEach(function(c) {{ c.remove(); }});
+
+                var shown = 0;
+                slugs.forEach(function(slug) {{
+                    var proj = projects[slug];
+                    var show = false;
+                    if (activeFilter === 'all') show = true;
+                    else if (activeFilter === 'photo' && (proj.type === 'photo' || proj.type === 'both')) show = true;
+                    else if (activeFilter === 'video' && (proj.type === 'video' || proj.type === 'both')) show = true;
+                    else if (activeFilter.indexOf('editor:') === 0) {{
+                        var ed = activeFilter.substring(7);
+                        if (proj.editor === ed || proj.photo_editor === ed) show = true;
+                    }}
+                    if (!show) return;
+                    shown++;
+
+                    var card = makeEl('div', 'fb-project-card');
+
+                    // Header: name + type badge + editor badges
+                    var header = makeEl('div', 'fb-project-header');
+                    header.appendChild(makeEl('div', 'fb-project-name', proj.name));
+                    var typeBadge = makeEl('span', 'fb-type-badge fb-type-' + proj.type, proj.type);
+                    header.appendChild(typeBadge);
+                    if (proj.editor) header.appendChild(makeEl('span', 'fb-editor-badge', proj.editor));
+                    if (proj.photo_editor) header.appendChild(makeEl('span', 'fb-editor-badge', proj.photo_editor));
+                    card.appendChild(header);
+
+                    // Version links
+                    if (proj.versions && proj.versions.length > 0) {{
+                        var verWrap = makeEl('div', null);
+                        verWrap.style.marginBottom = '8px';
+                        proj.versions.forEach(function(v) {{
+                            var vLink = makeLink(v.url, v.label, 'fb-version-link');
+                            verWrap.appendChild(vLink);
+                        }});
+                        card.appendChild(verWrap);
+                    }}
+
+                    // Tracker(s)
+                    if (proj.type === 'both') {{
+                        var pLabel = makeEl('div', null, '\\uD83D\\uDCF7 Photo');
+                        pLabel.style.cssText = 'font-size:11px;color:#9ca3af;margin-top:8px;';
+                        card.appendChild(pLabel);
+                        card.appendChild(fbBuildTracker(fbGetStatus(proj, 'photo')));
+                        var vLabel = makeEl('div', null, '\\uD83C\\uDFAC Video');
+                        vLabel.style.cssText = 'font-size:11px;color:#9ca3af;margin-top:8px;';
+                        card.appendChild(vLabel);
+                        card.appendChild(fbBuildTracker(fbGetStatus(proj, 'video')));
+                    }} else {{
+                        card.appendChild(fbBuildTracker(fbGetStatus(proj)));
+                    }}
+
+                    // Filter entries for this project
+                    var projEntries = entries.filter(function(e) {{ return e.project === proj.name; }});
+                    var songs = projEntries.filter(function(e) {{ return e.type === 'song'; }});
+                    var corrections = projEntries.filter(function(e) {{ return e.type === 'correction'; }});
+
+                    // Songs
+                    if (songs.length > 0) {{
+                        card.appendChild(makeEl('div', 'fb-section-title', 'Song Choices (' + songs.length + ')'));
+                        songs.forEach(function(s) {{
+                            var songDiv = makeEl('div', 'fb-song');
+                            songDiv.appendChild(makeEl('span', 'fb-song-icon', '\\uD83C\\uDFB5'));
+                            songDiv.appendChild(makeEl('span', 'fb-song-text', s.content));
+                            card.appendChild(songDiv);
+                        }});
+                    }}
+
+                    // Corrections
+                    if (corrections.length > 0) {{
+                        card.appendChild(makeEl('div', 'fb-section-title', 'Corrections (' + corrections.length + ')'));
+                        corrections.forEach(function(c) {{
+                            var corDiv = makeEl('div', 'fb-correction');
+                            var corHeader = makeEl('div', 'fb-correction-header');
+                            if (c.timestamp) corHeader.appendChild(makeEl('span', 'fb-correction-ts', c.timestamp));
+                            if (c.priority) {{
+                                var priCls = 'fb-correction-pri fb-pri-' + (c.priority || 'low').toLowerCase();
+                                corHeader.appendChild(makeEl('span', priCls, c.priority));
+                            }}
+                            // Fixed status icon
+                            if (c.fixed === 'yes') {{
+                                corHeader.appendChild(makeEl('span', 'fb-status-icon', '\\u2705'));
+                            }} else if (c.fixed && c.fixed.indexOf('cant_fix') === 0) {{
+                                corHeader.appendChild(makeEl('span', 'fb-status-icon', '\\u274C'));
+                            }}
+                            corDiv.appendChild(corHeader);
+                            corDiv.appendChild(makeEl('div', 'fb-correction-text', c.content));
+
+                            // Fix buttons (only if not already fixed)
+                            if (!c.fixed || c.fixed === '') {{
+                                var actions = makeEl('div', 'fb-correction-actions');
+                                var fixBtn = makeEl('button', 'fb-fix-btn', '\\u2705 Fixed');
+                                var cantFixBtn = makeEl('button', 'fb-fix-btn', '\\u274C Can\\u0027t Fix');
+
+                                fixBtn.addEventListener('click', (function(entry, btn1, btn2) {{
+                                    return function() {{
+                                        btn1.disabled = true;
+                                        btn2.disabled = true;
+                                        var pin = _fbConfig.project_pins[entry.project] || '';
+                                        fbPostUpdate('feedback_update', {{
+                                            project: entry.project,
+                                            row: entry.row || '',
+                                            fixed: 'yes',
+                                            pin: pin
+                                        }}).then(function() {{
+                                            btn1.className = 'fb-fix-btn fixed';
+                                            btn1.textContent = '\\u2705 Fixed';
+                                        }});
+                                    }};
+                                }})(c, fixBtn, cantFixBtn));
+
+                                cantFixBtn.addEventListener('click', (function(entry, btn1, btn2) {{
+                                    return function() {{
+                                        btn1.disabled = true;
+                                        btn2.disabled = true;
+                                        var pin = _fbConfig.project_pins[entry.project] || '';
+                                        fbPostUpdate('feedback_update', {{
+                                            project: entry.project,
+                                            row: entry.row || '',
+                                            fixed: 'cant_fix',
+                                            pin: pin
+                                        }}).then(function() {{
+                                            btn2.className = 'fb-fix-btn cant-fix';
+                                            btn2.textContent = '\\u274C Can\\u0027t Fix';
+                                        }});
+                                    }};
+                                }})(c, fixBtn, cantFixBtn));
+
+                                actions.appendChild(fixBtn);
+                                actions.appendChild(cantFixBtn);
+                                corDiv.appendChild(actions);
+                            }}
+
+                            card.appendChild(corDiv);
+                        }});
+                    }}
+
+                    // No feedback yet
+                    if (songs.length === 0 && corrections.length === 0) {{
+                        var noData = makeEl('div', 'fb-empty');
+                        noData.textContent = 'No feedback submitted yet';
+                        noData.style.padding = '16px 0';
+                        card.appendChild(noData);
+                    }}
+
+                    // Notify editor button (only if corrections exist)
+                    if (corrections.length > 0 && proj.editor_phone) {{
+                        var notifyBtn = makeEl('button', 'fb-notify-btn', '\\uD83D\\uDCE9 Notify ' + proj.editor);
+                        notifyBtn.addEventListener('click', (function(project, editorPhone, pin) {{
+                            return function() {{
+                                notifyBtn.disabled = true;
+                                notifyBtn.textContent = 'Sending...';
+                                fbPostUpdate('feedback_notify', {{
+                                    project: project.name,
+                                    editor_phone: editorPhone,
+                                    pin: pin
+                                }}).then(function() {{
+                                    notifyBtn.textContent = '\\u2705 Notified';
+                                    setTimeout(function() {{
+                                        notifyBtn.disabled = false;
+                                        notifyBtn.textContent = '\\uD83D\\uDCE9 Notify ' + project.editor;
+                                    }}, 5000);
+                                }});
+                            }};
+                        }})(proj, proj.editor_phone, _fbConfig.project_pins[proj.name] || ''));
+                        card.appendChild(notifyBtn);
+                    }}
+
+                    container.appendChild(card);
+                }});
+
+                if (shown === 0) {{
+                    container.appendChild(makeEl('div', 'fb-empty', 'No projects match this filter.'));
+                }}
+            }}
+
+            filters.forEach(function(f) {{
+                var tab = makeEl('button', 'fb-filter-tab' + (f.key === 'all' ? ' active' : ''), f.label);
+                tab.addEventListener('click', function() {{
+                    filterWrap.querySelectorAll('.fb-filter-tab').forEach(function(t) {{ t.classList.remove('active'); }});
+                    tab.classList.add('active');
+                    activeFilter = f.key;
+                    renderFiltered();
+                }});
+                filterWrap.appendChild(tab);
+            }});
+            container.appendChild(filterWrap);
+            renderFiltered();
+        }}
+
+        function buildClientFeedback(el, data) {{
+            _fbConfig = {{ script_url: data.script_url, ram_phone: data.ram_phone, project_pins: data.project_pins }};
+
+            // Toolbar: refresh button
+            var toolbar = makeEl('div', 'fb-toolbar');
+            var refreshBtn = makeEl('button', 'fb-refresh', '\\u21BB Refresh');
+            toolbar.appendChild(refreshBtn);
+            el.appendChild(toolbar);
+
+            // Loading state
+            var loadingEl = makeEl('div', 'fb-loading', 'Loading corrections...');
+            el.appendChild(loadingEl);
+
+            function doFetch() {{
+                // Show loading
+                var existing = el.querySelector('.fb-loading');
+                if (!existing) {{
+                    existing = makeEl('div', 'fb-loading', 'Loading corrections...');
+                    el.appendChild(existing);
+                }}
+
+                var fetchUrl = data.script_url + '?action=feedback_read';
+                if (!isAllowedUrl(fetchUrl)) {{
+                    existing.textContent = 'Script URL not in allowlist.';
+                    return;
+                }}
+                fetch(fetchUrl)
+                    .then(function(r) {{ return r.json(); }})
+                    .then(function(result) {{
+                        var ld = el.querySelector('.fb-loading');
+                        if (ld) ld.remove();
+                        var ents = result.entries || [];
+                        fbRenderProjects(el, data.projects, ents);
+                    }})
+                    .catch(function() {{
+                        var ld = el.querySelector('.fb-loading');
+                        if (ld) ld.textContent = 'Failed to load. Check your connection.';
+                    }});
+            }}
+
+            refreshBtn.addEventListener('click', function() {{
+                // Remove cards + filters
+                var cards = el.querySelectorAll('.fb-project-card, .fb-filter-tabs, .fb-empty');
+                cards.forEach(function(c) {{ c.remove(); }});
+                doFetch();
+            }});
+
+            doFetch();
         }}
 
         function buildBookingConfirm(el, data) {{
