@@ -16,6 +16,7 @@ Output:
 """
 
 import base64
+import hashlib
 import html
 import json
 import os
@@ -84,6 +85,11 @@ def encrypt_content(plaintext, password):
     return base64.b64encode(salt + iv + ciphertext).decode("ascii")
 
 
+def slug_hash(slug):
+    """Hash a slug/role key to a 16-char hex string for obfuscation."""
+    return hashlib.sha256(slug.encode()).hexdigest()[:16]
+
+
 def generate():
     """Generate feedback/index.html."""
     csp_nonce = secrets.token_hex(16)
@@ -121,7 +127,7 @@ def generate():
     encrypted_projects = {}
     for slug, p in PROJECTS.items():
         payload = {"v": 1, **build_project_data(p), **shared_config}
-        encrypted_projects[slug] = encrypt_content(json.dumps(payload), p["pin"])
+        encrypted_projects[slug_hash(slug)] = encrypt_content(json.dumps(payload), p["pin"])
 
     # Role encrypted blobs (each encrypted with role password)
     encrypted_roles = {}
@@ -152,14 +158,13 @@ def generate():
             "editor_name": editor_name,
             **shared_config,
         }
-        encrypted_roles[role] = encrypt_content(
+        encrypted_roles[slug_hash(role)] = encrypt_content(
             json.dumps(payload), cred["password"]
         )
 
     # JSON strings for embedding in HTML
     encrypted_projects_json = json.dumps(encrypted_projects)
     encrypted_roles_json = json.dumps(encrypted_roles)
-    project_slugs_json = json.dumps(list(PROJECTS.keys()))
 
     page_html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -1104,13 +1109,13 @@ def generate():
     </div>
 
     <script nonce="{csp_nonce}">
+    if (top !== self) {{ top.location = self.location; }}
     (function() {{
         'use strict';
 
         // ── Encrypted Data (embedded at build time) ──
         var ENCRYPTED_PROJECTS = {encrypted_projects_json};
         var ENCRYPTED_ROLES = {encrypted_roles_json};
-        var PROJECT_SLUGS = {project_slugs_json};
         var PBKDF2_ITERATIONS = {PBKDF2_ITERATIONS};
 
         // ── Decrypted state (memory-only, never persisted) ──
@@ -1140,6 +1145,13 @@ def generate():
             }} catch(e) {{
                 return false;
             }}
+        }}
+
+        // ── Key Hashing (obfuscate slugs in source) ──
+        async function hashKey(str) {{
+            var enc = new TextEncoder().encode(str);
+            var hash = await crypto.subtle.digest('SHA-256', enc);
+            return Array.from(new Uint8Array(hash)).map(function(b) {{ return b.toString(16).padStart(2, '0'); }}).join('').slice(0, 16);
         }}
 
         // ── DOM Helpers (no innerHTML — security) ──
@@ -1207,9 +1219,10 @@ def generate():
             return params.get('p') || '';
         }}
 
-        function initPinGate() {{
+        async function initPinGate() {{
             var slug = getProjectSlug();
-            if (!slug || !ENCRYPTED_PROJECTS[slug]) {{
+            var hashedSlug = slug ? await hashKey(slug) : '';
+            if (!slug || !ENCRYPTED_PROJECTS[hashedSlug]) {{
                 var gate = document.getElementById('pin-gate');
                 gate.textContent = '';
                 gate.appendChild(el('p', {{textContent: 'Invalid project link. Please check the URL you received.', style: 'color: #ef4444;'}}));
@@ -1221,9 +1234,9 @@ def generate():
             var btn = el('button', {{textContent: 'Unlock'}});
             container.appendChild(inp);
             container.appendChild(btn);
-            btn.addEventListener('click', function() {{ checkPin(inp, slug); }});
+            btn.addEventListener('click', function() {{ checkPin(inp, hashedSlug); }});
             inp.addEventListener('keydown', function(e) {{
-                if (e.key === 'Enter') checkPin(inp, slug);
+                if (e.key === 'Enter') checkPin(inp, hashedSlug);
             }});
             inp.focus();
         }}
@@ -1912,26 +1925,23 @@ def generate():
         var roleLockUntil = 0;
         var activeRole = '';
 
-        // Role label lookup (non-sensitive — just UI labels for the password prompt)
-        var ROLE_LABELS = {{'photo-editor': 'Photo Editor', 'video-editor': 'Video Editor', 'admin': 'Admin Dashboard'}};
-
-        function initRoleGate(role) {{
+        async function initRoleGate(role) {{
             activeRole = role;
-            if (!ENCRYPTED_ROLES[role]) return;
+            var hashedRole = await hashKey(role);
+            if (!ENCRYPTED_ROLES[hashedRole]) return;
 
             var gate = document.getElementById('editor-gate');
             gate.classList.remove('hidden');
             // Update prompt text
-            var roleLabel = ROLE_LABELS[role] || 'Editor';
-            gate.querySelector('p').textContent = 'Enter ' + roleLabel.toLowerCase() + ' password';
+            gate.querySelector('p').textContent = 'Enter editor dashboard password';
             var container = document.getElementById('editor-pw-input');
             var inp = el('input', {{type: 'password', placeholder: 'Password', autocomplete: 'off'}});
             var btn = el('button', {{textContent: 'Unlock'}});
             container.appendChild(inp);
             container.appendChild(btn);
-            btn.addEventListener('click', function() {{ checkRolePw(inp, role); }});
+            btn.addEventListener('click', function() {{ checkRolePw(inp, hashedRole); }});
             inp.addEventListener('keydown', function(e) {{
-                if (e.key === 'Enter') checkRolePw(inp, role);
+                if (e.key === 'Enter') checkRolePw(inp, hashedRole);
             }});
             inp.focus();
         }}
@@ -1955,13 +1965,17 @@ def generate():
                     ram_phone: data.ram_phone,
                 }};
                 _roleData = data;
+                // Update heading with label from decrypted payload
+                if (data.label) {{
+                    document.querySelector('.subtitle').textContent = data.label;
+                }}
                 document.getElementById('editor-gate').classList.add('hidden');
-                if (role === 'admin') {{
+                if (activeRole === 'admin') {{
                     document.getElementById('admin-content').classList.remove('hidden');
                     buildAdminDashboard(data);
                 }} else {{
                     document.getElementById('editor-content').classList.remove('hidden');
-                    buildEditorDashboard(role, data);
+                    buildEditorDashboard(activeRole, data);
                 }}
             }} catch(e) {{
                 // GCM auth failure = wrong password
@@ -2507,13 +2521,12 @@ def generate():
         var role = params.get('role') || '';
         if (role === 'admin' || role === 'photo-editor' || role === 'video-editor') {{
             document.getElementById('pin-gate').classList.add('hidden');
-            var roleLabel = ROLE_LABELS[role] || 'Dashboard';
-            document.querySelector('.subtitle').textContent = roleLabel;
+            document.querySelector('.subtitle').textContent = 'Dashboard';
             initRoleGate(role);
         }} else if (role === 'editor') {{
             // Backward compat: old ?role=editor URL → redirect to video-editor
             document.getElementById('pin-gate').classList.add('hidden');
-            document.querySelector('.subtitle').textContent = 'Video Editor';
+            document.querySelector('.subtitle').textContent = 'Dashboard';
             initRoleGate('video-editor');
         }} else {{
             initPinGate();
