@@ -131,15 +131,6 @@ def _load_passwords():
     sys.exit(1)
 
 
-def _load_otp_password():
-    """Load current OTP password from .secret if it exists."""
-    if SECRET_FILE.exists():
-        try:
-            secrets = json.loads(SECRET_FILE.read_text(encoding="utf-8"))
-            return secrets.get("otp", "")
-        except (json.JSONDecodeError, KeyError):
-            pass
-    return ""
 PBKDF2_ITERATIONS = 400_000
 
 
@@ -1052,18 +1043,11 @@ def generate_html():
     client_pw, internal_pw = _load_passwords()
     client_json = json.dumps(client_content)
     internal_json = json.dumps(internal_content)
-    # Primary client blob (permanent or OTP password)
     encrypted_client_blob = encrypt_content(client_json, client_pw)
     encrypted_internal_blob = encrypt_content(internal_json, internal_pw)
-    # Secondary client blob (OTP if different from primary)
-    otp_pw = _load_otp_password()
-    encrypted_client_otp_blob = ""
-    if otp_pw and otp_pw != client_pw:
-        encrypted_client_otp_blob = encrypt_content(client_json, otp_pw)
-        print(f"   Encrypted client with 2 passwords (permanent + OTP)")
-    else:
-        print(f"   Encrypted client with 1 password")
-    print(f"   Encrypted {len(internal_content)} internal sections")
+    # Admin blob: client content encrypted with internal password (so internal pw unlocks everything)
+    encrypted_client_admin_blob = encrypt_content(client_json, internal_pw)
+    print(f"   Encrypted client + internal + admin sections")
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -3343,8 +3327,8 @@ def generate_html():
         if (top !== self) {{ top.location = self.location; }}
 
         const ENCRYPTED_CLIENT = "{encrypted_client_blob}";
-        const ENCRYPTED_CLIENT_OTP = "{encrypted_client_otp_blob}";
         const ENCRYPTED_INTERNAL = "{encrypted_internal_blob}";
+        const ENCRYPTED_CLIENT_ADMIN = "{encrypted_client_admin_blob}";
         const PBKDF2_ITERATIONS = {PBKDF2_ITERATIONS};
         let clientUnlocked = false;
         let internalUnlocked = false;
@@ -4289,24 +4273,19 @@ def generate_html():
             btn.textContent = 'Checking...';
             let matched = false;
 
-            // Try client blobs (permanent + OTP)
+            // Try client blob
             if (!clientUnlocked) {{
-                const clientBlobs = [ENCRYPTED_CLIENT];
-                if (ENCRYPTED_CLIENT_OTP) clientBlobs.push(ENCRYPTED_CLIENT_OTP);
-                for (const blob of clientBlobs) {{
-                    try {{
-                        const plaintext = await decryptContent(input, blob);
-                        const sections = JSON.parse(plaintext);
-                        injectDecryptedContent(sections);
-                        clientUnlocked = true;
-                        matched = true;
-                        updateClientLinks();
-                        break;
-                    }} catch(e) {{ /* not this password */ }}
-                }}
+                try {{
+                    const plaintext = await decryptContent(input, ENCRYPTED_CLIENT);
+                    const sections = JSON.parse(plaintext);
+                    injectDecryptedContent(sections);
+                    clientUnlocked = true;
+                    matched = true;
+                    updateClientLinks();
+                }} catch(e) {{ /* not this password */ }}
             }}
 
-            // Try internal blob
+            // Try internal blob — also unlocks client sections (admin access)
             if (!internalUnlocked) {{
                 try {{
                     const plaintext = await decryptContent(input, ENCRYPTED_INTERNAL);
@@ -4315,6 +4294,16 @@ def generate_html():
                     internalUnlocked = true;
                     matched = true;
                     updateInternalLinks();
+                    // Admin: also unlock client sections
+                    if (!clientUnlocked) {{
+                        try {{
+                            const clientPlain = await decryptContent(input, ENCRYPTED_CLIENT_ADMIN);
+                            const clientSections = JSON.parse(clientPlain);
+                            injectDecryptedContent(clientSections);
+                            clientUnlocked = true;
+                            updateClientLinks();
+                        }} catch(e2) {{ /* ok */ }}
+                    }}
                 }} catch(e) {{ /* not internal password */ }}
             }}
 
