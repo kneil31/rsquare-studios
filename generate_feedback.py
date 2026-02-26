@@ -1230,7 +1230,22 @@ def generate():
             if (!slug || !ENCRYPTED_PROJECTS[hashedSlug]) {{
                 var gate = document.getElementById('pin-gate');
                 gate.textContent = '';
-                gate.appendChild(el('p', {{textContent: 'Invalid project link. Please check the URL you received.', style: 'color: #ef4444;'}}));
+
+                if (!slug) {{
+                    // No ?p= param — show welcome landing page
+                    var welcome = el('div', {{style: 'text-align: center; max-width: 400px; margin: 0 auto;'}});
+                    welcome.appendChild(el('div', {{textContent: '🎬', style: 'font-size: 3rem; margin-bottom: 0.5rem;'}}));
+                    welcome.appendChild(el('h2', {{textContent: 'Welcome!', style: 'color: #fff; margin: 0 0 0.75rem 0; font-size: 1.3rem;'}}));
+                    welcome.appendChild(el('p', {{textContent: 'This page lets you track your photo or video project, submit song choices, and provide feedback on edits.', style: 'color: #aaa; font-size: 0.95rem; line-height: 1.5; margin: 0 0 1.25rem 0;'}}));
+                    welcome.appendChild(el('p', {{textContent: 'To access your project, use the link that was shared with you. It includes a project code in the URL.', style: 'color: #888; font-size: 0.85rem; line-height: 1.5; margin: 0 0 1.5rem 0;'}}));
+                    var contact = el('p', {{style: 'color: #666; font-size: 0.8rem; margin: 0;'}});
+                    contact.appendChild(document.createTextNode("Don't have a link? Contact Ram to get yours."));
+                    welcome.appendChild(contact);
+                    gate.appendChild(welcome);
+                }} else {{
+                    // Has ?p= but slug not found
+                    gate.appendChild(el('p', {{textContent: 'Invalid project link. Please check the URL you received.', style: 'color: #ef4444;'}}));
+                }}
                 return;
             }}
 
