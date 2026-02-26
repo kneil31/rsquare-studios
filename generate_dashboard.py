@@ -3365,7 +3365,7 @@ def generate_html():
         function isAllowedUrl(url) {{
             try {{
                 const parsed = new URL(url);
-                if (!['http:', 'https:'].includes(parsed.protocol)) return false;
+                if (parsed.protocol !== 'https:') return false;
                 return ALLOWED_HOSTS.some(h => parsed.hostname === h || parsed.hostname.endsWith('.' + h));
             }} catch {{ return false; }}
         }}

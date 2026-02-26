@@ -72,6 +72,17 @@ var FEEDBACK_EMAIL_EDITOR = "editor@example.com";           // TODO: Replace wit
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // ── Helper: verify PIN by checking it matches a known PIN in the Feedback tab ──
+  function verifyProjectPin(sheet, project, pin) {
+    if (!pin) return false;
+    var rows = sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      // Column A = Project, Column G (index 6) = PIN
+      if (rows[i][0] == project && rows[i][6] == pin) return true;
+    }
+    return false;
+  }
+
   // ── Feedback Update (editor marks correction as fixed/unfixed) ──
 
   if (type === "feedback_update") {
@@ -81,6 +92,13 @@ var FEEDBACK_EMAIL_EDITOR = "editor@example.com";           // TODO: Replace wit
       return ContentService.createTextOutput(JSON.stringify({
         status: "error",
         message: "Feedback tab not found"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    // Verify caller has a valid PIN for this project
+    if (!data.pin || !verifyProjectPin(sheet, data.project, data.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error",
+        message: "Unauthorized"
       })).setMimeType(ContentService.MimeType.JSON);
     }
     var rows = sheet.getDataRange().getValues();

@@ -136,24 +136,29 @@ def generate():
         is_photo_editor = role == "photo-editor"
         is_video_editor = role == "video-editor"
 
-        # Filter projects by role
+        # Filter projects by role — include PINs for server-side validation
         role_projects = {}
+        role_project_pins = {}  # project_name → pin (for server-side auth)
         for slug, p in PROJECTS.items():
             proj_data = build_project_data(p)
             if role == "admin":
                 # Admin sees everything
                 role_projects[slug] = proj_data
+                role_project_pins[p["name"]] = p["pin"]
             elif is_photo_editor:
                 photo_ed = p.get("photo_editor") or p["editor"]
                 if photo_ed == editor_name and p.get("type", "video") in ("photo", "both"):
                     role_projects[slug] = proj_data
+                    role_project_pins[p["name"]] = p["pin"]
             elif is_video_editor:
                 if p["editor"] == editor_name and p.get("type", "video") in ("video", "both"):
                     role_projects[slug] = proj_data
+                    role_project_pins[p["name"]] = p["pin"]
 
         payload = {
             "v": 1,
             "projects": role_projects,
+            "project_pins": role_project_pins,
             "label": cred["label"],
             "editor_name": editor_name,
             **shared_config,
@@ -1785,7 +1790,21 @@ def generate():
         }}
 
         // ── POST to Google Apps Script ──
+        var _lastPostTime = 0;
+        var POST_COOLDOWN_MS = 5000;
+
         function postFeedback(data, onSuccess) {{
+            var now = Date.now();
+            if (now - _lastPostTime < POST_COOLDOWN_MS) {{
+                showToast('Please wait a few seconds before submitting again.', 'error');
+                return;
+            }}
+            _lastPostTime = now;
+
+            // Disable all submit buttons during request
+            var submitBtns = document.querySelectorAll('.btn-primary, .btn-approve');
+            submitBtns.forEach(function(b) {{ b.disabled = true; }});
+
             var params = new URLSearchParams();
             Object.keys(data).forEach(function(k) {{ params.append(k, data[k]); }});
 
@@ -1797,7 +1816,10 @@ def generate():
                 if (onSuccess) onSuccess();
             }}).catch(function(err) {{
                 showToast('Failed to submit. Try again.', 'error');
-                console.error('Feedback POST error:', err);
+            }}).finally(function() {{
+                setTimeout(function() {{
+                    submitBtns.forEach(function(b) {{ b.disabled = false; }});
+                }}, POST_COOLDOWN_MS);
             }});
         }}
 
@@ -2173,6 +2195,9 @@ def generate():
                                     params.append('content', correction.content);
                                     params.append('fixed', newStatus);
                                     if (note) params.append('note', note);
+                                    // Server-side auth: send project PIN from role blob
+                                    var projPin = (_roleData && _roleData.project_pins) ? _roleData.project_pins[projData.name] : '';
+                                    if (projPin) params.append('pin', projPin);
                                     fetch(_config.script_url, {{method: 'POST', body: params}}).then(function() {{
                                         correction.fixed = newStatus;
                                         correction.fixedNote = note || '';
@@ -2279,6 +2304,9 @@ def generate():
                             params.append('type', 'feedback_notify');
                             params.append('project', projData.name);
                             params.append('summary', summary);
+                            // Server-side auth: send project PIN from role blob
+                            var nPin = (_roleData && _roleData.project_pins) ? _roleData.project_pins[projData.name] : '';
+                            if (nPin) params.append('pin', nPin);
                             fetch(_config.script_url, {{method: 'POST', body: params}}).then(function() {{
                                 notifyBtn.disabled = false;
                                 notifyBtn.textContent = '\\u2714 Ram notified';

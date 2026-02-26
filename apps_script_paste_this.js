@@ -114,6 +114,19 @@ function doPost(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // ── Helper: verify PIN by checking it matches a known PIN in the Feedback tab ──
+  // For feedback_update and feedback_notify, the caller must provide a PIN
+  // that matches at least one existing row for that project.
+  function verifyProjectPin(sheet, project, pin) {
+    if (!pin) return false;
+    var rows = sheet.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      // Column A = Project, Column G (index 6) = PIN
+      if (rows[i][0] == project && rows[i][6] == pin) return true;
+    }
+    return false;
+  }
+
   // Update fixed status (no email — editor uses Notify button for summary)
   if (type === "feedback_update") {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -121,6 +134,12 @@ function doPost(e) {
     if (!sheet) {
       return ContentService.createTextOutput(JSON.stringify({
         status: "error", message: "Feedback tab not found"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    // Verify caller has a valid PIN for this project
+    if (!p.pin || !verifyProjectPin(sheet, p.project, p.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error", message: "Unauthorized"
       })).setMimeType(ContentService.MimeType.JSON);
     }
     var rows = sheet.getDataRange().getValues();
@@ -144,6 +163,15 @@ function doPost(e) {
 
   // Summary notification from editor (one email for all fixes)
   if (type === "feedback_notify") {
+    // Verify caller has a valid PIN for this project
+    var ss2 = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet2 = ss2.getSheetByName("Feedback");
+    if (sheet2 && !verifyProjectPin(sheet2, p.project, p.pin)) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: "error", message: "Unauthorized"
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     try {
       var subject = "[Rsquare] " + (p.project || "Unknown") + " - Editor update";
       var body = p.summary || "No details provided.";
