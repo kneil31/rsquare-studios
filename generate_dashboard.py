@@ -5464,7 +5464,8 @@ Looking forward to it! 🙌
                 if (clientUnlocked || internalUnlocked) {{
                     updateLockIcon();
                     document.getElementById('logout-btn').style.display = 'block';
-                    showSection(clientUnlocked && !internalUnlocked ? 'pricing' : 'home');
+                    var landing = params.get('s') || 'pricing';
+                    showSection(landing);
                 }}
             }})();
         }})();

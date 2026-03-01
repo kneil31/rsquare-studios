@@ -28,7 +28,8 @@ def main():
     else:
         pw = secrets["client"]
 
-    url = f"{BASE_URL}?k={pw}&t={ts}"
+    section = "pricing" if link_type == "client" else "home"
+    url = f"{BASE_URL}?k={pw}&t={ts}&s={section}"
 
     print(f"\n{'=' * 60}")
     print(f"  Rsquare Studios — {link_type.title()} Link")
