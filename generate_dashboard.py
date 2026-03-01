@@ -5425,7 +5425,7 @@ Looking forward to it! 🙌
             if (params.t) {{
                 var created = parseInt(params.t, 10);
                 var now = Math.floor(Date.now() / 1000);
-                if (now - created > 48 * 3600) {{
+                if (now - created > 10 * 60) {{ // TESTING: 10 min (change back to 48 * 3600)
                     // Clear hash and show expired message
                     history.replaceState(null, '', window.location.pathname + window.location.search);
                     showToast('This link has expired. Please request a new one.');
