@@ -5409,6 +5409,55 @@ Looking forward to it! 🙌
 
         /* ── Post-listener initialization ── */
 
+        // Auto-unlock via URL hash: #unlock=<password>
+        // Allows sharing a direct link that skips the password gate
+        (function() {{
+            var hash = window.location.hash;
+            if (!hash) return;
+            var match = hash.match(/^#unlock=(.+)$/);
+            if (!match) return;
+            var key = decodeURIComponent(match[1]);
+            // Clear hash from URL bar (keeps it clean, no password visible)
+            history.replaceState(null, '', window.location.pathname + window.location.search);
+            // Auto-decrypt with the provided key
+            (async function() {{
+                // Try client blob
+                if (!clientUnlocked) {{
+                    try {{
+                        var plaintext = await decryptContent(key, ENCRYPTED_CLIENT);
+                        var sections = JSON.parse(plaintext);
+                        injectDecryptedContent(sections);
+                        clientUnlocked = true;
+                        updateClientLinks();
+                    }} catch(e) {{ /* not client password */ }}
+                }}
+                // Try internal blob (also unlocks client via admin blob)
+                if (!internalUnlocked) {{
+                    try {{
+                        var plaintext = await decryptContent(key, ENCRYPTED_INTERNAL);
+                        var sections = JSON.parse(plaintext);
+                        injectDecryptedContent(sections);
+                        internalUnlocked = true;
+                        updateInternalLinks();
+                        if (!clientUnlocked) {{
+                            try {{
+                                var clientPlain = await decryptContent(key, ENCRYPTED_CLIENT_ADMIN);
+                                var clientSections = JSON.parse(clientPlain);
+                                injectDecryptedContent(clientSections);
+                                clientUnlocked = true;
+                                updateClientLinks();
+                            }} catch(e2) {{ /* ok */ }}
+                        }}
+                    }} catch(e) {{ /* not internal password */ }}
+                }}
+                if (clientUnlocked || internalUnlocked) {{
+                    updateLockIcon();
+                    document.getElementById('logout-btn').style.display = 'block';
+                    showSection(clientUnlocked && !internalUnlocked ? 'pricing' : 'home');
+                }}
+            }})();
+        }})();
+
         // Load checklists (after event listeners, safe if localStorage unavailable)
         loadChecklist();
 
