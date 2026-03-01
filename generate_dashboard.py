@@ -5409,31 +5409,27 @@ Looking forward to it! 🙌
 
         /* ── Post-listener initialization ── */
 
-        // Auto-unlock via URL hash: #unlock=<password>&t=<unix_timestamp>
-        // Link expires after 48 hours from the timestamp
+        // Auto-unlock via query params: ?k=<password>&t=<unix_timestamp>
+        // Link expires after 10 minutes from the timestamp
+        // Uses query params (not hash) so Slack/WhatsApp preserve the full URL
         (function() {{
-            var hash = window.location.hash;
-            if (!hash) return;
-            var params = {{}};
-            hash.substring(1).split('&').forEach(function(p) {{
-                var kv = p.split('=');
-                if (kv.length === 2) params[kv[0]] = decodeURIComponent(kv[1]);
-            }});
-            if (!params.unlock) return;
-            var key = params.unlock;
-            // Check 48-hour expiry
-            if (params.t) {{
-                var created = parseInt(params.t, 10);
+            var params = new URLSearchParams(window.location.search);
+            var key = params.get('k');
+            if (!key) return;
+            // Check expiry
+            var t = params.get('t');
+            if (t) {{
+                var created = parseInt(t, 10);
                 var now = Math.floor(Date.now() / 1000);
                 if (now - created > 10 * 60) {{
-                    // Clear hash and show expired message
-                    history.replaceState(null, '', window.location.pathname + window.location.search);
+                    // Clear params and show expired message
+                    history.replaceState(null, '', window.location.pathname);
                     showToast('This link has expired. Please request a new one.');
                     return;
                 }}
             }}
-            // Clear hash from URL bar (keeps it clean, no password visible)
-            history.replaceState(null, '', window.location.pathname + window.location.search);
+            // Clear query params from URL bar (keeps it clean, no password visible)
+            history.replaceState(null, '', window.location.pathname);
             // Auto-decrypt with the provided key
             (async function() {{
                 // Try client blob

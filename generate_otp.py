@@ -58,7 +58,7 @@ def update_secret(new_client_pw):
         print("ERROR: .secret file not found. Cannot update.")
         sys.exit(1)
 
-    data["otp"] = new_client_pw
+    data["client"] = new_client_pw
     SECRET_FILE.write_text(json.dumps(data), encoding="utf-8")
     return data["internal"]
 
@@ -125,7 +125,7 @@ def notify_slack(password, expires, timestamp):
         print("   WARNING: Slack credentials not found, skipping notification.")
         return
 
-    unlock_url = f"https://portfolio.rsquarestudios.com/#unlock={password}&t={timestamp}"
+    unlock_url = f"https://portfolio.rsquarestudios.com/?k={password}&t={timestamp}"
 
     try:
         # Send client-ready message first (easy to copy-paste to WhatsApp)
@@ -181,7 +181,7 @@ def main():
     password = generate_password()
     timestamp = int(datetime.now().timestamp())
     expires = (datetime.now() + timedelta(hours=48)).strftime("%b %d, %Y %I:%M %p")
-    unlock_url = f"https://portfolio.rsquarestudios.com/#unlock={password}&t={timestamp}"
+    unlock_url = f"https://portfolio.rsquarestudios.com/?k={password}&t={timestamp}"
     print(f"   Password: {password}")
     print(f"   Link:     {unlock_url}")
     print(f"   Expires:  {expires}")

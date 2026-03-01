@@ -28,7 +28,7 @@ def main():
     else:
         pw = secrets["client"]
 
-    url = f"{BASE_URL}#unlock={pw}&t={ts}"
+    url = f"{BASE_URL}?k={pw}&t={ts}"
 
     print(f"\n{'=' * 60}")
     print(f"  Rsquare Studios — {link_type.title()} Link")
