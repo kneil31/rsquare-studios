@@ -116,7 +116,7 @@ def git_push():
     return True
 
 
-def notify_slack(password, expires):
+def notify_slack(password, expires, timestamp):
     """Send OTP to Slack channel via HTTP API (no slack_sdk dependency)."""
     import urllib.request
 
@@ -125,12 +125,14 @@ def notify_slack(password, expires):
         print("   WARNING: Slack credentials not found, skipping notification.")
         return
 
+    unlock_url = f"https://portfolio.rsquarestudios.com/#unlock={password}&t={timestamp}"
+
     try:
         # Send client-ready message first (easy to copy-paste to WhatsApp)
         client_msg = (
             "Hey! Here's a private link to our portfolio and pricing 📷\n\n"
-            "https://portfolio.rsquarestudios.com/\n"
-            f"Password: {password}\n\n"
+            f"{unlock_url}\n\n"
+            "This link is valid for 48 hours.\n"
             "Let me know if you have any questions!\n"
             "— Ram"
         )
@@ -149,7 +151,7 @@ def notify_slack(password, expires):
         urllib.request.urlopen(req_pw, timeout=10)
 
         # Then send internal context message
-        msg = f"🔑 OTP generated — expires {expires}"
+        msg = f"🔑 OTP generated — expires {expires}\n🔗 {unlock_url}"
         payload = json.dumps({"channel": channel, "text": msg}).encode("utf-8")
         req = urllib.request.Request(
             "https://slack.com/api/chat.postMessage",
@@ -175,10 +177,13 @@ def main():
 
     print("\n🔑 Generating new client OTP...")
 
-    # Generate password
+    # Generate password + timestamp
     password = generate_password()
+    timestamp = int(datetime.now().timestamp())
     expires = (datetime.now() + timedelta(hours=48)).strftime("%b %d, %Y %I:%M %p")
+    unlock_url = f"https://portfolio.rsquarestudios.com/#unlock={password}&t={timestamp}"
     print(f"   Password: {password}")
+    print(f"   Link:     {unlock_url}")
     print(f"   Expires:  {expires}")
 
     # Update .secret
@@ -199,11 +204,11 @@ def main():
 
     # Slack notify
     if not no_push and not no_slack:
-        notify_slack(password, expires)
+        notify_slack(password, expires, timestamp)
     else:
         print("   Skipping Slack notification.")
 
-    print(f"\n✅ OTP ready! Share password '{password}' with client.\n")
+    print(f"\n✅ OTP ready! Link copied to Slack — just forward to client.\n")
 
 
 if __name__ == "__main__":
