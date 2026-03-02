@@ -19,7 +19,6 @@ Hey! Here's a private link to our portfolio and pricing 📷
 
 ${LINK}
 
-This link is valid for 48 hours.
 Let me know if you have any questions!
 — Ram
 EOF
