@@ -17,7 +17,7 @@ def get_overdue_projects(projects):
     today = datetime.now()
     overdue = []
     for p in projects:
-        if p["status"] == "COMPLETED":
+        if "completed" in p["status"].lower():
             continue
         sent = datetime.strptime(p["date_sent"], "%Y-%m-%d")
         days_elapsed = (today - sent).days
@@ -108,7 +108,7 @@ def get_pending_projects(projects):
     today = datetime.now()
     pending = []
     for p in projects:
-        if p["status"] == "COMPLETED":
+        if "completed" in p["status"].lower():
             continue
         sent = datetime.strptime(p["date_sent"], "%Y-%m-%d")
         p["days_elapsed"] = (today - sent).days

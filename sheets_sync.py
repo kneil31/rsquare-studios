@@ -151,7 +151,7 @@ def add_project(data):
 def get_pending():
     """Return all non-COMPLETED projects."""
     projects = read_projects()
-    return [p for p in projects if p["status"] != "COMPLETED"]
+    return [p for p in projects if "completed" not in p["status"].lower()]
 
 
 def _video_row_to_dict(headers, row):
