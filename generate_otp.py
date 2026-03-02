@@ -132,7 +132,6 @@ def notify_slack(password, expires, timestamp):
         client_msg = (
             "Hey! Here's a private link to our portfolio and pricing 📷\n\n"
             f"{unlock_url}\n\n"
-            "This link is valid for 48 hours.\n"
             "Let me know if you have any questions!\n"
             "— Ram"
         )
