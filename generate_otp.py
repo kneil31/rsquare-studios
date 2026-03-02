@@ -89,13 +89,14 @@ def log_otp(password):
 def regenerate_dashboard():
     """Run generate_dashboard.py to rebuild index.html."""
     result = subprocess.run(
-        [sys.executable, str(GENERATE_SCRIPT)],
+        ["/opt/homebrew/bin/python3", str(GENERATE_SCRIPT)],
         capture_output=True, text=True, cwd=str(SCRIPT_DIR)
     )
     if result.returncode != 0:
         print(f"ERROR: Dashboard generation failed:\n{result.stderr}")
-        sys.exit(1)
+        return False
     print("   Dashboard regenerated.")
+    return True
 
 
 def git_push():
@@ -188,25 +189,39 @@ def main():
     print(f"   Link:     {unlock_url}")
     print(f"   Expires:  {expires}")
 
-    # Update .secret
+    # Save old password for rollback
+    old_secret = SECRET_FILE.read_text(encoding="utf-8")
+
+    # Update .secret FIRST (dashboard reads it during generation)
     update_secret(password)
     print("   .secret updated.")
 
-    # Log it
+    # Regenerate — if this fails, rollback .secret
+    if not regenerate_dashboard():
+        print("   ROLLING BACK .secret to previous password...")
+        SECRET_FILE.write_text(old_secret, encoding="utf-8")
+        home_secret = Path.home() / ".r2_secret"
+        home_secret.write_text(old_secret, encoding="utf-8")
+        print("   Rollback complete. Dashboard unchanged.")
+        sys.exit(1)
+
+    # Log it (only after successful rebuild)
     log_otp(password)
 
-    # Regenerate
-    regenerate_dashboard()
-
     # Push
+    pushed = True
     if not no_push:
-        git_push()
+        pushed = git_push()
+        if not pushed:
+            print("   WARNING: Push failed — dashboard rebuilt locally but not deployed.")
     else:
         print("   Skipping git push (--no-push).")
 
-    # Slack notify
-    if not no_push and not no_slack:
+    # Slack notify (only if push succeeded)
+    if not no_push and not no_slack and pushed:
         notify_slack(password, expires, timestamp)
+    elif not pushed:
+        print("   Skipping Slack notification (push failed).")
     else:
         print("   Skipping Slack notification.")
 
