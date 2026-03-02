@@ -88,11 +88,16 @@ python3 sync_dashboard.py --dry-run # Regenerate but don't push
   - `ENCRYPTED_CLIENT_ADMIN` — same client content, encrypted with internal password (admin access)
 - **Internal password unlocks everything** — decrypts both internal and client sections in one go
 - **Client password** unlocks only client sections (pricing, booking)
-- **Auto-unlock links:** `#unlock=<password>&t=<timestamp>` in URL hash — clients click and see pricing instantly, no password gate. Hash cleared from URL bar after decryption. Links expire after 48 hours; expired links show toast and fall back to password gate.
-- **Link generator:** `python3 generate_link.py` (client) or `python3 generate_link.py internal` — generates timestamped link, copies to clipboard
-- **OTP rotation:** `python3 generate_otp.py` rotates client password, regenerates dashboard, pushes to GitHub, sends ready-to-forward auto-unlock link to Slack
-- **Passwords:** Stored in `.secret` (gitignored) — never in source code or docs
+- **Auto-unlock links:** `?k=<password>&t=<timestamp>&s=pricing` — clients click and land on pricing instantly, no password gate. Query params cleared from URL bar after decryption. Links expire after 48 hours; expired links show toast, portfolio remains visible, pricing locks.
+- **3 ways to generate links:**
+  - **Slack:** Type `otp` in #instagram-posts → copy-friendly message ready to forward to WhatsApp
+  - **iPhone Shortcut:** "Client Link" on home screen → SSH to Mac → share sheet to WhatsApp
+  - **Terminal:** `python3 generate_link.py` (client) or `python3 generate_link.py internal` → copies to clipboard
+- **Apple Shortcut setup:** Runs `/Users/ram/client_link.sh` via SSH. Reads `~/.r2_secret` (synced from `.secret` by `generate_otp.py`). Works with Mac locked.
+- **Passwords:** Stored in `.secret` (gitignored) + `~/.r2_secret` (SSH-safe copy for Shortcut)
+- **Password rotation:** `python3 generate_otp.py` rotates client password, regenerates dashboard, pushes to GitHub, auto-syncs `~/.r2_secret`
 - **Manual password gate:** Still works for direct visitors without the auto-unlock link
+- **Internal/editor dashboard:** Always requires password (no auto-unlock for internal sections)
 - **Data-driven DOM building (no innerHTML):** All decrypted content rendered via `createElement`/`textContent`
 - **Safe markdown renderer:** Markdown-to-DOM converter via `createElement`/`textContent`
 - **URL allowlist enforced:** `isAllowedUrl()` validates all dynamic URLs (HTTPS-only, no HTTP)
