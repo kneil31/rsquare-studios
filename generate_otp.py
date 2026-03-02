@@ -60,6 +60,9 @@ def update_secret(new_client_pw):
 
     data["client"] = new_client_pw
     SECRET_FILE.write_text(json.dumps(data), encoding="utf-8")
+    # Sync to ~/.r2_secret for Apple Shortcut (SSH can't read Documents)
+    home_secret = Path.home() / ".r2_secret"
+    home_secret.write_text(json.dumps(data), encoding="utf-8")
     return data["internal"]
 
 

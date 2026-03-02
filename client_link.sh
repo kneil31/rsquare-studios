@@ -3,7 +3,8 @@
 # Used by Apple Shortcut "Client Link" via Run Shell Script
 # Outputs ONLY the shareable message (no decorations)
 
-SECRET_FILE="$(dirname "$0")/.secret"
+SCRIPT_DIR="/Users/ram/Documents/2025 - Rsquare/Rsquare-Scripts/Photography/rsquarestudios/rsquare-studios-dashboard"
+SECRET_FILE="$SCRIPT_DIR/.secret"
 
 if [ ! -f "$SECRET_FILE" ]; then
   echo "Error: .secret not found"
