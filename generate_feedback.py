@@ -951,6 +951,25 @@ def generate():
             opacity: 0.5;
             cursor: not-allowed;
         }}
+        .btn-reminder {{
+            background: #14532d;
+            border: 1px solid #22c55e;
+            color: #86efac;
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }}
+        .btn-reminder:hover {{
+            background: #166534;
+        }}
         .editor-section-label {{
             font-size: 12px;
             color: #999;
@@ -2347,6 +2366,37 @@ def generate():
             return card;
         }}
 
+        // ── Build WhatsApp reminder message for unfixed corrections ──
+        function buildReminderMessage(projects, entries) {{
+            var groups = {{}};
+            var projectSlugs = Object.keys(projects);
+            projectSlugs.forEach(function(slug) {{
+                var proj = projects[slug];
+                var projEntries = entries.filter(function(e) {{
+                    return e.project.toLowerCase() === proj.name.toLowerCase();
+                }});
+                var unfixed = projEntries.filter(function(e) {{
+                    return e.type === 'correction' && !e.fixed;
+                }});
+                if (unfixed.length > 0) {{
+                    groups[proj.name] = unfixed;
+                }}
+            }});
+
+            if (Object.keys(groups).length === 0) return null;
+
+            var msg = 'Hi bro,\\n\\nPending corrections update:\\n';
+            Object.keys(groups).forEach(function(name) {{
+                msg += '\\n' + name + ':\\n';
+                groups[name].forEach(function(c) {{
+                    var ts = c.timestamp ? '[' + c.timestamp + '] ' : '';
+                    msg += '\\u2022 ' + ts + c.content + '\\n';
+                }});
+            }});
+            msg += '\\nCould you check on these when you get a chance?';
+            return msg;
+        }}
+
         // ── Editor Dashboard (role-filtered) ──
         function buildEditorDashboard(role, data) {{
             var container = document.getElementById('editor-content');
@@ -2362,6 +2412,25 @@ def generate():
                 refreshBtn.addEventListener('click', function() {{ buildEditorDashboard(role, data); }});
                 refreshDiv.appendChild(refreshBtn);
                 container.appendChild(refreshDiv);
+
+                // Send Reminder button (WhatsApp unfixed corrections)
+                var reminderMsg = buildReminderMessage(data.projects, entries);
+                if (reminderMsg) {{
+                    // Find editor phone from first project
+                    var firstSlug = Object.keys(data.projects)[0];
+                    var editorPhone = firstSlug ? (data.projects[firstSlug].editor_phone || data.projects[firstSlug].photo_editor_phone) : '';
+                    if (editorPhone) {{
+                        var reminderBtn = el('button', {{className: 'btn-reminder', textContent: '\\uD83D\\uDCF2 Send Reminder via WhatsApp'}});
+                        reminderBtn.addEventListener('click', function() {{
+                            var waUrl = 'https://wa.me/' + editorPhone + '?text=' + encodeURIComponent(reminderMsg);
+                            if (isAllowedUrl(waUrl)) {{
+                                var a = el('a', {{href: waUrl, target: '_blank', rel: 'noreferrer noopener'}});
+                                a.click();
+                            }}
+                        }});
+                        container.appendChild(reminderBtn);
+                    }}
+                }}
 
                 // Projects come pre-filtered from decrypted blob
                 var projectSlugs = Object.keys(data.projects);
@@ -2410,6 +2479,37 @@ def generate():
                 refreshBtn.addEventListener('click', function() {{ buildAdminDashboard(data); }});
                 refreshDiv.appendChild(refreshBtn);
                 container.appendChild(refreshDiv);
+
+                // Per-editor reminder buttons
+                var editorProjects = {{}};
+                Object.keys(data.projects).forEach(function(slug) {{
+                    var proj = data.projects[slug];
+                    var editors = [];
+                    if (proj.editor && proj.editor_phone) editors.push({{name: proj.editor, phone: proj.editor_phone}});
+                    if (proj.photo_editor && proj.photo_editor_phone) editors.push({{name: proj.photo_editor, phone: proj.photo_editor_phone}});
+                    editors.forEach(function(ed) {{
+                        if (!editorProjects[ed.name]) editorProjects[ed.name] = {{phone: ed.phone, projects: {{}}}};
+                        editorProjects[ed.name].projects[slug] = proj;
+                    }});
+                }});
+
+                Object.keys(editorProjects).forEach(function(edName) {{
+                    var edInfo = editorProjects[edName];
+                    var msg = buildReminderMessage(edInfo.projects, entries);
+                    if (msg && edInfo.phone) {{
+                        var btn = el('button', {{className: 'btn-reminder', textContent: '\\uD83D\\uDCF2 Remind ' + edName}});
+                        btn.addEventListener('click', (function(phone, message) {{
+                            return function() {{
+                                var waUrl = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
+                                if (isAllowedUrl(waUrl)) {{
+                                    var a = el('a', {{href: waUrl, target: '_blank', rel: 'noreferrer noopener'}});
+                                    a.click();
+                                }}
+                            }};
+                        }})(edInfo.phone, msg));
+                        container.appendChild(btn);
+                    }}
+                }});
 
                 // Collect unique editor names and status values for filters
                 var editorNames = {{}};

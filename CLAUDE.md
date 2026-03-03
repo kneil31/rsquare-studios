@@ -93,7 +93,7 @@ python3 sync_dashboard.py --dry-run # Regenerate but don't push
   - **Slack:** Type `otp` in #instagram-posts → copy-friendly message ready to forward to WhatsApp
   - **iPhone Shortcut:** "Client Link" on home screen → SSH to Mac → share sheet to WhatsApp
   - **Terminal:** `python3 generate_link.py` (client) or `python3 generate_link.py internal` → copies to clipboard
-- **Apple Shortcut setup:** Runs `/Users/ram/client_link.sh` via SSH. Reads `~/.r2_secret` (synced from `.secret` by `generate_otp.py`). Works with Mac locked.
+- **Apple Shortcut setup:** Runs `/Users/ram/client_link.sh` via SSH over Tailscale VPN. Uses Tailscale IP (not local 192.168.x.x) so it works from anywhere (LTE, Wi-Fi, etc.). Reads `~/.r2_secret` (synced from `.secret` by `generate_otp.py`). Works with Mac locked.
 - **Passwords:** Stored in `.secret` (gitignored) + `~/.r2_secret` (SSH-safe copy for Shortcut)
 - **Password rotation:** `python3 generate_otp.py` rotates client password, regenerates dashboard, pushes to GitHub, auto-syncs `~/.r2_secret`
 - **Manual password gate:** Still works for direct visitors without the auto-unlock link

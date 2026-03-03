@@ -6,7 +6,7 @@
     <meta name="referrer" content="no-referrer">
     <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
     <meta name="robots" content="noindex, nofollow, noarchive">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-a9d74bd526f9ab88f4695d7e3b856d25'; style-src 'unsafe-inline'; img-src 'self' data: https://img.youtube.com; connect-src https://script.google.com https://script.googleusercontent.com https://docs.google.com; font-src 'none'; frame-src https://www.youtube.com https://youtube.com; base-uri 'none'; form-action https://script.google.com;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-65d6c534a01b1abde6048cb0d27917b7'; style-src 'unsafe-inline'; img-src 'self' data: https://img.youtube.com; connect-src https://script.google.com https://script.googleusercontent.com https://docs.google.com; font-src 'none'; frame-src https://www.youtube.com https://youtube.com; base-uri 'none'; form-action https://script.google.com;">
     <title>Rsquare Studios — Project Tracker</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -778,6 +778,25 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
+        .btn-reminder {
+            background: #14532d;
+            border: 1px solid #22c55e;
+            color: #86efac;
+            width: 100%;
+            margin-top: 12px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-reminder:hover {
+            background: #166534;
+        }
         .editor-section-label {
             font-size: 12px;
             color: #999;
@@ -940,14 +959,14 @@
         <div class="toast" id="toast"></div>
     </div>
 
-    <script nonce="a9d74bd526f9ab88f4695d7e3b856d25">
+    <script nonce="65d6c534a01b1abde6048cb0d27917b7">
     if (top !== self) { top.location = self.location; }
     (function() {
         'use strict';
 
         // ── Encrypted Data (embedded at build time) ──
-        var ENCRYPTED_PROJECTS = {"f4c8e9544a537db1": "p394DUjoaGR6MdO1+jO1tOcYdfdx4HS0Pa+Xp15s8v6sFsZ2qHfJHVOFfNN8wwaHawvbkCGMKZRDgqqyZ+U7uoflpbspgJOdl+BlqW2OEw1yNwIAjBhKKi8S+Nbf7toTcUwQVvFgJ1kpsMYV1zjizCWCUyceCn8EeWq4mc5JYAkQb2GAsvIjBgc8LBgtf8JSdJus93aB/vhMU1walbFcS6zklb+lrNy94WK0hy9oG2fAOuez0D39yAmIzXoiZDwyR0uR4q+GSLbfo7FYy8DLJ4TpkloolRwN97K9PehrZCVsfvhUmaNyoDB6slylErcgZWgjAoibjQTb7R5GuBtLui6t/GGtWi/t9ejAw0TMt8fqp+XVDH9szUqj2ZNWAVMCiMsrg8CKINMtIq9mzM3RKC2Fg4BIy81omkPL6eGTb9Tm9Sg7y39zkgE3bicMIj06xSowRTRILqsmNv7yNET7Zchx93129u+u3+rpnmnq7lKawwGEp90nNf2/1XFlpz1X//KyFmUweon6ogX6QrhHmXHZrrfiVQr77C0rNKlE0imW4fIxUUgJwZUkhvBUQsWH3uHD9iIEd/VZEjNaYOB1YSFJFPaPC0WkMi5zI0m4TY006nYmG2lE1NmQk93WOdcmUqaUDEyh9aUgD+3mqIDz0DtN+OEJQi6FWX4nqK8Jr3GOBeLSY8NR9dc7d0V+0Butcs1E4rnp35BIuCBzzdHhESsRu2lx51sPdLZmwGBj0ZSupPu1edrVMH0zSS3QuXBlMN4wz/x8fBqyCbcWO0bpOrmzdsWdS82rJyUyNSFrRv+Mcbk=", "954a66f8dcda60ce": "8VSV6vYmO4cf1a81cQkjiGYQpXho1OB636wDXwXhu8vxKuTVQR//liBY3ZKCF4ss2z++ecKudS9SrIvwICyPYm7WYR9ueZDV+cYrdt4Dlf585xyIFEcRUBVZbygAShHLwJGzO4eCtX0olWbJhEKOhX9ozSMJkTxRH6pDhdAkQUbXlsaZLq0dYdi9XEWn/OxYp1F6zVgn8+JdAGcF72hau9rPrwcXcBa0GeHj+K3lE6eRgEJMZ0JbnTrt4SjkSfqBsgjuP1YYek/UFxxj5YqpluJAPDUxhLKk6iYIetjnS5T/z9O+VE5qPQCH9Z9yJyUmTaP2PAGEMr6Ce0iLtxvCL2nazI8WtpCwB4GvUL/ORDvmrrD9hzjVkiNGenFIIhniix0sSPwvpv+uePKMgwhhDpqhyw5EFPHqBcRQ6nT9WhuAcq2inVk9wVCc5DWPqd51KQSrh2oMQ6/NdGI9GxpvJ4UTpuukMDo8NB4Z0+NS4PL9S+QLs+nsZhLvs+ENW2y8AfxmWqSzmAxAXw6n0wwGDTsMju+VY0R161zHqJlbFIh+Mt24I5FgtFm4iT8xap2QeE05MbtNeL0I0CUGFojFUkdfy7uxAHFUI8VhOQ0I7Q6ynIaru2lduZAbHn1xgsENQLj6AT0ps4TVSZ4PKBybUR7SUrthgq4R8DeK1uhz2o0RfdTp7GPmPRkV5garEqp4y9QrCLqjo3ND5CT2atgTqSvPii+h3fJnb2H7VtZfzZc/2OtLi7l5xQcn3d0O3CVTqGGfrqYRUA=="};
-        var ENCRYPTED_ROLES = {"118680224f672907": "Dx+M7nD7NApF95veLynOGlo6f6nkPKgx8Ckdcw39zfr+15g65xPSIxhBXMp4Vw2R2PbmZ/Yag0mdoUC6VahTZUPfWYrGS+O+DcNWSw1LzXxUljD/7O2/ZN83vWGYCbNCD1JiJTfXYXF4PNWpjmIOKZKxtch1hyrE2QHaq1RnGH9YcdQ9gDa6tWYD4tw/a36kjKApQzNnGfUspNTuX+w0z3H4w8nThoR09taA3iYnV9IgS4IV/camCJjF7jRAGcLMwEmv0MecBlxMdSxRlTsQ2GELOfJedyZvIxNseOii/JMAPHEHfi4U3myDb35H4zTsxgY/+U/ikkw4TPph8sEZ1Xrx71eyDjZDkfkxMBQ0ctmz3tBKsAy+KMgEi5ievJsiQb/4c9TIeGo2HEwna3zYXKsNiycPQNJLtwAS+4ZOb7UfyEhxmiTy9aPoZNWVe1AeXStvxDk5laAOaPFkqnODqrP/8yTLSH2PhdBmrjA7Pd8hHN2dTfZrLrC8ZOCSio2fdwJD6lIUXalyJCgsdJzNnsQeYbuJp8hVgdgKOIocvEFWNwm/6DDXIb4+VKQvssfq800IvFU0gwT4hEEZM9M1pY96pOYoDuQMvzT0pClJqCoUgEXJQS+/wJ6ooNuCOIbe6wJC0dGpJw/fO6EPh0rDikGouMZbCtI5EoQsUo5y8tqlYtYIovn9u/gnv3++0sbQXHgcPtkScm8F3Dx9XJMaaHhn2KVQT44bd4tlaP3zoQNbzOPCudmj4VFJQRHflhjycII3qG3lZsSvifNavxKYpoSAAugGjFJSFESra/HXfnXmSEJUAOO6GLt6DJWu7UGvCrfjyEBRPPpdRilTEn06AsEHNETwkGbZB7vvB78dCTSbCwb9xj95NkCVAKYQBdrovhfVJC1ABptE1tBH7+udG8m5FQPonp1ZnvCO2SSKi9Mgu6Lt7TpehSd/+kjuSdNeMrIwKvVbFdEaZImVzNqthSjNN75RBd84JcS9AiiH2Lhad7e1tOUPZpi4XHFWzf+8LIkX0tyBPb/Kv6lYVywXjGdojkhD+jdAWNeQdqbdsrdU9Jkthpee2RG1d7FBDIq+Wos08fOnBgKCSpNSFHGiC9YN/DhE+YJtcsROnFO1w63nXT4Q1uPrN6D8ZgcS0sWiGDuMlbDYLykUjO88XXs9OWexRmeTdpHioHAORwp6W807YJ8N3QwLUoWrudTP1w1Gpj5GD+OEcifgEk4NBFWuoUjVOE/65UJ8+tbdbii0x3HfuWEp3MNvTiUSxMHgHgNu2/RNQJ+dYQ2pIp3MQwHTuBvJdaRU6BmrkaRnT3hilSSJtnQmrUjU3wlfkG9P2d2heouw5kbnitvqFIA9L2A5GCGpt7zNKV0sOvFlx6ZFKDlnJa2Tpm5LyymaSwU6sXL+UG2zKmgAtowULhfw7vRop6cRR7Y=", "a207c52db956f08c": "2KZL7fkJbm0v2+GujH77mMmBQ4Ne4NFzXrs4lw+67n1LklphRHO3LN2kA2sNmPg5TyqVeo5YB6225m7VcqFGRVWsmCm6PeBWdM9UJfn8duZQUrgpz3DJRsPkSv0OGSKK0fvvR/Ixr0uQPrUmNBk292gbi1IojvM9TelUpWwbv54y4wie1Qmz04gaSfDdRRC1qJYrdevJMTHECbC8pNzqLtfAE5Hv37H7wKTdwY31YYFwaQ3ZQWtiy6VPobA5mtUvkkyzSU0qaE6E54nKVqD0fiYIpPbJW/EIiKhBnhd5pCTNSTy4S3gqOVnQPASPQEM7mFvIZ9Sf0f/dlnCMAXgCXVwmMcn86xN4I5cYBaDrrgAZSYCngenwVKkMpQViQOgYjOlcM11w/G1Unqi+iLuMaZJOKDNhhKZ5BnpkTBJqcS09fYadHMfXzrcxP6AEqCVTNY0lB/pg9vsSi9c3MOpsHb9s/UCzpxAcNImJISEFwFRflRsTDz4J4X2qdQWxe9i6iafnolD2MwmrI3Csuj+FW+6fA4IE/eYU6sbwrAvMjf+4I6VVtVbMi4r3rstAjzGYQkyslWfwI4qEYdWtyzy159zy9++SqmePnSpnw2dXMAIujovcnllO/kmcTuqG8Z5BQe6UwRBrkMdaZuqT7YXgatXJl28DvwX+cA41JNRw6TRyBQmiTDP7rqn7I4RO3q7scyNuViW9+uz5gFsYXJRujJbVpDPfAyywHV0oXyu3e8mrVHxr+twHCCarp936ZTlMoio34ZHcDDvM/up2OQcTnH6Q/ykzntiPJYByJ4qOy21uoy4bYXpOUcLTB48RDC4cMIEdcyHLGtajkGaJdkuBU8Y2X4hLxt229xC4ZWdGSdlEUA+c3S7uDXiNN/1gLHtVUqp+KTL9l+5f95+zu/6yGHR+X0/HpI30qclwNp8W7WtrnrwvIBd3oZRjMq9hZczfhL7U+mIQiqty64vphPbrJUYYkA==", "8c6976e5b5410415": "7370RDyyb9/aIFN/cSfS2h8Cs2cjsjF4g5+aMv/xjshjrJIYGmw4oeNjrVct+QEHiSR38U2RQzGIIw12RZ2stGZdD4FSM0ruqi2A7G+iAC3lbavgA4pOP41eoP/nFEBacihtPZcsagfX6buo/YwgZxClcOE1NPFDFHde6Xpo6lN1imN5yYbsQde/RB6MPxanisFoD4G/XE5TSpgf3harhc19AJbq6x9RwQLgjWj+Bc6qJuqcmUzBVH0C6yb6OCry2mrVBhww39K/Kn27uR309yctoC8rq8XuEiOZ26QptapAMYgIuohfGodAFmrsNrEhRMDLGxSN/8Nda4EupoYDwZzWVMmE+/kA7dRIVK1gn5KKbec0kIaC+foZR1KHGRNkLGa+JqiaVHlqQRl01tdpBCC5U/uigxx6Mcv6oD2+S3dqaS0IH9CHXMOFxY0NASKEWTu/1Lrk/GKpOPsULt7kME5te5YzNuqZH0GgzEVJHObd8TfyenrOxlgrwE4m863zNo3LIE/jYhUyslSH5iZaLhV908gS3l4F83Vi8jSqA9tlQUbR9zTtHDUaFWeeNrz9RPfzshJlJh8S7fQbVXK48mMcae8MGfe1TFJQqgX9X703r0KmngQjV2gjhbS+FZh+WOavD6qZCwTI2gfdcVlEwjLnnaQGvO7YXnuYgXK81N+CxF+md59CXFe2Cskr9HEtWnFKkveC8OvGm/4GAxuyGFT80gU50uPH7O+Q20400yAS80biidvaoGqnZiI6oJx7pGKMQ7BnQrt1yFAOCM6up0yg6zpqNp9IATSXA2QeiNJVhd1zguGJrUR0BYvSlHNloahauYAOPvEjFGMThmGvbfKniv65X/7uXharJ0H9DXpIMgM7weFy7BjxhzV2nku94doRTI2MLxHpcWu2fURDI+kyfozlNoaw67+G9xFx1+lPcNdLhRUjr2RQH9/WmIysFLAgbxxYVWyO+2AtFeSh/JJjxJ9GAQjFgN+6coW/xQ01z2gvjV1TSfUP/V9KsZYwjquDzj/RuRPTd7v3XVmJiK6uAzexc6SqRJTYjYXGEjVks///aSBDNyM9IpL1LjzToyUcAKMdHysG/giOHQmkfEuk6+aEQTnHgAzqOljorET3ebUCycHJGC+DzuwKon9zqzIwjpx2zOQVFZQAZN7AKPF61hLio2X/MCo5HbHjadUROGGGQH2d0ASHJ5gRUWb+sZ1vzSo5yT6QYuFu88yjKX4VA81OYzTKudoz0iUB4JM282neaxLBwVuECuSKsF/p9JBDt+IpAKbouG8JvOVLcgYg1QVdrFSxr/dMRsx/nUoFJUGk3I79SMxMe+Ciayy+K4MHkqbmoyXihxOLkLs17Cggi1pIx6rLW9gdik12W0hGmZZO6FZ31y4tX+UxxPOhaUHwCuDlNFZYCqK9R+DxOe4="};
+        var ENCRYPTED_PROJECTS = {"f4c8e9544a537db1": "kmo1SSwf3BBFUDhx9eEPuRivgCsvfD2vt9hwpAigzs4+9c2nejt3wa60M5mdz/uiW5xiS7wH4iu3jjKDOv34ibTnHzc8BjMA5Pwr4yAGYcrwa6H7uko+2/+OXGsGy5HguaNn4WsDUu2z5tVH4lbIMSzQdeuRJmPuS8noFNQNKPn5dZgG/xyaPVz1rvMreX5iL3HWkLbpAxjsNc66VP2f4rSFq7HJ6l6Xbfkia1P1eM/jJyv+Hynqu4oaLpCGo5X6zh9oknSeIBrQbqRdDn9Si7vc0gBr+dDL2ZIEnt6ezdyZfq43BbFjJBn0ORnw++QXQom5/5LJjX35iv05ykXwI5QdhWKiHH8IVnMEzyRm3xpGA5IgDCMs5Pw70UO/OilLmgQdmvnNH7UVRrTjh6sbZdcetodJIFeEyUzR7ikW6fxZzR0KtHpe3dVugaL4WjfTO/LYOkMUidB6jc4GAsu5suHMOndVofnIpeqF8ANj8UEXCJjsDlztuHGs3Lg6CGZtuunZWVZiAaOkU4BA6hPObTLlhyDGf4r/3gRlPC49bGuKlSyVvrTAvqajABwUPcFutIix1Oz3utSVDd5oTyaAioZW/blS/PJcVLKb+Oh//uflKf9KCHS0KKChX0l6ImHuw7Jze0VkafEz9a9qYH61QJPsNlRy09zTRyIKqtkq1LPVCJpXcHdh3M7t3tPxPrlV2qYnrs6aJfcIZBXa+mfCyZrUe960H7fYg0fuhiWnUUhVM3MnrNggtp8NTM8QdbbYHezqIe3Ux/XVgNlDsZR3opgvPxqaqqLITq1A2xj64l8LlJE=", "954a66f8dcda60ce": "UQCqZBjp2OhYI2e0yoPoWUrJIZH5RjflGK7p/W0OuGWd3x2ILunTVdjIJkznd8CGLHf83EHoc/5rf8063nCQiPtPsd8TaL6C968nx3h5socQrNK4eJVaPIU3C5HSDIX5mtpJR0wTMG0CImHPhdqXi9Uwg1ZorcVcNyhe4CVzofFtRTmxtf9kIZXsNtBKoiORb4zwfWQOBnfK7ZZ25THtonky2cbqv3Xh5PeT5kSszBXvVTJVlR5jkWSwQsdPXrJAyH6yBcF+PpIX+9zvIPVwhm1efa/cqwr806+FUmLZOFcSuAV1d9eNVZIylay6UpfApbnL+kEy92MAb5Uqq8KzXTZjlLMeRqo1ZzAJuvkHSwcol1F/T2sFcBl0hculjIHRJqL+QNYdP9KvekHXmoqRdKEK8RtdqEg7B8Nb43iEDm8tsjBVjgzxDBoSbm8ZT4IhHtIOZMpsvMIHVtGvllaTRc0EP2kiIx5tub6NLotdcUssinjAMd2R3oOTevJ5RKwcBBDcyjCFTFMr6lWShc16koRdCb4M0ZXKPxiUc9hpIAVVNeoFtOtiFw45Jzd4ULMjFEtVUAwV72eag91JzR7N6Lfv0oq11DBXrr5u9FMsZlRubDPkNnF1I0r36s1+k5HiMMYXsmxjauELwLOX1Q6NITr0z749+bHJXBLCbEDpWvg11oi8y4irs6x99HLrOIvEOBF3gvsTi9T9qt1BGxJKwITa4prr0tJMepxQGaOIpJe4y65NzV51gC5IjtXkMJd8DXtamXvcGA=="};
+        var ENCRYPTED_ROLES = {"118680224f672907": "SWkJB2qF8QvWw0cuNPH6qcowQPbOZQXW6zBMXWjQSbJn7Em27X2S00mbdvq1LfYRBbKghwwPtLj/rQvjl0lmn+QAfnqLdGr/4KbEXLjzlpwW4rFvUpretk+wzilMG5fR0Aa5U2Gv3HMk/Kz4k7RGgVv/yigasQ0MBmn+okYFnuY3A0uNWFkR9O0vXWe7pKcsjq1DMr8hS+Yk4SKFg8pp2Zb1oV9As2QTx9CrMy+1yJy46Ra34JcJTS0AX9cxQTQgR9cB0CEDHOyJwRH1RtCjwMHcLHbzbFz5kjMsd4w63nkl3MYhjHsrVk+EGisbW15cX9I0/TdKgOFIWLb43SDtlhXGxsqhz4M4Kg4jNxPIg7k5v1PgR36ViPVNetl7NT7DsiGkfJnCtnXoGJPcTPSJGMclrrwVdXMNZs5ZBDk9/2CJQD8HhVtDVSZibBrj2ZxUzo0GtaKUE+XxGdvw+j+K2BZunfk/8znxYo++Oz33gzPgHhc8KOZiPK7H9Vgst1mHSr6xJqPvXle1LpLlfzBd0ll4j8cCcNJkW5sJy6B9dEpmx9x9droD+2fAlCE4y3oBIMehwmCnJXVDhWn6YflM3w9FNeHH7ZR/CCO5PnzapYzLV1hdK4Z1KcoQeX0wyiaTKOcH7KOqk6BnxS8WA8qxY8TV7ExJ5silCM6LEVCSKP7EQxmT6C+rC6oPM/hFoQWE5oy3GGT9c8VwCcj4b2B4t4tj3WhrPfp2zUmJKwl8u9yC60F7fnzQq1YgnstI/ZwsxpaXLSQr2E0gPLEau4bpLgxZnZ1sLvwYvvTaEVDzxQeVRElhg+eG9MJi6mzgRo5be5inRV+V4xpzQaD4w/dNsINBC1TqbPCWbtPPIPGnD88Ci/M6Utuc5TUEF5c9bnwG+6hLkiHvVYzReGxCLB4aYjZhn5BiU1Aa1gap3DZzQTP3NQ5/5MQQxV29Gb0dLWGgIv1RGwz+yu1+o5fOlETmNzO7ddJOaCtBZJIHFsvN6mSCD04H+rYjQdyuw3lvXB0qgefyCFR4RySNX55LH0ge3K8QwKKB8Lf0opI1CfhGqw1Vw9XG3pdwOqzMCcM5+F7hmDDbxwTIg4jWuEzUiM6H/hIojuzqFQ155/7g0VLkEHjvrq8KJMKPm5iSvd086pFp1R7HdeSnAQ3Yw14QqhHMr+rv3E1IG44JEozopcXKhmHPsZtRrQAgSvCcORXa0dikJ2/17zbpiUoQ/OelXUvFfxXTGKbMbJTqJinMFYLgjK6SLpVyzoAds3hpwrPKBjrZsDyjnvux1XgikRj4uoVvetwAuP4ccC7Wxi2sHSfaLj4yweMvQNR6c7SF/m+E1XI84IOrMKcv0qXRWT3r99iOq0R1R2/eODBuFyBcOumu7K9lxxapJsLhhRWJjuvklebAeDbBt2va03k8RFcxSUvMpybxTrY=", "a207c52db956f08c": "t0amKj3xA5tDR2j5yT4vUvWKARBK8NAHEYkvQ1F9qjmCcVeuY2/q3N1en8yqTL1U87aU1aAzFjeq5JThBp+85SxWBY+pQUe0wje4oLVFMP4WSFOBwiE//zWwARYhifFJLFoRxY8RUBNJDftMndHbto8jepv0SETN+9/JcBEcmVLZ1lRNh2jcSEU8w5jUYTUv/pZYh30FLgAyL9/G/Y1I5Te3W8UN1rGKAexYI2RBwMLaQbPPY4GafIJeM7VohswDabNKvjrOEbNZKf3XV+k48hxOhp6fXOZ9qO7H8dfgGT/fFoXxskYmpqichvJgw5IEQUCXQJrsTry8lclthG6kSrXoXqG+SMY0ijk0x/S4pd3KEJzIAuQ/aYGlL7EWGGvpHUA9tC8d8pTZaaEgi6zCJDsOcODaQiRXWvQKs8Y5UbNWx5jQm4c74M9NLqj8N/JzNAYu0li+yKk5hNexOma+3AUi6Bjl41S/b5ae4U9XOevct1AQwB7lAei8attSG0NpjtA2oU9TZoVXCTKtM2HDkaOs9oQdv2jrVJcFHz1gy4WjCtEMjED0j2Ef16/izE7NTZoAVRiar3SY0BmfOoTxZEakN71fKeNXMj9+DQarg1+nblC6LgNKwSewYFSCXERBK/VPaJcE0wToIdQMQNQ1rLTwyLgIsoZlebaDesncATm57fMDSd7L2CQxbr89inzZRV75oSng7fiykW2/UBKQGWHTCSPKLglddjv8UFNKCA3dQhVwHssFXpOazauCr7blLm0d5eg+iJaJZpUH5bnZe/fQvGEGIUQKYlSRH4DoGbTO9Gd0oVDPTehDOCsxCqrP7XAqu3L/vHmSvxYvpijIjZFJCh3yO9hZw+lSLiyIt5beoKSoTiUSqstAJlu6pti0/tBAXnfA9LnMJtv1Kn650R6jyUWv7piX8y5Cw7/KhKepq3R3xeXUfXDDTfCIe7bN0/91PLih3xkspRGjNIZweR+cow==", "8c6976e5b5410415": "jUZGZhNtEZhxHr7MsF+dmVvzeMTO2fImClI4oCQAQu6idJZXWb0xW6uoGz2amxrQx/MkPEj83q9ioW6+8/Pmi2yuiHHBB+Lo+XuoYy2sUCIqJD2x9xZCV6w2GZM/QD5C9Azf6LlJRXAHsmYlRWLa6ialI2B+GfZM480YBsnxFJoJGXW+5oOxkqPPoCXpEKDC7zVaVHJ8Rt1qSf4hAv7YaUHHcrOGUXpil8tPMYppRf2GC/geqmL+2CMYu+M2+39JO093lElZRd2DUnQekBRNkNhtzNnBmvQ6I6PEfpXb1iJz16J1sxSyEZSrTLAXCDCVY4SCTIX6P6TpGKo7RoP/zy1pcEUSm5ifDJPilhZF2kVmFJhJYeKj+j98zVXMkCwLHosSo7yX57weogfKZvbA6QIowlUXNeQda2NB7He1394wbi0Ju52SbzNKfUOvekCEm2oU7FBqC25emB8LEfPdZRQsi7yl2PH1637H8xuAh9ehMudm0hbhit5lbRUJFI1Tg3QbB5o+hp2fVcT0CwjiTYuzL6/SIQgh9XtCZ/sXa8axmTUjwBNVSgGdA4q2jyJKdAyfuS7cqmz7MAhltbXJxGCUXP8tjwMJO3RiBOZVcUf0YqmvKJvJFrOqHch1Tqaq7ID7GG4ac3hCTRrrzvCyUp3CgMwUZvvN2qIm+o1ZimBN7qr359DW8eB2VqCXPjFjH5Tm0XZPPxT80oqKFmLPMcoOdpk9GYVWCN6PngRUfgVzkm2ZjG2Td7VMDIu3ZTilY71gvrwkVPxlG1spQMPTbtW1d8VV2qCNeiH3/tgWgZxgEyXFKVk/6+4BL7jqnlH1Wtn3bJtbi2hgha5WYeLp/pQvCS6IB7kQG3LYQaSrv6uDo2ZN0qQIr1JK8xXtJNPKKOIfSBZ7cKNHH48R4OAqRRMSXeI5C6RIhtPmunyrnE25mg8uRy0AXBRmKqLH98pwTUfWnMwkltq7QJW2gklB8IbSiDadKMW/PdzlNgTu5Veo/bqSL8MlnV6Q+oQE8t+UmBrFDWHHgyBe7qUQfP3jPVviUIuCv0Phvro7zM4Tm3RLTNaQ306WvW9n9BMieCVIdVivv370Oa2XKZutaMGrbpMzShNeOrA24T3vykUwlYqhOnrlX9ozDUxRGKiAK9/A3yvXNsv8f8mACImJbzPmpD9sYaB61LheGCCxxSs66Ho1Os1goGQ8zqgy1amLY3aCKWWE3GpAlXch3rhn8uL/E/qeChfb5ZiK4b7hvZb8xvxfxGdqFFkvw6c3l2AgezT6c89VY0cr5DFJE+deZ2F1lZ0ftUBJKggTxjxnIrtvll+njbId+Q7djEbw+0qCR46YdUo+FwFeJ8HTeLMCfbMafh41XIMRI9fj2U37eGkYTriDN//aicTLSP5SkitpGgOYKsRaVTjbKefPJwwmNItQPMg="};
         var PBKDF2_ITERATIONS = 400000;
 
         // ── Decrypted state (memory-only, never persisted) ──
@@ -2174,6 +2193,37 @@
             return card;
         }
 
+        // ── Build WhatsApp reminder message for unfixed corrections ──
+        function buildReminderMessage(projects, entries) {
+            var groups = {};
+            var projectSlugs = Object.keys(projects);
+            projectSlugs.forEach(function(slug) {
+                var proj = projects[slug];
+                var projEntries = entries.filter(function(e) {
+                    return e.project.toLowerCase() === proj.name.toLowerCase();
+                });
+                var unfixed = projEntries.filter(function(e) {
+                    return e.type === 'correction' && !e.fixed;
+                });
+                if (unfixed.length > 0) {
+                    groups[proj.name] = unfixed;
+                }
+            });
+
+            if (Object.keys(groups).length === 0) return null;
+
+            var msg = 'Hi bro,\n\nPending corrections update:\n';
+            Object.keys(groups).forEach(function(name) {
+                msg += '\n' + name + ':\n';
+                groups[name].forEach(function(c) {
+                    var ts = c.timestamp ? '[' + c.timestamp + '] ' : '';
+                    msg += '\u2022 ' + ts + c.content + '\n';
+                });
+            });
+            msg += '\nCould you check on these when you get a chance?';
+            return msg;
+        }
+
         // ── Editor Dashboard (role-filtered) ──
         function buildEditorDashboard(role, data) {
             var container = document.getElementById('editor-content');
@@ -2189,6 +2239,25 @@
                 refreshBtn.addEventListener('click', function() { buildEditorDashboard(role, data); });
                 refreshDiv.appendChild(refreshBtn);
                 container.appendChild(refreshDiv);
+
+                // Send Reminder button (WhatsApp unfixed corrections)
+                var reminderMsg = buildReminderMessage(data.projects, entries);
+                if (reminderMsg) {
+                    // Find editor phone from first project
+                    var firstSlug = Object.keys(data.projects)[0];
+                    var editorPhone = firstSlug ? (data.projects[firstSlug].editor_phone || data.projects[firstSlug].photo_editor_phone) : '';
+                    if (editorPhone) {
+                        var reminderBtn = el('button', {className: 'btn-reminder', textContent: '\uD83D\uDCF2 Send Reminder via WhatsApp'});
+                        reminderBtn.addEventListener('click', function() {
+                            var waUrl = 'https://wa.me/' + editorPhone + '?text=' + encodeURIComponent(reminderMsg);
+                            if (isAllowedUrl(waUrl)) {
+                                var a = el('a', {href: waUrl, target: '_blank', rel: 'noreferrer noopener'});
+                                a.click();
+                            }
+                        });
+                        container.appendChild(reminderBtn);
+                    }
+                }
 
                 // Projects come pre-filtered from decrypted blob
                 var projectSlugs = Object.keys(data.projects);
@@ -2237,6 +2306,37 @@
                 refreshBtn.addEventListener('click', function() { buildAdminDashboard(data); });
                 refreshDiv.appendChild(refreshBtn);
                 container.appendChild(refreshDiv);
+
+                // Per-editor reminder buttons
+                var editorProjects = {};
+                Object.keys(data.projects).forEach(function(slug) {
+                    var proj = data.projects[slug];
+                    var editors = [];
+                    if (proj.editor && proj.editor_phone) editors.push({name: proj.editor, phone: proj.editor_phone});
+                    if (proj.photo_editor && proj.photo_editor_phone) editors.push({name: proj.photo_editor, phone: proj.photo_editor_phone});
+                    editors.forEach(function(ed) {
+                        if (!editorProjects[ed.name]) editorProjects[ed.name] = {phone: ed.phone, projects: {}};
+                        editorProjects[ed.name].projects[slug] = proj;
+                    });
+                });
+
+                Object.keys(editorProjects).forEach(function(edName) {
+                    var edInfo = editorProjects[edName];
+                    var msg = buildReminderMessage(edInfo.projects, entries);
+                    if (msg && edInfo.phone) {
+                        var btn = el('button', {className: 'btn-reminder', textContent: '\uD83D\uDCF2 Remind ' + edName});
+                        btn.addEventListener('click', (function(phone, message) {
+                            return function() {
+                                var waUrl = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(message);
+                                if (isAllowedUrl(waUrl)) {
+                                    var a = el('a', {href: waUrl, target: '_blank', rel: 'noreferrer noopener'});
+                                    a.click();
+                                }
+                            };
+                        })(edInfo.phone, msg));
+                        container.appendChild(btn);
+                    }
+                });
 
                 // Collect unique editor names and status values for filters
                 var editorNames = {};
