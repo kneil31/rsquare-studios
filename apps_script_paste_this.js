@@ -184,6 +184,48 @@ function doPost(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // ── Booking request from quote builder ──
+  if (type === "booking") {
+    var ss3 = SpreadsheetApp.getActiveSpreadsheet();
+    var bookingSheet = ss3.getSheetByName("Bookings");
+    if (!bookingSheet) {
+      bookingSheet = ss3.insertSheet("Bookings");
+      bookingSheet.appendRow(["Name", "Event", "Date", "Hours", "Coverage", "Quote", "Live Streaming", "Location", "Submitted", "Status"]);
+    }
+    bookingSheet.appendRow([
+      p.name || "",
+      p.event || "",
+      p.date || "",
+      p.hours || "",
+      p.coverage || "",
+      p.quote || "",
+      p.live_streaming || "No",
+      p.location || "",
+      new Date(),
+      "new"
+    ]);
+
+    try {
+      var subject = "[Rsquare] New Booking Request — " + (p.name || "Unknown");
+      var body = "New booking request from the website!\n\n" +
+                 "Client: " + (p.name || "") + "\n" +
+                 "Event: " + (p.event || "") + "\n" +
+                 "Date: " + (p.date || "TBD") + "\n" +
+                 "Location: " + (p.location || "") + "\n" +
+                 "Hours: " + (p.hours || "") + "\n" +
+                 "Coverage: " + (p.coverage || "") + "\n" +
+                 "Live Streaming: " + (p.live_streaming || "No") + "\n" +
+                 "Quote: " + (p.quote || "") + "\n\n" +
+                 "Submitted: " + new Date().toLocaleString() + "\n";
+      MailApp.sendEmail({ to: FEEDBACK_EMAIL_RAM, subject: subject, body: body });
+    } catch(err) { Logger.log("Booking email failed: " + err); }
+
+    return ContentService.createTextOutput(JSON.stringify({
+      status: "ok", message: "Booking request saved"
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // ── Default: Review submission ──
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Reviews");
   sheet.appendRow([
     p.name || "",

@@ -121,6 +121,7 @@ _feedback_secrets = _load_feedback_secrets()
 
 REVIEW_FORM_URL = _dashboard_secrets["review_form_url"]
 RAM_PHONE = _dashboard_secrets["ram_phone"]
+BOOKING_SCRIPT_URL = _dashboard_secrets.get("booking_script_url", "")
 
 # Passwords loaded from .secret file or env vars (never hardcoded)
 def _load_passwords():
@@ -1081,6 +1082,7 @@ def generate_html():
         },
         "liveStreamingCost": 100,
         "reviewFormUrl": REVIEW_FORM_URL,
+        "bookingScriptUrl": BOOKING_SCRIPT_URL,
         "ramPhone": RAM_PHONE,
     }
 
@@ -1724,6 +1726,7 @@ def generate_html():
             font-family: inherit;
             -webkit-appearance: none;
         }}
+        .form-input[type="date"] {{ -webkit-appearance: auto; appearance: auto; cursor: pointer; }}
         .form-input:focus, .form-select:focus {{ border-color: #8b5cf6; }}
         .form-input::placeholder {{ color: #3d3d3d; }}
         .form-select {{ cursor: pointer; }}
@@ -4068,7 +4071,9 @@ def generate_html():
             const inline1 = makeEl('div', 'form-row-inline');
             const dateRow = makeEl('div', 'form-row');
             dateRow.appendChild(makeEl('label', 'form-label', 'DATE'));
-            dateRow.appendChild(makeInput('q-date', 'date', ''));
+            const dateInp = makeInput('q-date', 'date', '');
+            dateInp.addEventListener('click', function() {{ try {{ this.showPicker(); }} catch(e) {{}} }});
+            dateRow.appendChild(dateInp);
             inline1.appendChild(dateRow);
             const hoursRow = makeEl('div', 'form-row');
             hoursRow.appendChild(makeEl('label', 'form-label', 'HOURS OF COVERAGE'));
@@ -4103,8 +4108,7 @@ def generate_html():
             liveRow.appendChild(liveLabel);
             form.appendChild(liveRow);
 
-            // Estimate + Retainer (inline)
-            const inline3 = makeEl('div', 'form-row-inline');
+            // Estimated Investment
             const estRow = makeEl('div', 'form-row');
             estRow.appendChild(makeEl('label', 'form-label', 'ESTIMATED INVESTMENT'));
             const quoteInput = document.createElement('input');
@@ -4113,12 +4117,7 @@ def generate_html():
             quoteInput.readOnly = true;
             Object.assign(quoteInput.style, {{ color: '#8b5cf6', fontWeight: '700' }});
             estRow.appendChild(quoteInput);
-            inline3.appendChild(estRow);
-            const retRow = makeEl('div', 'form-row');
-            retRow.appendChild(makeEl('label', 'form-label', 'RETAINER'));
-            retRow.appendChild(makeInput('q-deposit', 'text', 'e.g. $100'));
-            inline3.appendChild(retRow);
-            form.appendChild(inline3);
+            form.appendChild(estRow);
 
             el.appendChild(form);
 
@@ -4130,15 +4129,13 @@ def generate_html():
 
             // Buttons
             const btnRow = makeEl('div', 'btn-row');
-            const copyBtn = makeEl('button', 'copy-btn', '\U0001f4cb Copy to Clipboard');
+            const bookBtn = makeEl('button', 'share-wa-btn', 'Request Booking');
+            bookBtn.id = 'request-booking-btn';
+            bookBtn.style.background = '#8b5cf6';
+            btnRow.appendChild(bookBtn);
+            const copyBtn = makeEl('button', 'copy-btn', '\U0001f4cb Copy Quote');
             copyBtn.id = 'copy-quote-btn';
             btnRow.appendChild(copyBtn);
-            const waBtn = makeEl('a', 'share-wa-btn', '\U0001f4ac Share via WhatsApp');
-            waBtn.id = 'wa-share-btn';
-            waBtn.href = '#';
-            waBtn.target = '_blank';
-            waBtn.rel = 'noreferrer noopener';
-            btnRow.appendChild(waBtn);
             el.appendChild(btnRow);
 
             // Confirmation
@@ -4146,7 +4143,7 @@ def generate_html():
             conf.id = 'booking-confirmation';
             Object.assign(conf.style, {{ display: 'none', marginTop: '20px', padding: '20px', background: '#1a2e1a', border: '1px solid #2d4a2d', borderRadius: '12px', textAlign: 'center' }});
             conf.appendChild(setStyle(makeEl('div', null, '\u2713'), {{ fontSize: '24px', marginBottom: '8px' }}));
-            conf.appendChild(setStyle(makeEl('div', null, 'Quote sent!'), {{ fontSize: '16px', fontWeight: '600', color: '#10b981', marginBottom: '6px' }}));
+            conf.appendChild(setStyle(makeEl('div', null, 'Booking request received!'), {{ fontSize: '16px', fontWeight: '600', color: '#10b981', marginBottom: '6px' }}));
             const confMsg = makeEl('div');
             Object.assign(confMsg.style, {{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.6' }});
             confMsg.appendChild(document.createTextNode("I'll confirm availability and get back to you within 24 hours."));
@@ -5124,7 +5121,6 @@ def generate_html():
             const location = document.getElementById('q-location').value || '___';
             const dateVal = document.getElementById('q-date').value;
             const shootType = document.getElementById('q-shoottype').value;
-            const deposit = document.getElementById('q-deposit').value || '___';
             const hasLive = document.getElementById('q-live').checked;
 
             let dateDisplay = '___';
@@ -5188,15 +5184,15 @@ def generate_html():
             preview.appendChild(qSection([
                 qEl('div', 'quote-section-title', 'Pricing'),
                 totalRow,
-                qRow('Retainer', deposit),
-                qEl('div', 'quote-note', 'Rest due on event day'),
             ]));
 
-            // What You Get
+            // What You Get (conditional on package type)
             const whatNote = qEl('div', 'quote-note');
             whatNote.appendChild(document.createTextNode('\u2022 All edited pictures \u2014 ready in 12\u201315 days'));
-            whatNote.appendChild(document.createElement('br'));
-            whatNote.appendChild(document.createTextNode('\u2022 Cinematic teaser (4\u20136 min) \u2014 ready in 3\u20134 weeks'));
+            if (svcKey !== 'photo_only') {{
+                whatNote.appendChild(document.createElement('br'));
+                whatNote.appendChild(document.createTextNode('\u2022 Cinematic teaser (4\u20136 min) \u2014 ready in 3\u20134 weeks'));
+            }}
             preview.appendChild(qSection([qEl('div', 'quote-section-title', 'What You Get'), whatNote]));
 
             // How You Get Your Photos
@@ -5226,12 +5222,9 @@ Hours: ${{hours || '___'}}${{hasLive ? '\\nLive Streaming: Yes (+$' + liveCost +
 
 *Pricing*
 Total: ${{quote}}
-Retainer: ${{deposit}}
-Rest due on event day
 
 *What You Get*
-• All edited pictures — ready in 12–15 days
-• Cinematic teaser (4–6 min) — ready in 3–4 weeks
+• All edited pictures — ready in 12–15 days${{svcKey !== 'photo_only' ? '\\n• Cinematic teaser (4–6 min) — ready in 3–4 weeks' : ''}}
 
 *How You Get Your Photos*
 You'll get a private gallery link. Download all pics at once from desktop — email with the download link usually takes 15–30 min. Link works for 3 months so grab them soon!
@@ -5268,8 +5261,67 @@ Looking forward to it! 🙌
             const encoded = encodeURIComponent(text);
             const waUrl = 'https://wa.me/?text=' + encoded;
             if (isAllowedUrl(waUrl)) window.open(waUrl, '_blank');
-            const conf = document.getElementById('booking-confirmation');
-            if (conf) conf.style.display = 'block';
+        }}
+
+        var _bookingCooldown = false;
+        function submitBooking(e) {{
+            e.preventDefault();
+            if (_bookingCooldown) return;
+            const url = _appConfig ? _appConfig.bookingScriptUrl : '';
+            if (!url) {{
+                showToast('Booking is not configured yet.');
+                return;
+            }}
+            const nameEl = document.getElementById('q-name');
+            const eventEl = document.getElementById('q-event');
+            const name = nameEl ? nameEl.value.trim() : '';
+            const event = eventEl ? eventEl.value : '';
+            if (!name || !event) {{
+                showToast('Please fill in your name and event type.');
+                return;
+            }}
+            const btn = document.getElementById('request-booking-btn');
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+            _bookingCooldown = true;
+
+            const svcSel = document.getElementById('q-services');
+            const svcText = svcSel ? svcSel.options[svcSel.selectedIndex].text : '';
+            const liveCb = document.getElementById('q-live');
+            const dateEl = document.getElementById('q-date');
+            const hoursEl = document.getElementById('q-hours');
+            const quoteEl = document.getElementById('q-quote');
+            const locEl = document.getElementById('q-location');
+
+            var formBody = new URLSearchParams();
+            formBody.append('type', 'booking');
+            formBody.append('name', name);
+            formBody.append('event', event);
+            formBody.append('date', dateEl ? dateEl.value : '');
+            formBody.append('hours', hoursEl ? hoursEl.value : '');
+            formBody.append('coverage', svcText);
+            formBody.append('quote', quoteEl ? quoteEl.value : '');
+            formBody.append('live_streaming', liveCb && liveCb.checked ? 'Yes' : 'No');
+            formBody.append('location', locEl ? locEl.value.trim() : '');
+
+            fetch(url, {{
+                method: 'POST',
+                body: formBody
+            }}).then(function() {{
+                const conf = document.getElementById('booking-confirmation');
+                if (conf) conf.style.display = 'block';
+                btn.textContent = 'Request Sent';
+                setTimeout(function() {{
+                    _bookingCooldown = false;
+                    btn.disabled = false;
+                    btn.textContent = 'Request Booking';
+                }}, 5000);
+            }}).catch(function() {{
+                showToast('Something went wrong. Please try again.');
+                _bookingCooldown = false;
+                btn.disabled = false;
+                btn.textContent = 'Request Booking';
+            }});
         }}
 
         /* Review form submission */
@@ -5378,11 +5430,11 @@ Looking forward to it! 🙌
             el.addEventListener(eventType, updateQuote);
         }});
 
-        // Group 6: Copy quote + Share WA (inside encrypted content — bind after decryption too)
+        // Group 6: Copy quote + Request Booking (inside encrypted content — bind after decryption too)
         var copyBtn = document.getElementById('copy-quote-btn');
         if (copyBtn) copyBtn.addEventListener('click', copyQuote);
-        var waBtn = document.getElementById('wa-share-btn');
-        if (waBtn) waBtn.addEventListener('click', function(e) {{ shareQuoteWA(e); }});
+        var bookBtn = document.getElementById('request-booking-btn');
+        if (bookBtn) bookBtn.addEventListener('click', function(e) {{ submitBooking(e); }});
 
         // Group 7: Checklist checkboxes (delegated — works after decryption injects them)
         document.addEventListener('change', function(e) {{
@@ -5398,8 +5450,8 @@ Looking forward to it! 🙌
             if (resetBtn2) resetBtn2.addEventListener('click', resetChecklists);
             var copyBtn2 = document.getElementById('copy-quote-btn');
             if (copyBtn2) copyBtn2.addEventListener('click', copyQuote);
-            var waBtn2 = document.getElementById('wa-share-btn');
-            if (waBtn2) waBtn2.addEventListener('click', function(e) {{ shareQuoteWA(e); }});
+            var bookBtn2 = document.getElementById('request-booking-btn');
+            if (bookBtn2) bookBtn2.addEventListener('click', function(e) {{ submitBooking(e); }});
             // Re-bind quote builder inputs
             document.querySelectorAll('[data-quote-input]').forEach(function(el) {{
                 var eventType = (el.tagName === 'SELECT' || el.type === 'checkbox') ? 'change' : 'input';
