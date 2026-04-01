@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta property="og:title" content="Rsquare Studios — Video Highlights">
+    <meta property="og:description" content="Cinematic highlight reels from weddings, baby showers & celebrations">
+    <meta property="og:image" content="https://portfolio.rsquarestudios.com/hero.jpg">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'nonce-82793126361eeec03ad0bb09f67b1622'; style-src 'unsafe-inline'; img-src https://img.youtube.com data:; font-src 'none'; frame-src 'none'; base-uri 'none';">
+    <title>Rsquare Studios — Videos</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #191919; color: #e0e0e0; min-height: 100vh; }
+        .container { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
+        .header { text-align: center; margin-bottom: 32px; padding-top: 20px; }
+        .header h1 { font-size: 28px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+        .header p { font-size: 14px; color: #6b7280; margin-top: 6px; }
+        .expired { display: none; text-align: center; padding: 80px 20px; }
+        .expired h2 { font-size: 22px; color: #fff; margin-bottom: 12px; }
+        .expired p { color: #6b7280; font-size: 14px; }
+        #content { display: none; }
+        .page-title { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 6px; letter-spacing: -0.5px; }
+        .page-meta { font-size: 14px; color: #6b7280; margin-bottom: 32px; }
+        .video-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .video-card { text-decoration: none; color: inherit; border-radius: 12px; overflow: hidden; background: #252525; transition: transform 0.2s, box-shadow 0.2s; }
+        .video-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(139,92,246,0.2); }
+        .video-thumb { position: relative; aspect-ratio: 16/9; background-size: cover; background-position: center; }
+        .video-play { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 48px; height: 48px; background: rgba(0,0,0,0.7); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff; }
+        .video-duration { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.8); color: #fff; font-size: 11px; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+        .video-title { padding: 10px 12px; font-size: 13px; font-weight: 600; color: #e0e0e0; line-height: 1.3; }
+        .channel-link { display: block; text-align: center; margin-top: 24px; color: #8b5cf6; text-decoration: none; font-size: 14px; }
+        .channel-link:hover { text-decoration: underline; }
+        .footer { text-align: center; padding: 40px 0 20px; font-size: 13px; color: #525252; }
+        .footer a { color: #8b5cf6; text-decoration: none; }
+        @media (max-width: 768px) {
+            .video-grid { grid-template-columns: 1fr; gap: 12px; }
+            .video-play { width: 40px; height: 40px; font-size: 16px; }
+            .video-title { font-size: 14px; padding: 8px 10px; }
+            .page-title { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Rsquare Studios</h1>
+            <p>Cinematic highlight reels &amp; teasers &mdash; Dallas, TX</p>
+        </div>
+        <div class="expired" id="expired">
+            <h2>This link has expired</h2>
+            <p>Please request a new link from Rsquare Studios.</p>
+        </div>
+        <div id="content"></div>
+        <div class="footer" id="footer" style="display:none;">
+            Rsquare Studios &middot; Dallas, TX<br>
+            <a href="https://portfolio.rsquarestudios.com/" rel="noreferrer noopener">portfolio.rsquarestudios.com</a>
+        </div>
+    </div>
+    <script nonce="82793126361eeec03ad0bb09f67b1622">
+        if (top !== self) { top.location = self.location; }
+        const ENCRYPTED_BLOB = "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";
+        const PBKDF2_ITERATIONS = 400000;
+        const ALLOWED_HOSTS = ['www.youtube.com', 'youtube.com', 'youtu.be', 'img.youtube.com'];
+
+        function isAllowedUrl(url) {
+            try {
+                var parsed = new URL(url);
+                if (parsed.protocol !== 'https:') return false;
+                return ALLOWED_HOSTS.some(function(h) { return parsed.hostname === h || parsed.hostname.endsWith('.' + h); });
+            } catch(e) { return false; }
+        }
+
+        async function deriveKey(password, salt) {
+            var enc = new TextEncoder();
+            var keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+            return crypto.subtle.deriveKey(
+                { name: 'PBKDF2', salt: salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+                keyMaterial, { name: 'AES-GCM', length: 256 }, false, ['decrypt']
+            );
+        }
+
+        async function decryptContent(password, blob) {
+            var raw = Uint8Array.from(atob(blob), function(c) { return c.charCodeAt(0); });
+            var salt = raw.slice(0, 16);
+            var iv = raw.slice(16, 28);
+            var ciphertext = raw.slice(28);
+            var key = await deriveKey(password, salt);
+            var decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: iv }, key, ciphertext);
+            return new TextDecoder().decode(decrypted);
+        }
+
+        function makeEl(tag, cls, text) {
+            var el = document.createElement(tag);
+            if (cls) el.className = cls;
+            if (text) el.textContent = text;
+            return el;
+        }
+
+        (async function() {
+            var params = new URLSearchParams(window.location.search);
+            var key = params.get('k');
+            var ts = parseInt(params.get('t') || '0', 10);
+
+            if (key) { window.history.replaceState(null, '', window.location.pathname); }
+
+            var now = Math.floor(Date.now() / 1000);
+            if (!key || !ts || (now - ts) > 172800) {
+                document.getElementById('expired').style.display = 'block';
+                return;
+            }
+
+            try {
+                var plaintext = await decryptContent(key, ENCRYPTED_BLOB);
+                var data = JSON.parse(plaintext);
+                var vData = data['videos'];
+                var el = document.getElementById('content');
+                el.style.display = 'block';
+                document.getElementById('footer').style.display = 'block';
+
+                el.appendChild(makeEl('h1', 'page-title', vData.title));
+                el.appendChild(makeEl('div', 'page-meta', vData.subtitle));
+
+                var videoGrid = makeEl('div', 'video-grid');
+                (vData.videos || []).forEach(function(v) {
+                    var ytUrl = 'https://www.youtube.com/watch?v=' + v.id;
+                    var thumbUrl = 'https://img.youtube.com/vi/' + v.id + '/hqdefault.jpg';
+                    if (!isAllowedUrl(ytUrl)) return;
+                    var card = document.createElement('a');
+                    card.href = ytUrl;
+                    card.target = '_blank';
+                    card.rel = 'noreferrer noopener';
+                    card.className = 'video-card';
+                    var thumb = makeEl('div', 'video-thumb');
+                    thumb.style.backgroundImage = "url('" + thumbUrl + "')";
+                    thumb.appendChild(makeEl('div', 'video-play', '▶'));
+                    thumb.appendChild(makeEl('div', 'video-duration', v.duration));
+                    card.appendChild(thumb);
+                    card.appendChild(makeEl('div', 'video-title', v.title));
+                    videoGrid.appendChild(card);
+                });
+                el.appendChild(videoGrid);
+
+                if (vData.youtube_channel && isAllowedUrl(vData.youtube_channel)) {
+                    var link = document.createElement('a');
+                    link.href = vData.youtube_channel;
+                    link.target = '_blank';
+                    link.rel = 'noreferrer noopener';
+                    link.className = 'channel-link';
+                    link.textContent = 'Watch more on YouTube →';
+                    el.appendChild(link);
+                }
+            } catch(e) {
+                document.getElementById('expired').style.display = 'block';
+            }
+        })();
+    </script>
+</body>
+</html>
