@@ -14,22 +14,24 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 
 - **Live URL:** https://portfolio.rsquarestudios.com/ (custom domain, CNAME → kneil31.github.io)
 - **GitHub Repo:** kneil31/rsquare-studios (public)
-- **Generator:** `generate_dashboard.py` → outputs `index.html`
+- **Generator:** `generate_dashboard.py` → outputs `index.html`, `photos.html`, `videos.html`
 - **Passwords:** Stored in `.secret` file (gitignored, never committed)
 
-## 3 Sections
+## 3 Sections (All Encrypted)
 
-1. **Portfolio** (client-facing) — Category tiles with cover photos linking to SmugMug galleries
+1. **Portfolio** (client-facing, password-protected) — Category tiles, gallery cards, videos, reviews, gear — all encrypted
 2. **Investment / Pricing** (client-facing, password-protected) — Hourly rate cards with interactive quote builder
 3. **Workflow Dashboard** (password-protected) — Posing guides, workflow checklists, editing reference, editing project tracker
+
+**Nothing is visible without a password or auto-unlock link.** Home page shows only a password gate.
 
 ## Key Design Decisions
 
 - **Mobile-first:** Bottom nav bar, floating WhatsApp button, large touch targets
 - **Dark theme:** Notion-inspired (#191919 background, #8b5cf6 accent purple)
 - **Hero layout:** Option D split (image left, text right) with CSS `mask-image` blend
-- **Two-level AES-256-GCM encryption:** Client and internal sections encrypted with separate passwords. No plaintext secrets in HTML source.
-- **Data-driven DOM building (no innerHTML):** Encrypted payloads contain JSON data objects; JS builds DOM at runtime
+- **Full AES-256-GCM encryption:** Portfolio, pricing, workflow — ALL content encrypted. Home page shows only password gate. No plaintext gallery data, SmugMug URLs, YouTube IDs, or client names in HTML source.
+- **Data-driven DOM building (no innerHTML):** Encrypted payloads contain JSON data objects; JS builds DOM at runtime (`buildHome`, `buildPortfolioHome`, `buildPortfolioCategory`, `buildVideos`, `buildPricing`, etc.)
 - **Cover images:** Pulled from SmugMug API (highlight images per album)
 - **Tile labels below image:** Category name and gallery count displayed below the tile image, not overlaid
 - **No external dependencies:** Single self-contained HTML file, no frameworks
@@ -38,8 +40,8 @@ Notion-style dark-themed dashboard for Rsquare Studios photography business. Hos
 
 ## My Gear Section
 
-- **Inline expandable section** on the home page
-- **Data:** `GEAR_LIST` dict in `generate_dashboard.py` — 7 categories rendered at build time
+- **Inline expandable section** on the home page (inside encrypted blob)
+- **Data:** `GEAR_LIST` dict in `generate_dashboard.py` — 7 categories, encrypted into client blob, rebuilt by `buildHome()` JS function
 - **Layout:** Collapsed by default, click to expand. 2-col grid (mobile) / 3-col (desktop)
 
 ## Cover Images (SmugMug)
@@ -83,20 +85,29 @@ python3 sync_dashboard.py --dry-run # Regenerate but don't push
 ## Security
 
 - **Three AES-256-GCM blobs** at build time (Python `cryptography` package):
-  - `ENCRYPTED_CLIENT` — pricing, booking, `__config__` (client password)
+  - `ENCRYPTED_CLIENT` — portfolio, videos, reviews, gear, hero, pricing, booking, `__config__` (client password)
   - `ENCRYPTED_INTERNAL` — workflow, checklists, posing guides, editing projects (internal password)
   - `ENCRYPTED_CLIENT_ADMIN` — same client content, encrypted with internal password (admin access)
 - **Internal password unlocks everything** — decrypts both internal and client sections in one go
-- **Client password** unlocks only client sections (pricing, booking)
-- **Auto-unlock links:** `?k=<password>&t=<timestamp>&s=pricing` — clients click and land on pricing instantly, no password gate. Query params cleared from URL bar after decryption. Links expire after 48 hours; expired links show toast, portfolio remains visible, pricing locks.
-- **3 ways to generate links:**
+- **Client password** unlocks all client sections (portfolio, videos, pricing, booking)
+- **Auto-unlock links:** `?k=<password>&t=<timestamp>&s=<section>` — clients click and land on the section instantly, no password gate. Query params cleared from URL bar after decryption. Links expire after 24 hours; expired links show toast, password gate shown.
+  - `s=home` — lands on home page (default)
+  - `s=pricing` — lands on pricing page
+  - `s=booking` — lands on quote builder / booking page
+- **Standalone page links (48h expiry):**
+  - `python3 generate_link.py photos` → all photo categories
+  - `python3 generate_link.py photos wedding` → just wedding galleries
+  - `python3 generate_link.py videos` → video highlights
+  - iOS Shortcuts: "PHOTOS LINK", "VIDEOS LINK", "WEDDING LINK" etc.
+- **4 ways to generate dashboard links:**
   - **Slack:** Type `otp` in #instagram-posts → copy-friendly message ready to forward to WhatsApp
-  - **iPhone Shortcut:** "Client Link" on home screen → SSH to Mac → share sheet to WhatsApp
+  - **iPhone Shortcut:** "CLIENT LINK" → SSH to Mac → share sheet to WhatsApp (pricing link)
+  - **iPhone Shortcut:** "Booking LINK" → SSH to Mac → share sheet to WhatsApp (booking link)
   - **Terminal:** `python3 generate_link.py` (client) or `python3 generate_link.py internal` → copies to clipboard
-- **Apple Shortcut setup:** Runs `/Users/ram/client_link.sh` via SSH over Tailscale VPN. Uses Tailscale IP (not local 192.168.x.x) so it works from anywhere (LTE, Wi-Fi, etc.). Reads `~/.r2_secret` (synced from `.secret` by `generate_otp.py`). Works with Mac locked.
+- **Apple Shortcut setup:** Runs `~/client_link.sh` or `~/booking_link.sh` via SSH over Tailscale VPN. Uses Tailscale IP (not local 192.168.x.x) so it works from anywhere (LTE, Wi-Fi, etc.). Reads `~/.r2_secret` (synced from `.secret` by `generate_otp.py`). Works with Mac locked.
 - **Passwords:** Stored in `.secret` (gitignored) + `~/.r2_secret` (SSH-safe copy for Shortcut)
-- **Password rotation:** `python3 generate_otp.py` rotates client password, regenerates dashboard, pushes to GitHub, auto-syncs `~/.r2_secret`
-- **Manual password gate:** Still works for direct visitors without the auto-unlock link
+- **Password rotation:** `python3 generate_otp.py` rotates client password (24h cycle), regenerates dashboard, pushes to GitHub, auto-syncs `~/.r2_secret`
+- **Manual password gate:** Home page has its own password gate for direct visitors without the auto-unlock link
 - **Internal/editor dashboard:** Always requires password (no auto-unlock for internal sections)
 - **Data-driven DOM building (no innerHTML):** All decrypted content rendered via `createElement`/`textContent`
 - **Safe markdown renderer:** Markdown-to-DOM converter via `createElement`/`textContent`
@@ -116,8 +127,9 @@ All secrets stored in gitignored local files:
 | File | Contains | Used by |
 |------|----------|---------|
 | `.secret` | Client + internal passwords | `generate_dashboard.py`, `generate_otp.py` |
-| `.dashboard_secrets.json` | Phone, email, Sheet IDs, Apps Script URLs | `generate_dashboard.py`, `sheets_sync.py`, `detect_new_projects.py` |
+| `.dashboard_secrets.json` | Phone, email, Sheet IDs, Apps Script URLs, booking URL | `generate_dashboard.py`, `sheets_sync.py`, `detect_new_projects.py` |
 | `.feedback_secrets.json` | Feedback passphrases, editor phones, role passwords | `generate_feedback.py` |
+| `~/.r2_secret` | Passwords + sheet_id (SSH-safe copy) | `~/client_link.sh`, `~/booking_link.sh`, `~/reminder_*.sh` |
 | `~/.smugmug_config.json` | SmugMug API key, secret, OAuth tokens | `fetch_*.py` scripts |
 | `~/.megarc` | MEGA account credentials | `detect_video_projects.py` |
 
@@ -146,6 +158,35 @@ All secrets stored in gitignored local files:
 - **Config:** Project registry, passphrases, editor info all in `.feedback_secrets.json`
 - **Server-side PIN validation:** `feedback_update` and `feedback_notify` require valid project PIN (verified by Apps Script)
 - **POST rate limiting:** 5-second cooldown on all form submissions (client-side)
+
+## Quote Builder Booking
+
+- **Flow:** Client fills quote builder → clicks "Request Booking" → POSTs to Apps Script → row in "Bookings" tab + email to Ram
+- **Apps Script handler:** `type=booking` in `doPost()` (same deployment as reviews/feedback)
+- **Sheet columns:** Name, Event, Date, Hours, Coverage, Quote, Live Streaming, Location, Submitted, Status
+- **Auto-creates tab:** If "Bookings" tab doesn't exist, Apps Script creates it with headers
+- **Rate limiting:** 5-second cooldown prevents double submission
+- **Config:** `bookingScriptUrl` in encrypted `__config__` blob (from `booking_script_url` in `.dashboard_secrets.json`)
+- **iPhone Shortcut:** "Booking LINK" → SSH `~/booking_link.sh` → share sheet. Generates `?s=booking` link that auto-unlocks and lands on quote builder
+
+## Editor Reminders (iPhone Shortcuts)
+
+- **Scripts:** `~/reminder_laxman.sh`, `~/reminder_madhu.sh` — self-contained, SSH-callable
+- **Data source:** Fetches Google Sheets directly via public CSV export (no Documents access needed)
+- **Sheet ID:** Stored in `~/.r2_secret` (SSH-safe, preserved across OTP rotations)
+- **Editor mapping:** Photo projects (tab 0) = all Laxman. Video projects (tab 2) = editor column, defaults to Madhu
+- **Humanized messages:** `message_variants.py` randomizes greeting, list format, and closing each run. Editor-aware — Madhu gets urgency style ("late avthundi bro", "valu adgthunaru"), Laxman gets casual tone. Single message output, no robotic "Pending projects update:" format.
+- **iPhone Shortcut:** "Remind Laxman" / "Remind Madhu" → SSH over Tailscale → share to WhatsApp
+- **Also in repo:** `editor_reminder.sh` + `editor_reminder_summary.py` (full-featured version using `sheets_sync.py`, includes `--feedback` flag for corrections)
+
+## Standalone Pages
+
+- **photos.html** — Standalone encrypted photo portfolio for freelance sharing. Category tiles → gallery cards (SmugMug links). No pricing/booking/workflow. 48h auto-unlock via `?k=&t=` (no password gate). Dark theme, mobile-first. Generated by `generate_standalone_photos_html()` in `generate_dashboard.py`.
+- **videos.html** — Standalone encrypted video highlights for freelance sharing. YouTube thumbnail grid with play overlay + duration. No pricing/booking/workflow. 48h auto-unlock. Generated by `generate_standalone_videos_html()` in `generate_dashboard.py`.
+- **Link generation:** `python3 generate_link.py photos` / `python3 generate_link.py photos wedding` / `python3 generate_link.py videos` → 48h link copied to clipboard. Category filter via `&c=` param.
+- **iOS Shortcuts:** `~/photos_link.sh [category]`, `~/videos_link.sh` — SSH over Tailscale, output to Share Sheet → WhatsApp. Valid categories: wedding, engagement, pre_wedding, half_saree, maternity, baby_shower, birthday, cradle, celebrations.
+- **dhriti-storyboard.html** — Dhriti's cradle ceremony shot storyboard with 16 base64-embedded LENshiv reference photos. Self-contained (595KB), no encryption, phone-first layout. Source of truth: `canon_c50/cradle_ceremony/storyboard.html` — always edit there first, then overwrite this copy. Live at `https://portfolio.rsquarestudios.com/dhriti-storyboard.html`. localStorage checklist state is origin-specific.
+- **dhriti.html** — Dhriti shoot checklist (separate from storyboard).
 
 ## Subprojects
 
